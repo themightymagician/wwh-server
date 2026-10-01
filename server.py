@@ -128,6 +128,17 @@ GAMES = {
         "Jede Zelle tippt ihr Land auf der Karte im Gerät an. Einzeln geht auch.",
         "Volltreffer 100 Punkte, danach weniger, je weiter weg. Nachbarländer bekommen mindestens 55."]},
 }
+GAMES.update({
+    "maulwurf_los": {"name": "Ein Verdacht", "mode": "solo", "pts": 0, "rounds": 1, "min": 3, "ereignis": True, "rules": [
+        "Die Zentrale vermutet einen Maulwurf des Amtes in der Zelle.",
+        "Jedes Gerät zeigt jetzt verdeckt eine Rollenkarte – nur für die eigenen Augen.",
+        "Wer Maulwurf ist, sammelt ab jetzt für das Amt. Bei der Übergabe wird abgestimmt."]},
+    "maulwurf_wahl": {"name": "Wer ist der Maulwurf?", "mode": "solo", "pts": 0, "rounds": 1, "min": 4, "ereignis": True, "rules": [
+        "Die Zelle stimmt im Gerät ab: Wer arbeitet für das Amt?",
+        "Die letzte Stimme jeder Person zählt, die Stimme des Maulwurfs nicht.",
+        "Aufgelöst wird bei der Übergabe."]},
+})
+EREIGNISSE = ["maulwurf_los", "maulwurf_wahl"]
 INTERNAL = ["schaetzen", "ranking", "impostor", "zoom", "sound", "hoeher", "emoji", "wette", "woerterbuch", "schwaerzung"]
 SPECIAL = ["deppardy", "atlas"]      # eigene Editoren im Archiv
 BUZZ = {"zoom", "sound", "emoji"}
@@ -296,12 +307,13 @@ def defaults():
         "story": vorlage("drehbuch.json", {}), "prologIdx": 0, "finaleStufe": 0, "stealLog": [],
         "mole": {"on": False, "id": None, "bonus": 5, "voteOpen": False, "result": None}, "moleVotes": {},
         "stealPct": 20, "stealVerlust": 50, "verzichtBonus": 2, "ziel": -1, "beute": [], "funk": None,
-        "depArm": True, "judgedPts": {}, "korrekturStand": 3,
+        "depArm": True, "judgedPts": {}, "korrekturStand": 4,
         "kartei": vorlage("beutekartei.json", {}),
         "vorschlaege": {}, "zielProzent": 50, "namenZeigen": False, "beispiel": True, "schluesselloch": True,
         "klang": {"an": True, "signale": True, "vol": 80, "cues": {},
                   "musik": {"an": False, "url": "", "spiel": "", "vol": 35}},
         "cues": [], "cueN": 0, "rausch": dict(RAUSCH0),
+        "test": None, "tracking": {}, "impressum": "", "beuteImportInfo": "",
     }
 
 
@@ -324,7 +336,7 @@ def deep_merge(base, saved):
         if isinstance(base.get(k), dict) and isinstance(v, dict) and k not in ("content", "atlasSets", "scores", "gains",
                                                                                "upts", "answers", "teamAnswers", "votes",
                                                                                "moleVotes", "bets", "betDone", "judged",
-                                                                               "cursor", "rnd", "vorschlaege"):
+                                                                               "cursor", "rnd", "vorschlaege", "tracking", "test"):
             base[k] = deep_merge(base[k], v)
         else:
             base[k] = v
@@ -419,6 +431,22 @@ def korrekturen3(s):
     s["korrekturStand"] = 3
 
 
+def korrekturen4(s):
+    """Stand 4: Epilog, Abspann und die Ereignisse im Einsatzplan bekommen Texte."""
+    if s.get("korrekturStand", 0) >= 4:
+        return
+    st = s.setdefault("story", {})
+    neu = vorlage("drehbuch.json", {})
+    for k in ("epilog", "abspann"):
+        if not st.get(k) and neu.get(k):
+            st[k] = copy.deepcopy(neu[k])
+    ms = st.setdefault("missionen", {})
+    for k in EREIGNISSE:
+        if k not in ms and k in (neu.get("missionen") or {}):
+            ms[k] = copy.deepcopy(neu["missionen"][k])
+    s["korrekturStand"] = 4
+
+
 def load():
     global STATE, VERSION
     os.makedirs(MEDIA, exist_ok=True)
@@ -438,6 +466,7 @@ def load():
             korrekturen(s)
             korrekturen2(s)
             korrekturen3(s)
+            korrekturen4(s)
             for p in s["plan"]:                       # Außeneinsätze sind jetzt eingebaut
                 p.setdefault("opt", "")
                 p.setdefault("zm", "sprecher")
@@ -608,10 +637,20 @@ def round_state(s, r):
             if e:
                 it = dict(copy.deepcopy(e), marke=st.get("marke", ""), setName=st.get("name", ""))
         lst = []
+    test = s.get("test") or {}
+    if test.get("i") is not None and m["type"] != "atlas":       # Testlauf: genau dieser Eintrag
+        i = int(test["i"])
+        it = copy.deepcopy(lst[i]) if 0 <= i < len(lst) else None
+        lst = []
     if lst:
+        # Nur Einträge in der Rotation; „aus“ markierte werden übersprungen
         c = s["cursor"].get(m["type"], 0)
-        it = copy.deepcopy(lst[c % len(lst)])
-        s["cursor"][m["type"]] = c + 1
+        for k in range(len(lst)):
+            j = (c + k) % len(lst)
+            if not lst[j].get("aus"):
+                it = copy.deepcopy(lst[j])
+                s["cursor"][m["type"]] = c + k + 1
+                break
     ln = lines_of(it)
     order = list(range(len(ln)))
     random.shuffle(order)
@@ -643,6 +682,181 @@ def cue(s, art):
     """Klang-Signal für die Leinwand (Musik und Töne spielt nur die Leinwand)."""
     s["cueN"] = s.get("cueN", 0) + 1
     s["cues"] = (s.get("cues") or [])[-11:] + [{"n": s["cueN"], "art": art}]
+
+
+def track(s, aid, was, n=1):
+    """Kleine Strichliste je Person für die Personalakten bei der Übergabe."""
+    if not aid:
+        return
+    t = s.setdefault("tracking", {}).setdefault(aid, {})
+    t[was] = t.get(was, 0) + n
+
+
+def steal_weiter(s, text):
+    """Nach einem Umlagern oder Verzicht: Bei „alle dürfen“ ist die nächste Person dran."""
+    ps = s["pendingSteal"] or {}
+    kette = list(ps.get("kette") or [])
+    vorher = ps.get("text") or ""
+    gesamt = (vorher + " " + text).strip() if vorher else text
+    while kette and kette[0] not in by_id(s):
+        kette.pop(0)
+    if kette:
+        s.update({"thief": kette.pop(0), "lastSteal": gesamt,
+                  "pendingSteal": dict(ps, kette=kette, text=gesamt)})
+    else:
+        s.update({"pendingSteal": None, "thief": None, "lastSteal": gesamt})
+
+
+TEST_SICHERN = ["plan", "cur", "active", "phase", "screen", "scores", "gains", "beute", "stealLog", "teams", "pendingSteal",
+                "thief", "lastSteal", "funk", "upts", "dep", "atlasOrder", "atlasRes", "rnd", "answers", "teamAnswers",
+                "feed", "open", "revealed", "round", "vorschlaege", "votes", "judged", "judgedPts", "bets", "betDone",
+                "spyResult", "zoomStep", "showQ", "awarded", "mole", "moleVotes", "tracking", "finaleStufe"]
+
+
+def test_ende(s):
+    t = s.get("test") or {}
+    for k, v in (t.get("sicher") or {}).items():
+        s[k] = v
+    s["test"] = None
+
+
+def zeile_kurz(t, e):
+    """Ein Archiv-Eintrag in einer Zeile – für den KI-Auftrag."""
+    f = {"schaetzen": lambda: f"Frage: {e.get('q')} (Antwort {e.get('a')} {e.get('unit', '')})",
+         "ranking": lambda: f"Aufgabe: {e.get('q')} – " + " / ".join(lines_of(e)),
+         "impostor": lambda: f"Parole: {e.get('word')} (Kategorie {e.get('cat')})",
+         "zoom": lambda: f"Bild, Lösung: {e.get('a')}", "sound": lambda: f"Tonaufnahme, Lösung: {e.get('a')}",
+         "hoeher": lambda: f"{e.get('q')} {e.get('a')} ({e.get('av')}) oder {e.get('b')} ({e.get('bv')})",
+         "emoji": lambda: f"Emojis {e.get('e')} = {e.get('a')} ({e.get('cat')})",
+         "wette": lambda: f"{e.get('cat')}: {e.get('q')} – {e.get('a')}",
+         "woerterbuch": lambda: f"Wort {e.get('wort')}: {e.get('def')}",
+         "schwaerzung": lambda: f"Text: {str(e.get('text', '')).replace(chr(10), ' ')} ({e.get('quelle')})"}.get(t)
+    return re.sub(r"\s+", " ", f() if f else str(e)).strip()
+
+
+VERMERKE = ["fremd", "alt", "doppeldeutig", "mundartlich", "derb", "poetisch", "aufrührerisch", "unerwünscht",
+            "umgangssprachlich", "unamtlich", "verdächtig", "umstritten"]
+
+
+def beute_auftrag(s):
+    """Text für eine KI: alle Einträge ohne Beutewort und alle Beutewörter ohne Karteikarte – mit Antwortformat."""
+    offen, woerter = [], set()
+    for t, lst in s["content"].items():
+        for i, e in enumerate(lst or []):
+            if str(e.get("beute") or "").strip():
+                woerter.add(e["beute"].strip())
+            elif t not in ("woerterbuch", "schwaerzung"):       # die nehmen notfalls ihr eigenes Wort
+                offen.append((f"content:{t}:{i}", GAMES[t]["name"], zeile_kurz(t, e)))
+            else:
+                woerter.add(beute_von(e, t))
+    for b in s["boards"]:
+        for ci, c in enumerate(b.get("cats", [])):
+            for p in b.get("pts", []):
+                q = strip_html((c.get("qh") or {}).get(str(p)))
+                if not q:
+                    continue
+                bw = str((c.get("bw") or {}).get(str(p)) or "").strip()
+                if bw:
+                    woerter.add(bw)
+                else:
+                    a = strip_html((c.get("ah") or {}).get(str(p)))
+                    offen.append((f"deppardy:{b['id']}:{ci}:{p}", "Deppardy · " + c.get("name", ""), f"{q} – Antwort: {a}"))
+    for sid, st in s["atlasSets"].items():
+        for i, e in enumerate(st.get("eintraege") or []):
+            if str(e.get("beute") or "").strip():
+                woerter.add(e["beute"].strip())
+            else:
+                land = GEO.get(str(e.get("land")), {}).get("name", "")
+                offen.append((f"atlas:{sid}:{i}", "Atlas · " + st.get("name", ""), f"{e.get('text')} (Herkunft: {land})"))
+    ohne_karte = sorted(w for w in woerter if w and w not in s["kartei"])
+    zeilen = [
+        "Du hilfst bei einem Quiz-Abend. Die Geschichte: Ein „Amt für Reinsprache“ verbietet alles Fremde, Alte und "
+        "Doppeldeutige. Die Mitspielenden bergen verbotene deutsche Wörter. Jede Quizfrage bringt ein „Beutewort“: "
+        "ein schönes, seltenes, altes, fremdstämmiges oder doppeldeutiges deutsches Wort, das thematisch zur Frage passt.",
+        "",
+        "AUFGABE 1 – Für jeden Eintrag unten genau ein passendes Beutewort finden (ein Wort oder eine kurze Wendung, "
+        "höchstens 40 Zeichen, nicht die Lösung der Frage selbst, möglichst kein Wort doppelt).",
+        "AUFGABE 2 – Für jedes Beutewort (deine neuen und die Liste „Ohne Karteikarte“) eine Karteikarte schreiben: "
+        "art (der/die/das, Pl., Adj., Verb …), def (Bedeutung, ein Satz, höchstens 160 Zeichen), herkunft (kurz, darf leer sein), "
+        "vermerk (genau einer von: " + ", ".join(VERMERKE) + ").",
+        "",
+        "Antworte NUR mit gültigem JSON in genau diesem Format, ohne Erklärung davor oder danach:",
+        '{"beute": [{"ref": "<ref aus der Liste>", "wort": "<Beutewort>"}],',
+        ' "kartei": {"<Beutewort>": {"art": "", "def": "", "herkunft": "", "vermerk": ""}}}',
+        "",
+        f"EINTRÄGE OHNE BEUTEWORT ({len(offen)}):",
+    ]
+    zeilen += [f"- ref={r} | {wo} | {txt}" for r, wo, txt in offen] or ["(keine)"]
+    zeilen += ["", f"OHNE KARTEIKARTE ({len(ohne_karte)}):"] + ([f"- {w}" for w in ohne_karte] or ["(keine)"])
+    return "\n".join(zeilen), len(offen), len(ohne_karte)
+
+
+def beute_import(s, daten):
+    """Antwort der KI übernehmen: Beutewörter an die Einträge, Karten in die Beutekartei."""
+    if not isinstance(daten, dict):
+        raise CmdError("Erwartet wird ein JSON-Objekt mit „beute“ und „kartei“")
+    n_b = n_k = 0
+    for x in daten.get("beute") or []:
+        if not isinstance(x, dict):
+            continue
+        ref, wort = str(x.get("ref") or ""), str(x.get("wort") or "").strip()[:60]
+        teile = ref.split(":")
+        if not wort:
+            continue
+        try:
+            if teile[0] == "content" and teile[1] in s["content"]:
+                e = s["content"][teile[1]][int(teile[2])]
+                if not str(e.get("beute") or "").strip():
+                    e["beute"] = wort
+                    n_b += 1
+            elif teile[0] == "deppardy":
+                b = next(bb for bb in s["boards"] if bb["id"] == teile[1])
+                c = b["cats"][int(teile[2])]
+                if not (c.get("bw") or {}).get(teile[3]):
+                    c.setdefault("bw", {})[teile[3]] = wort
+                    n_b += 1
+            elif teile[0] == "atlas":
+                e = s["atlasSets"][teile[1]]["eintraege"][int(teile[2])]
+                if not str(e.get("beute") or "").strip():
+                    e["beute"] = wort
+                    n_b += 1
+        except (IndexError, KeyError, ValueError, StopIteration):
+            continue
+    for wort, k in (daten.get("kartei") or {}).items():
+        wort = str(wort).strip()[:60]
+        if not wort or not isinstance(k, dict):
+            continue
+        verm = str(k.get("vermerk") or "").strip().lower()
+        s["kartei"][wort] = {"art": str(k.get("art") or "")[:30], "def": str(k.get("def") or "")[:300],
+                             "herkunft": str(k.get("herkunft") or "")[:200], "vermerk": verm if verm in VERMERKE else ""}
+        n_k += 1
+    s["beuteImportInfo"] = f"{n_b} Beutewörter und {n_k} Karteikarten übernommen."
+
+
+def personalakten(s):
+    """Wer hat sich am häufigsten umentschieden, wer am meisten gefunkt … – für die Übergabe."""
+    ids = by_id(s)
+    tr = s.get("tracking") or {}
+    verd = {}
+    mo = s.get("mole") or {}
+    for voter, ziel in (s.get("moleVotes") or {}).items():
+        verd[ziel] = verd.get(ziel, 0) + 1
+    def spitze(werte):
+        werte = {k: v for k, v in werte.items() if k in ids and v > 0}
+        if not werte:
+            return None
+        mx = max(werte.values())
+        return {"codes": [ids[k]["code"] for k, v in werte.items() if v == mx], "namen": [ids[k]["name"] for k, v in werte.items() if v == mx], "wert": mx}
+    feld = lambda k: {a: t.get(k, 0) for a, t in tr.items()}
+    akten = [
+        ("wankelmut", "Der Wankelmut", "× umentschieden", spitze(feld("wechsel"))),
+        ("treffsicher", "Treffsicher", "× getroffen", spitze(feld("treffer"))),
+        ("dauerfunker", "Dauerfunker", "× gefunkt", spitze(feld("funk"))),
+        ("buzzer", "Schnellster Finger", "× gebuzzert", spitze(feld("buzz"))),
+        ("fleiss", "Aktenfleiß", "Abgaben insgesamt", spitze(feld("abgaben"))),
+        ("verdacht", "Unter Verdacht", "× als Maulwurf verdächtigt", spitze(verd) if mo.get("on") else None),
+    ]
+    return [{"key": k, "titel": t, "was": w, **x} for k, t, w, x in akten if x]
 
 
 def zell_modus(m):
@@ -721,22 +935,24 @@ def umlagern(s, thief, vic, ziel=None):
     s["stealLog"].append({"thief": thief, "victim": vic, "ziel": ziel, "amt": amt, "an": an, "cur": s["cur"]})
     rest = f" – angekommen sind {an}" if an != amt else ""
     wohin = "" if ziel == thief else f" in den Rucksack von {ids[ziel]['code']}"
-    s.update({"pendingSteal": None, "thief": None,
-              "lastSteal": f"{ids[thief]['code']} hat {amt} Wörter aus dem Rucksack von {ids[vic]['code']}{wohin} umgelagert{rest}."})
+    steal_weiter(s, f"{ids[thief]['code']} hat {amt} Wörter aus dem Rucksack von {ids[vic]['code']}{wohin} umgelagert{rest}.")
     cue(s, "umlagern")
 
 
 def verzichten(s):
     ids = by_id(s)
+    text = ""
     if s["thief"]:
         bonus = s.get("verzichtBonus", 0)
         s["stealLog"].append({"thief": s["thief"], "victim": None, "amt": 0, "cur": s["cur"], "verzicht": True, "bonus": bonus})
         if s["thief"] in ids:
             s["scores"][s["thief"]] = s["scores"].get(s["thief"], 0) + bonus
-            s["lastSteal"] = f"{ids[s['thief']]['code']} hätte umlagern dürfen – und hat verzichtet." + (
+            text = f"{ids[s['thief']]['code']} hätte umlagern dürfen – und hat verzichtet." + (
                 f" Die Zentrale dankt mit {bonus} Wörtern." if bonus else "")
         cue(s, "verzicht")
-    s.update({"pendingSteal": None, "thief": None})
+        steal_weiter(s, text)
+    else:
+        s.update({"pendingSteal": None, "thief": None})
 
 
 def beute_pruefen(s):
@@ -921,6 +1137,7 @@ def wb_werten(s, m):
         ziel = opt[nr]["id"]
         if ziel == "echt":
             add_gain(s, voter, step(m))
+            track(s, voter, "treffer")
             erg["echt"].append(voter)
         elif ziel != voter:
             add_gain(s, ziel, 1)
@@ -1223,7 +1440,8 @@ def _host_cmd(s, c, a):
         if t not in FIELDS:
             raise CmdError("Unbekannter Typ")
         keys = [f[0] for f in FIELDS[t]]
-        s["content"][t] = [{k: str(e.get(k, "")) for k in keys} for e in a.get("list", [])]
+        s["content"][t] = [dict({k: str(e.get(k, "")) for k in keys}, **({"aus": True} if e.get("aus") else {}))
+                           for e in a.get("list", [])]
     elif c == "content_restore":
         t = a.get("type")
         s["content"][t] = copy.deepcopy(SAMPLES.get(t, []))
@@ -1303,13 +1521,42 @@ def _host_cmd(s, c, a):
                           for k, v in (st.get("missionen") or {}).items() if k in GAMES},
             "finale": {k: str(v)[:400] for k, v in (st.get("finale") or {}).items()},
             "maulwurf": {k: str(v)[:500] for k, v in (st.get("maulwurf") or {}).items()},
+            "epilog": [{"titel": str(t.get("titel", ""))[:60], "text": str(t.get("text", ""))[:600]}
+                       for t in st.get("epilog", []) if isinstance(t, dict)][:8],
+            "abspann": str(st.get("abspann", ""))[:3000],
         }
+    elif c == "impressum_set":
+        s["impressum"] = str(a.get("text") or "")[:5000]
+    elif c == "beute_import":
+        beute_import(s, a.get("daten"))
     elif c == "story_restore":
         s["story"] = vorlage("drehbuch.json", {})
+    elif c == "test_start":
+        if s.get("test"):
+            test_ende(s)
+        t = a.get("type")
+        if t not in GAMES or GAMES[t].get("ereignis"):
+            raise CmdError("Unbekanntes Spiel")
+        if s["active"] and not a.get("trotzdem"):
+            raise CmdError("Es läuft gerade eine Mission – erst abschließen oder abbrechen")
+        g = GAMES[t]
+        sicher = {k: copy.deepcopy(s.get(k)) for k in TEST_SICHERN}
+        test = {"sicher": sicher, "type": t, "i": a.get("i"), "atlas": a.get("atlas")}
+        mode = "team" if a.get("mode") == "team" else (g["mode"] if a.get("mode") is None else "solo")
+        s["test"] = test
+        s.update({"plan": [{"id": "test", "type": t, "mode": mode, "pts": int(a.get("pts") or g["pts"]), "rounds": 1 if t != "deppardy" else 1,
+                            "opt": str(a.get("board") or ""), "zm": a.get("zm") if a.get("zm") in ZELLMODI else "sprecher",
+                            "takt": int(a.get("takt") or 0)}], "cur": 0, "active": False})
+        if t == "atlas" and a.get("atlas"):
+            s["plan"][0]["rounds"] = 1
+        _host_cmd(s, "mission_start", {})
+    elif c == "test_ende":
+        if s.get("test"):
+            test_ende(s)
     elif c == "mission_start":
         if not m:
             raise CmdError("Keine Mission mehr offen")
-        if not s["agents"]:
+        if not s["agents"] and not s.get("test"):
             raise CmdError("Noch keine Agenten")
         if s["mole"]["on"] and s["mole"]["id"] not in ids:
             s["mole"]["id"] = random.choice(s["agents"])["id"]
@@ -1322,6 +1569,8 @@ def _host_cmd(s, c, a):
                       "rnd": {}, "answers": {}, "teamAnswers": {}, "feed": [], "open": False,
                       "upts": {}, "dep": None, "atlasRes": None, "atlasOrder": [], "funk": None, "vorschlaege": {}})
             cue(s, "einsatz")
+    elif c == "mission_abort" and s.get("test"):
+        test_ende(s)
     elif c == "mission_abort":
         s.update({"screen": "hq", "active": False, "phase": "intro", "gains": {}, "rnd": {},
                   "answers": {}, "teamAnswers": {}, "feed": [], "open": False})
@@ -1334,7 +1583,19 @@ def _host_cmd(s, c, a):
     elif c == "mission_begin":
         if not m:
             raise CmdError("Keine Mission")
-        if m["type"] == "deppardy":
+        if m["type"] == "maulwurf_los":              # Rollen verteilen, verdeckt auf jedem Gerät
+            s["mole"]["on"] = True
+            if s["mole"]["id"] not in ids and s["agents"]:
+                s["mole"]["id"] = random.choice(s["agents"])["id"]
+            s.update({"phase": "play", "rnd": {"ereignis": True}, "revealed": False, "open": False})
+        elif m["type"] == "maulwurf_wahl":
+            s["mole"]["on"] = True
+            if s["mole"]["id"] not in ids and s["agents"]:
+                s["mole"]["id"] = random.choice(s["agents"])["id"]
+            if not s["mole"]["result"]:
+                s["mole"]["voteOpen"] = True
+            s.update({"phase": "play", "rnd": {"ereignis": True}, "revealed": False, "open": False})
+        elif m["type"] == "deppardy":
             b = next((x for x in s["boards"] if x["id"] == m.get("opt")), None) or (s["boards"] or [None])[0]
             if not b:
                 raise CmdError("Im Archiv gibt es noch kein Deppardy-Board")
@@ -1343,7 +1604,9 @@ def _host_cmd(s, c, a):
             s.update({"phase": "play", "rnd": {}, "revealed": False, "open": False})
         elif m["type"] == "atlas":
             sets = [m["opt"]] if m.get("opt") in s["atlasSets"] else list(s["atlasSets"].keys())
-            pool = [(k, i) for k in sets for i in range(len(s["atlasSets"][k].get("eintraege") or []))]
+            pool = [(k, i) for k in sets for i, e in enumerate(s["atlasSets"][k].get("eintraege") or []) if not e.get("aus")]
+            if (s.get("test") or {}).get("atlas"):
+                pool = [tuple(s["test"]["atlas"])]
             if not pool:
                 raise CmdError("Im Archiv gibt es keine Atlas-Begriffe")
             random.shuffle(pool)
@@ -1423,6 +1686,7 @@ def _host_cmd(s, c, a):
         if not s["awarded"]:
             for aid in closest_ids(s):
                 add_gain(s, aid, step(m))
+                track(s, aid, "treffer")
             if closest_ids(s):
                 cue(s, "treffer")
             s["awarded"] = True
@@ -1432,6 +1696,7 @@ def _host_cmd(s, c, a):
             for i in richtig:
                 for aid in s["teams"][i]:
                     add_gain(s, aid, step(m))
+                    track(s, aid, "treffer")
             if m["type"] == "ranking" and richtig:           # schnellste richtige Zelle: ein Wort extra
                 schnell = min(richtig, key=lambda i: s["teamAnswers"][str(i)]["t"])
                 for aid in s["teams"][schnell]:
@@ -1450,6 +1715,7 @@ def _host_cmd(s, c, a):
             add_gain(s, aid, b if ok else -min(b, total(s, aid)))
             s["betDone"][aid] = "r" if ok else "w"
             if ok and b:
+                track(s, aid, "treffer")
                 cue(s, "treffer")
         else:
             prev = s["judged"].get(aid)
@@ -1464,6 +1730,7 @@ def _host_cmd(s, c, a):
             if ok and prev != "r":
                 add_gain(s, aid, wert)
                 s["judgedPts"][aid] = wert
+                track(s, aid, "treffer")
                 cue(s, "treffer")
             if not ok and prev == "r":
                 add_gain(s, aid, -s["judgedPts"].pop(aid, step(m)))
@@ -1503,6 +1770,7 @@ def _host_cmd(s, c, a):
                 add_gain(s, aid, wert)
                 s["judged"][aid] = "r"
                 s["judgedPts"][aid] = wert
+                track(s, aid, "treffer")
                 neu += 1
         if neu:
             cue(s, "treffer")
@@ -1521,15 +1789,29 @@ def _host_cmd(s, c, a):
             s["spyResult"] = "escaped"
     elif c == "audio":
         s["audio"] = {"n": s["audio"].get("n", 0) + 1, "a": a.get("a", "play")}
+    elif c == "mission_finish" and s.get("test"):
+        test_ende(s)
     elif c == "mission_finish":
         if m:
             beute_pruefen(s)
             cue(s, "ende")
+            if m["type"] == "maulwurf_wahl":
+                s["mole"]["voteOpen"] = False
         finish(s)
     elif c == "steal_thief":
         if a.get("id") not in ((s["pendingSteal"] or {}).get("winners") or []):
             raise CmdError("Nur wer den Einsatz gewonnen hat, darf umlagern")
         s["thief"] = a.get("id")
+    elif c in ("steal_zufall", "steal_alle"):
+        w = [x for x in ((s["pendingSteal"] or {}).get("winners") or []) if x in ids]
+        if not w:
+            raise CmdError("Niemand darf gerade umlagern")
+        if c == "steal_zufall":
+            s["thief"] = random.choice(w)
+        else:                                   # alle Sieger nacheinander, in zufälliger Reihenfolge
+            random.shuffle(w)
+            s["thief"] = w[0]
+            s["pendingSteal"] = dict(s["pendingSteal"], kette=w[1:])
     elif c == "steal_victim":
         umlagern(s, s["thief"], a.get("id"), a.get("ziel"))
     elif c == "steal_skip":
@@ -1640,6 +1922,8 @@ def _host_cmd(s, c, a):
         b = board_normal(a.get("board") or {})
         if a.get("neu"):
             b["id"] = uid()
+        alt = next((x for x in s["boards"] if x["id"] == b["id"]), None)
+        b["autor"] = (alt or {}).get("autor") or str(a.get("_host") or "")
         for i, x in enumerate(s["boards"]):
             if x["id"] == b["id"]:
                 s["boards"][i] = b
@@ -1657,11 +1941,13 @@ def _host_cmd(s, c, a):
         eintraege = []
         for e in st.get("eintraege", []):
             land = str(e.get("land") or "")
-            eintraege.append({"text": str(e.get("text", ""))[:80], "land": land if land in GEO else "",
-                              "auchOk": [str(x) for x in e.get("auchOk", []) if str(x) in GEO],
-                              "notiz": str(e.get("notiz", ""))[:300], "beute": str(e.get("beute", ""))[:60]})
+            eintraege.append(dict({"text": str(e.get("text", ""))[:80], "land": land if land in GEO else "",
+                                   "auchOk": [str(x) for x in e.get("auchOk", []) if str(x) in GEO],
+                                   "notiz": str(e.get("notiz", ""))[:300], "beute": str(e.get("beute", ""))[:60]},
+                                  **({"aus": True} if e.get("aus") else {})))
+        alt = s["atlasSets"].get(sid) or {}
         s["atlasSets"][sid] = {"name": str(st.get("name") or "Neues Set")[:60], "marke": str(st.get("marke") or "")[:120],
-                               "eintraege": eintraege}
+                               "eintraege": eintraege, "autor": alt.get("autor") or str(a.get("_host") or "")}
     elif c == "kartei_set":
         wort = str(a.get("wort") or "").strip()[:60]
         if not wort:
@@ -1685,7 +1971,34 @@ def _host_cmd(s, c, a):
         raise CmdError("Unbekannter Befehl: " + str(c))
 
 
+def _eingaben(s, aid):
+    d = s.get("dep") or {}
+    return {"antwort": (s["answers"].get(aid) or {}).get("v"), "stimme": s["votes"].get(aid), "einsatz": s["bets"].get(aid),
+            "vorschlag": (s["vorschlaege"].get(aid) or {}).get("v"), "mole": s["moleVotes"].get(aid),
+            "funk": sum(1 for f in s["feed"] if f["id"] == aid), "buzz": sum(1 for b in d.get("buzz") or [] if b.get("id") == aid)}
+
+
 def player_act(s, agent, a):
+    """Eingaben von den Agenten-Geräten – mit Strichliste für die Personalakten."""
+    aid = agent["id"]
+    vor = _eingaben(s, aid)
+    _player_act(s, agent, a)
+    nach = _eingaben(s, aid)
+    for k in ("antwort", "stimme", "einsatz", "vorschlag", "mole"):
+        if k == "vorschlag" and a.get("kind") == "vorschlag":
+            continue                             # Live-Vorschläge beim Ziehen zählen nicht
+        if nach[k] != vor[k]:
+            track(s, aid, "abgaben")
+            if vor[k] is not None:
+                track(s, aid, "wechsel")
+    if nach["funk"] > vor["funk"]:
+        track(s, aid, "funk")
+        track(s, aid, "abgaben")
+    if nach["buzz"] > vor["buzz"]:
+        track(s, aid, "buzz")
+
+
+def _player_act(s, agent, a):
     """Eingaben von den Agenten-Geräten."""
     m = mission(s)
     aid = agent["id"]
@@ -1801,8 +2114,10 @@ def player_act(s, agent, a):
 
 def finale_stufen(s):
     mo = s.get("mole") or {}
+    st = s.get("story") or {}
     return (["uebergabe"] + (["maulwurf"] if mo.get("on") and mo.get("id") else [])
-            + (["ziel"] if ziel_wert(s) > 0 else []) + ["hueter", "bilanz"] + (["kartei"] if s.get("beute") else []))
+            + (["ziel"] if ziel_wert(s) > 0 else []) + ["hueter", "bilanz"] + (["akten"] if personalakten(s) else [])
+            + (["kartei"] if s.get("beute") else []) + ["epilog"] * len(st.get("epilog") or []) + ["abspann"])
 
 
 def fuell(text, **kw):
@@ -1879,6 +2194,7 @@ def public_view(s, full=False):
         "thief": ids[s["thief"]]["code"] if s["thief"] in ids else None,
         "audio": s["audio"], "now": time.time(),
         "namenZeigen": bool(s.get("namenZeigen")), "beispiel": bool(s.get("beispiel", True)),
+        "test": bool(s.get("test")), "impressum": bool(str(s.get("impressum") or "").strip()),
         "klang": s.get("klang"), "cues": s.get("cues") or [],
     }
     st = s.get("story") or {}
@@ -1901,6 +2217,19 @@ def public_view(s, full=False):
         stufen = finale_stufen(s)
         i = min(s["finaleStufe"], len(stufen) - 1)
         v["finaleStufe"], v["finaleArt"], v["finaleStufen"] = i, stufen[i], len(stufen)
+        gerettet = sum(1 for b in s.get("beute") or [] if not b.get("verloren"))
+        if stufen[i] == "epilog":
+            nr = stufen[:i].count("epilog")
+            t = (st.get("epilog") or [])[nr]
+            v["epilog"] = {"titel": t.get("titel", ""), "nr": nr + 1, "von": stufen.count("epilog"),
+                           "text": fuell(t.get("text", ""), zelle=st.get("zelle", ""), gerettet=gerettet)}
+        if stufen[i] == "akten":
+            v["akten"] = personalakten(s)
+        if stufen[i] == "abspann":
+            v["abspann"] = {"text": fuell(st.get("abspann", ""), zelle=st.get("zelle", ""), gerettet=gerettet),
+                            "agenten": [{"code": a["code"], "name": a["name"], "total": total(s, a["id"])} for a in s["agents"]],
+                            "missionen": [((st.get("missionen") or {}).get(p["type"]) or {}).get("ort") or GAMES[p["type"]]["name"]
+                                          for p in s["plan"]], "gerettet": gerettet}
         stat = abend_statistik(s)
         pro = stat.pop("pro")
         if mo["result"] and mo["id"] in ids:
@@ -1936,6 +2265,9 @@ def public_view(s, full=False):
                         for t in s["teams"]]})
     if m["type"] == "deppardy" and s["phase"] == "play" and s.get("dep"):
         v["stage"] = dep_view(s, full)
+        return v
+    if GAMES[m["type"]].get("ereignis") and s["phase"] == "play":
+        v["stage"] = {"type": m["type"], "voted": list(s["moleVotes"].keys())}
         return v
     it = item(s)
     if s["phase"] != "play" or not it:
@@ -2247,7 +2579,7 @@ def host_view(s):
     return v
 
 
-META = {"games": GAMES, "internal": INTERNAL, "special": SPECIAL, "fields": FIELDS, "hints": HINTS, "zoom": ZOOM,
+META = {"ereignisse": EREIGNISSE, "vermerke": VERMERKE, "games": GAMES, "internal": INTERNAL, "special": SPECIAL, "fields": FIELDS, "hints": HINTS, "zoom": ZOOM,
         "cues": CUES, "rausch": RAUSCH0, "teamSpiele": TEAM_SPIELE, "taktSpiele": TAKT_SPIELE, "zellmodi": ZELLMODI}
 
 
@@ -2358,12 +2690,20 @@ class Handler(BaseHTTPRequestHandler):
         return json.loads(raw.decode("utf-8") or "{}")
 
     def authed(self):
+        """Hauptpasswort (beliebiger Name) = Leitung mit allen Rechten. Zusätzliche Zugänge stehen in config.json
+        unter „hosts“: Name und eigenes Passwort, z. B. für Leute, die Boards vorbereiten."""
         h = self.headers.get("Authorization", "")
+        self.host, self.admin = None, False
         if h.startswith("Basic "):
             try:
-                _, _, pw = base64.b64decode(h[6:]).decode("utf-8").partition(":")
+                name, _, pw = base64.b64decode(h[6:]).decode("utf-8").partition(":")
                 if hmac.compare_digest(pw.encode(), CONFIG["password"].encode()):
+                    self.host, self.admin = (name.strip() or "Leitung"), True
                     return True
+                for hn, hpw in (CONFIG.get("hosts") or {}).items():
+                    if hn.lower() == name.strip().lower() and hmac.compare_digest(pw.encode(), str(hpw).encode()):
+                        self.host = hn
+                        return True
             except Exception:
                 pass
         self.send_response(401)
@@ -2422,9 +2762,16 @@ class Handler(BaseHTTPRequestHandler):
                 wait_change(since)
                 with LOCK:
                     out = {"v": VERSION, "state": host_view(STATE), "meta": META}
+                out["ich"] = {"name": self.host, "admin": self.admin}
+                if self.admin:
+                    out["hosts"] = sorted((CONFIG.get("hosts") or {}).keys(), key=str.lower)
                 out["lan"] = f"http://{LAN_IP}:{self.server.server_port}/"
                 out["now"] = time.time()
                 return self.send_json(out)
+            if path == "/leitung/api/beute-auftrag":
+                with LOCK:
+                    text, n_offen, n_karten = beute_auftrag(STATE)
+                return self.send_json({"ok": True, "text": text, "offen": n_offen, "ohneKarte": n_karten})
             if path == "/leitung/api/export":
                 with LOCK:
                     body = json.dumps({"v": VERSION, "state": STATE}, ensure_ascii=False, indent=1).encode()
@@ -2441,6 +2788,21 @@ class Handler(BaseHTTPRequestHandler):
             p = self.safe_join(os.path.join(WEB, "leitung"), rel)
             return self.send_file(p, cache="vendor/" in rel or "data/" in rel) if p else self.send_error(404)
 
+        if path == "/impressum":
+            with LOCK:
+                txt = str(STATE.get("impressum") or "").strip() or "Noch kein Impressum hinterlegt."
+            esc = lambda t: t.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+            body = ('<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">'
+                    '<title>Impressum</title><link rel="stylesheet" href="/wwh.css"><style>main{max-width:720px;margin:0 auto;padding:32px 20px 60px;}'
+                    'h1{font-family:var(--display);font-weight:400;text-transform:uppercase;font-size:44px;margin:0 0 20px;}'
+                    '.text{font-family:var(--serif);font-size:18px;line-height:1.55;white-space:pre-line;}</style></head><body><main>'
+                    '<h1>Impressum</h1><div class="text">' + esc(txt) + '</div><p><a href="/">Zurück</a></p></main></body></html>').encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return
         routes = {"/": "index.html", "/leinwand": "leinwand.html"}
         rel = routes.get(path, path)
         if rel.startswith("/leitung"):
@@ -2487,13 +2849,36 @@ class Handler(BaseHTTPRequestHandler):
                     return
                 if path == "/leitung/api/cmd":
                     a = self.body_json(MAX_BODY)
+                    a["_host"] = self.host
                     with LOCK:
                         host_cmd(STATE, a.get("cmd"), a)
                         commit(sofort=a.get("cmd") in ("mission_finish", "steal_victim", "steal_skip", "mole_resolve",
                                                        "evening_reset", "agents_clear"))
                         v = VERSION
                     return self.send_json({"ok": True, "v": v})
+                if path == "/leitung/api/hosts":
+                    if not self.admin:
+                        return self.send_err("Nur die Leitung mit dem Hauptpasswort darf Zugänge verwalten", 403)
+                    a = self.body_json()
+                    name = str(a.get("name") or "").strip()[:30]
+                    if not name:
+                        return self.send_err("Name fehlt")
+                    with LOCK:
+                        hosts = CONFIG.setdefault("hosts", {})
+                        if a.get("aktion") == "del":
+                            hosts.pop(name, None)
+                        else:
+                            pw = str(a.get("pw") or "").strip()
+                            if len(pw) < 4:
+                                return self.send_err("Passwort bitte mit mindestens 4 Zeichen")
+                            hosts[name] = pw
+                        with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+                            json.dump(CONFIG, f, ensure_ascii=False, indent=2)
+                        commit()
+                    return self.send_json({"ok": True})
                 if path == "/leitung/api/config":
+                    if not self.admin:
+                        return self.send_err("Nur mit dem Hauptpasswort", 403)
                     a = self.body_json(MAX_BODY)
                     with LOCK:
                         if "joinUrl" in a:
@@ -2515,6 +2900,8 @@ class Handler(BaseHTTPRequestHandler):
                         f.write(self.rfile.read(n))
                     return self.send_json({"ok": True, "url": "/media/" + name})
                 if path == "/leitung/api/import":
+                    if not self.admin:
+                        return self.send_err("Nur mit dem Hauptpasswort", 403)
                     a = self.body_json(MAX_BODY)
                     try:
                         roh = a.get("state", a)
@@ -2528,6 +2915,7 @@ class Handler(BaseHTTPRequestHandler):
                         korrekturen(neu)
                         korrekturen2(neu)
                         korrekturen3(neu)
+                        korrekturen4(neu)
                     except ValueError as e:
                         return self.send_err("Import abgelehnt: " + str(e))
                     with LOCK:

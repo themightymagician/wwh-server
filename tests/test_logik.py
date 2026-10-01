@@ -308,3 +308,102 @@ class Runde2026(unittest.TestCase):
         W.host_cmd(s, "klang_set", {"klang": {"musik": {"an": True, "url": "/media/x.mp3"}, "cues": {"ende": "/media/e.mp3", "quatsch": "y"}}})
         self.assertEqual(s["klang"]["cues"], {"ende": "/media/e.mp3"})
         self.assertTrue(s["klang"]["musik"]["an"])
+
+
+class Runde2026b(unittest.TestCase):
+    """Zweite Runde Okt. 2026: Rotation, Testlauf, Ereignisse, Gleichstand, Personalakten, KI-Import, Epilog."""
+
+    def test_rotation_ueberspringt_ausgeschaltete(self):
+        s, ids = abend()
+        liste = [{"e": "1", "a": "a"}, {"e": "2", "a": "b", "aus": True}, {"e": "3", "a": "c"}]
+        W.host_cmd(s, "content_set", {"type": "emoji", "list": liste})
+        self.assertTrue(s["content"]["emoji"][1]["aus"])
+        s["plan"] = [{"id": "x", "type": "emoji", "mode": "solo", "pts": 2, "rounds": 3, "opt": ""}]
+        W.host_cmd(s, "mission_start", {})
+        W.host_cmd(s, "mission_begin", {})
+        gesehen = [W.item(s)["e"]]
+        for _ in range(2):
+            W.host_cmd(s, "round_next", {})
+            gesehen.append(W.item(s)["e"])
+        self.assertEqual(gesehen, ["1", "3", "1"])
+
+    def test_testlauf_laesst_den_abend_unberuehrt(self):
+        s, ids = abend()
+        s["scores"][ids[0]] = 7
+        cur = s["cursor"].get("emoji", 0)
+        W.host_cmd(s, "test_start", {"type": "emoji", "i": 2})
+        self.assertEqual(W.item(s) if s["phase"] == "play" else None, None)
+        W.host_cmd(s, "mission_begin", {})
+        self.assertEqual(W.item(s)["e"], s["content"]["emoji"][2]["e"])
+        W.host_cmd(s, "gain", {"id": ids[0], "d": 5})
+        W.host_cmd(s, "reveal", {})
+        W.host_cmd(s, "mission_finish", {})
+        self.assertIsNone(s["test"])
+        self.assertEqual(s["scores"][ids[0]], 7)
+        self.assertEqual(s["beute"], [])
+        self.assertEqual(s["cursor"].get("emoji", 0), cur)
+        self.assertEqual(len(s["plan"]), len(W.make_plan()))
+
+    def test_maulwurf_im_einsatzplan(self):
+        s, ids = abend()
+        s["plan"] = [{"id": "a", "type": "maulwurf_los", "mode": "solo", "pts": 0, "rounds": 1, "opt": ""},
+                     {"id": "b", "type": "maulwurf_wahl", "mode": "solo", "pts": 0, "rounds": 1, "opt": ""}]
+        W.host_cmd(s, "mission_start", {})
+        W.host_cmd(s, "mission_begin", {})
+        self.assertTrue(s["mole"]["on"] and s["mole"]["id"] in ids)
+        self.assertIn("rolle", W.me_view(s, s["agents"][0]))
+        W.host_cmd(s, "mission_finish", {})
+        W.host_cmd(s, "mission_start", {})
+        W.host_cmd(s, "mission_begin", {})
+        self.assertTrue(s["mole"]["voteOpen"])
+        self.assertEqual(W.public_view(s)["stage"]["type"], "maulwurf_wahl")
+        W.host_cmd(s, "mission_finish", {})
+        self.assertFalse(s["mole"]["voteOpen"])
+
+    def test_gleichstand_alle_duerfen_nacheinander(self):
+        s, ids = abend()
+        for a in ids:
+            s["scores"][a] = 20
+        s["pendingSteal"] = {"winners": [ids[0], ids[1]]}
+        W.host_cmd(s, "steal_alle", {})
+        erster = s["thief"]
+        W.host_cmd(s, "steal_skip", {})
+        self.assertIsNotNone(s["pendingSteal"])
+        self.assertNotEqual(s["thief"], erster)
+        W.host_cmd(s, "steal_victim", {"id": ids[3]})
+        self.assertIsNone(s["pendingSteal"])
+        self.assertIn("verzichtet", s["lastSteal"])
+        self.assertIn("umgelagert", s["lastSteal"])
+
+    def test_wankelmut_wird_gezaehlt(self):
+        s, ids = abend()
+        s["plan"] = [{"id": "x", "type": "schaetzen", "mode": "solo", "pts": 2, "rounds": 1, "opt": ""}]
+        W.host_cmd(s, "mission_start", {})
+        W.host_cmd(s, "mission_begin", {})
+        ag = s["agents"][0]
+        for v in ("10", "12", "15"):
+            W.player_act(s, ag, {"v": v})
+        self.assertEqual(s["tracking"][ag["id"]]["wechsel"], 2)
+        akten = W.personalakten(s)
+        self.assertEqual(akten[0]["key"], "wankelmut")
+
+    def test_ki_auftrag_und_import(self):
+        s, ids = abend()
+        text, offen, _ = W.beute_auftrag(s)
+        self.assertIn("ref=content:schaetzen:0", text)
+        W.host_cmd(s, "beute_import", {"daten": {"beute": [{"ref": "content:schaetzen:0", "wort": "Wörterflut"},
+                                                           {"ref": "unsinn:1", "wort": "x"}],
+                                                 "kartei": {"Wörterflut": {"art": "die", "def": "Sehr viele Wörter.", "vermerk": "poetisch"}}}})
+        self.assertEqual(s["content"]["schaetzen"][0]["beute"], "Wörterflut")
+        self.assertEqual(s["kartei"]["Wörterflut"]["vermerk"], "poetisch")
+        self.assertLess(W.beute_auftrag(s)[1], offen)
+
+    def test_epilog_und_abspann(self):
+        s, ids = abend()
+        stufen = W.finale_stufen(s)
+        self.assertEqual(stufen[-1], "abspann")
+        self.assertEqual(stufen.count("epilog"), len(s["story"]["epilog"]))
+        s["screen"] = "finale"
+        s["finaleStufe"] = stufen.index("epilog")
+        v = W.public_view(s)
+        self.assertEqual(v["epilog"]["nr"], 1)

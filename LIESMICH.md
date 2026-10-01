@@ -16,7 +16,11 @@ python3 server.py --port 9000
 python3 server.py --passwort geheim  # Passwort setzen (wird gespeichert)
 ```
 
-Beim ersten Start legt der Server `data/config.json` an und zeigt das Passwort für das Steuermodul einmal in der Konsole. Den Benutzernamen fragt der Browser auch ab, er ist egal.
+Beim ersten Start legt der Server `data/config.json` an und zeigt das Passwort für das Steuermodul einmal in der Konsole. Mit dem Hauptpasswort ist der Benutzername egal.
+
+**Mehrere Zugänge:** Unter „System → Zugänge zum Steuermodul“ legt die Leitung (Hauptpasswort) weitere Personen mit eigenem Namen und Passwort an, etwa zum Vorbereiten von Deppardy-Boards. Sie melden sich mit genau diesem Namen an. Boards zeigen, wer sie angelegt hat, und lassen sich auf „nur meine“ filtern. Importe, die Beitritts-Adresse und die Zugangsliste bleiben dem Hauptpasswort vorbehalten. Die Zugänge stehen in `data/config.json` unter `hosts`.
+
+**Impressum:** Text unter „System → Impressum“. Er erscheint unter `/impressum`, verlinkt auf dem Beitrittsbildschirm und im Warteraum der Handys, am Ende des Abspanns sowie klein auf dem Startbild der Leinwand. Ohne Text gibt es keinen Link.
 
 Die Taste `f` schaltet die Leinwand in den Vollbildmodus.
 
@@ -53,6 +57,16 @@ Alle Werte lassen sich während des Abends ändern, falls das Ziel zu leicht ode
 - **Die Schwärzung:** Ein Text erscheint mit schwarzem Balken, alle tippen das fehlende Wort. Jede richtige Antwort zählt. Im Archiv setzt du das geschwärzte Wort in doppelte eckige Klammern: `Die Gedanken sind [[frei]]`. Mitgeliefert sind 13 gemeinfreie Texte, Sprichwörter und Grundgesetz-Artikel. Die Karte zeigt ein thematisches Beutewort, zum Beispiel „Gedankenfreiheit“.
 
 Die beiden neuen Spiele stehen im Einsatzplan unter „Mission anhängen“. Sie haben eigene Einsatzorte im Drehbuch: die Wörterbuchredaktion und die Zensurbehörde.
+- **Warteraum:** Nach dem Beitreten und zwischen den Einsätzen zeigen die Handys nur einen Warteraum. Den Einsatz sehen alle gleichzeitig, sobald die Zentrale ihn startet.
+- **Eingabefelder:** Taucht auf dem Handy ein Textfeld auf, steht der Cursor schon darin.
+- **Rotation:** Im Archiv hat jeder Eintrag (auch Atlas-Begriffe) einen Haken „in Rotation“. Nur angehakte Einträge kommen im Spiel dran.
+- **Testlauf:** „▶ Testen“ neben einem Archiv-Eintrag, einem Atlas-Begriff oder einem Deppardy-Board startet genau dieses Spiel sofort als Testlauf – auf Leinwand und Handys, als Einzel- oder Zelleneinsatz. „Test beenden“ (rote Leiste oben) stellt Punkte, Beute, Plan und Reihenfolge exakt wieder her.
+- **Maulwurf im Einsatzplan:** „Ein Verdacht“ verteilt die Rollen verdeckt auf die Geräte, „Wer ist der Maulwurf?“ öffnet die Abstimmung. Beides lässt sich wie eine Mission an jede Stelle des Plans setzen.
+- **Gleichstand beim Umlagern:** Die Zentrale wählt eine Person aus, lässt den Zufall entscheiden oder lässt alle Spitzenreiter nacheinander umlagern.
+- **Personalakten:** Bei der Übergabe zeigt eine eigene Stufe, wer sich am häufigsten umentschieden hat, wer am meisten getroffen, gefunkt und gebuzzert hat, wer am meisten abgegeben hat und wer am häufigsten als Maulwurf verdächtigt wurde.
+- **Epilog und Abspann:** Nach der Beutekartei folgen die Epilog-Tafeln und ein durchlaufender Abspann mit allen Agenten, Einsatzorten und der Beute. Beides steht im Drehbuch (Platzhalter `{zelle}`, `{gerettet}`).
+- **Beutewörter per KI:** Unter „Archiv → Beutekartei“ erzeugt „KI-Auftrag kopieren“ einen fertigen Text mit allen Fragen ohne Beutewort, allen Wörtern ohne Karteikarte und dem Antwortformat (JSON). Die Antwort der KI dort einfügen oder als Datei laden – Beutewörter und Karten werden übernommen, vorhandene Beutewörter bleiben.
+- **Mehr oder weniger:** Die Behauptung erscheint als Propaganda-Plakat des Amtes, beim Aufdecken knallt ein Stempel „Wahrheit“ oder „Propaganda“ darauf.
 - **Einsatz:** Höchsteinsatz ist immer der aktuelle Rucksack – Gewinne und Verluste aus früheren Runden derselben Mission zählen mit. Wer leer ist, darf 2 setzen und verliert dabei nichts.
 - **Zellenmodus** (Einsatzplan, bei Rangordnung, Mehr oder weniger und Atlas): *Sprecher* – alle sehen die Vorschläge der eigenen Zelle live, eine Person schickt ab. *Abstimmung* – jede Stimme zählt gleich, die Mehrheit gilt (bei der Rangordnung nach Plätzen verrechnet). *Zuversicht* – jede Person stellt per Schieberegler ein, wie sicher sie ist; sichere Stimmen wiegen mehr. Andere Zellen sehen nichts davon.
 - **Zeittakt** (Einsatzplan, bei Bilderschrift und Schwärzung): Wer im ersten Takt (z. B. 10 s) richtig liegt, birgt alle Wörter, danach je Takt die Hälfte, mindestens 1. Leinwand und Handys zeigen den laufenden Wert.

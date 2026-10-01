@@ -89,6 +89,16 @@
    "ort": "Die Zensurbehörde",
    "lage": "In der Zensurbehörde liegen die geschwärzten Originale. Wer weiß, was unter dem Balken stand, holt es zurück.",
    "nach": "Die Zensoren finden ihre Balken abgekratzt. Unter jedem stand wieder ein Wort."
+  },
+  "maulwurf_los": {
+   "ort": "Ein Verdacht",
+   "lage": "Ein Funkspruch aus der Zentrale: Das Amt hat jemanden in eure Zelle eingeschleust. Schaut verdeckt auf euer Gerät – niemand soll mitlesen.",
+   "nach": "Die Rollen sind verteilt. Ab jetzt traut ihr einander ein wenig weniger."
+  },
+  "maulwurf_wahl": {
+   "ort": "Das Tribunal der Zelle",
+   "lage": "Wer hat für das Amt gesammelt? Jede Person stimmt verdeckt ab. Aufgelöst wird an der Grenze.",
+   "nach": "Die Stimmen sind versiegelt. Die Zentrale öffnet sie bei der Übergabe."
   }
  },
  "finale": {
@@ -108,5 +118,20 @@
   "frage": "Wer ist der Maulwurf?",
   "enttarnt": "Enttarnt. Die Zelle beschlagnahmt den Rucksack des Maulwurfs – jede andere Person erhält {anteil} Wörter daraus.",
   "entkommen": "Entkommen. Der Maulwurf verschwindet mit seinem Rucksack über die Grenze. Seine Prämie von {bonus} Wörtern zahlt das Amt für Reinsprache aus eigener Kasse – kein Rucksack der Zelle wird dafür angerührt."
- }
+ },
+ "epilog": [
+  {
+   "titel": "Nach der Grenze",
+   "text": "Das Zentralarchiv ist niedergebrannt. Aber in einem Keller jenseits der Grenze stehen jetzt Karteikästen, die nach Papier und Rauch riechen. {gerettet} Karten liegen darin."
+  },
+  {
+   "titel": "Was bleibt",
+   "text": "Jedes gerettete Wort ist ein Samenkorn. Irgendwann spricht es jemand wieder aus – ohne zu wissen, dass es einmal verboten war."
+  },
+  {
+   "titel": "Die Zelle",
+   "text": "Die Zelle {zelle} löst sich auf, die Decknamen werden verbrannt. Aber wer einmal ein Wort geschmuggelt hat, hört nie ganz damit auf."
+  }
+ ],
+ "abspann": "Ein Abend des Wortgewandten Widerstands\nZelle {zelle}\n\nRegie und Funk: die Zentrale\nGegenspieler: das Amt für Reinsprache\n\nKein Wort wurde bei diesem Abend verletzt.\nAlle Ähnlichkeiten mit lebenden Ämtern sind beabsichtigt."
 }
