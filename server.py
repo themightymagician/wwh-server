@@ -151,7 +151,9 @@ FIELDS = {
     "sound": [["src", "Audio (Datei hochladen, mp3-URL oder YouTube-Link)", "audio"], ["a", "Lösung"], ["beute", "Beutewort (optional)"]],
     "hoeher": [["q", "Frage", "wide"], ["a", "A"], ["av", "Wert A"], ["b", "B"], ["bv", "Wert B"], ["beute", "Beutewort (optional)"]],
     "emoji": [["e", "Emojis"], ["a", "Lösung"], ["cat", "Kategorie"], ["beute", "Beutewort (optional)"]],
-    "wette": [["cat", "Kategorie"], ["q", "Frage", "wide"], ["a", "Antwort"], ["beute", "Beutewort (optional)"]],
+    "wette": [["cat", "Kategorie"], ["q", "Frage", "wide"], ["a", "Antwort"],
+              ["opts", "Antwortmöglichkeiten (optional, eine pro Zeile – die richtige Antwort muss dabei sein)", "area"],
+              ["beute", "Beutewort (optional)"]],
     "woerterbuch": [["wort", "Beschlagnahmtes Wort"], ["art", "Artikel oder Wortart"], ["def", "Echte Bedeutung", "wide"],
                     ["beute", "Beutewort (leer = das Wort selbst)"]],
     "schwaerzung": [["text", "Text – das geschwärzte Wort in doppelte eckige Klammern: Die Gedanken sind [[frei]]", "area"],
@@ -165,7 +167,7 @@ HINTS = {
     "sound": "Hochgeladene Dateien und mp3-URLs spielen auf der Leinwand, gesteuert aus dem Steuermodul. YouTube-Links öffnen sich in einem neuen Tab.",
     "hoeher": "Werte mit Zahl eintragen („161,5 m“). Der größere Wert wird beim Aufdecken markiert, richtige Zellen erkennt das Steuermodul selbst.",
     "emoji": "Emojis direkt einfügen. Kategorie wird als Hinweis gezeigt.",
-    "wette": "Die Kategorie ist vor der Frage sichtbar – daran bemessen die Agenten ihren Einsatz.",
+    "wette": "Die Kategorie ist vor der Frage sichtbar – daran bemessen die Agenten ihren Einsatz. Mit Antwortmöglichkeiten tippen die Agenten nur noch an; das Steuermodul kann dann alle Einsätze auf einmal werten.",
     "woerterbuch": "Möglichst unbekannte Wörter wählen – sonst gibt es nichts zu fälschen. Die echte Bedeutung kurz halten, damit sie zwischen den Fälschungen nicht auffällt.",
     "schwaerzung": "Genau ein Wort in [[doppelte eckige Klammern]] setzen. Zeilenumbrüche bleiben erhalten. Nur gemeinfreie Texte, Sprichwörter oder Gesetze verwenden.",
 }
@@ -305,7 +307,8 @@ def defaults():
         "boards": vorlage("deppardy-boards.json", []), "atlasSets": vorlage("atlas-sets.json", {}),
         "dep": None, "depDur": 30, "upts": {}, "atlasOrder": [], "atlasRes": None,
         "story": vorlage("drehbuch.json", {}), "prologIdx": 0, "finaleStufe": 0, "stealLog": [],
-        "mole": {"on": False, "id": None, "bonus": 5, "voteOpen": False, "result": None}, "moleVotes": {},
+        "mole": {"on": False, "id": None, "bonus": 5, "voteOpen": False, "result": None,
+                 "dauer": False, "dauerBonus": 2, "schattenBonus": 3, "schatten": 0, "lauf": None, "log": [], "letzteCur": -1}, "moleVotes": {},
         "stealPct": 20, "stealVerlust": 50, "verzichtBonus": 2, "ziel": -1, "beute": [], "funk": None,
         "depArm": True, "judgedPts": {}, "korrekturStand": 4,
         "kartei": vorlage("beutekartei.json", {}),
@@ -684,6 +687,45 @@ def cue(s, art):
     s["cues"] = (s.get("cues") or [])[-11:] + [{"n": s["cueN"], "art": art}]
 
 
+def misstrauen_auswerten(s):
+    """Anonymes Misstrauensvotum: Trifft die Mehrheit den Maulwurf, bekommen alle Wörter gutgeschrieben –
+    auch der Maulwurf selbst, sonst verriete der Punktestand ihn. Trifft sie ihn nicht, wandert eine Prämie
+    auf sein Schattenkonto: unsichtbar, nicht umlagerbar, erst bei der Übergabe offen."""
+    mo = s["mole"]
+    lauf = mo.get("lauf")
+    if not lauf:
+        return
+    ids = by_id(s)
+    zaehlt = {v: z for v, z in (lauf.get("stimmen") or {}).items() if v != mo.get("id") and v in ids}
+    fuer = sum(1 for z in zaehlt.values() if z == mo.get("id"))
+    treffer = bool(zaehlt) and fuer * 2 > len(zaehlt)
+    if treffer:
+        for a in s["agents"]:
+            s["scores"][a["id"]] = s["scores"].get(a["id"], 0) + mo.get("dauerBonus", 2)
+        text = f"Die Mehrheit lag richtig. Die Zentrale schreibt jeder Person {mo.get('dauerBonus', 2)} Wörter gut."
+    else:
+        mo["schatten"] = mo.get("schatten", 0) + mo.get("schattenBonus", 3)
+        text = "Die Mehrheit lag daneben. Irgendwo notiert das Amt sich etwas."
+    mo.setdefault("log", []).append({"cur": s["cur"], "treffer": treffer, "stimmen": len(zaehlt), "t": time.time()})
+    mo["lauf"] = None
+    mo["dauerText"] = {"n": len(mo["log"]), "text": text, "treffer": treffer}
+    cue(s, "treffer" if treffer else "verloren")
+
+
+def misstrauen_starten(s, wer=None):
+    mo = s["mole"]
+    if not (mo.get("on") and mo.get("dauer") and mo.get("id")):
+        raise CmdError("Das Misstrauensvotum ist gerade nicht freigegeben")
+    if mo.get("result"):
+        raise CmdError("Der Maulwurf ist schon aufgelöst")
+    if mo.get("lauf"):
+        raise CmdError("Es läuft schon eine Abstimmung")
+    if wer and mo.get("letzteCur") == s["cur"]:
+        raise CmdError("Pro Einsatz ist nur ein Misstrauensvotum möglich")
+    mo["lauf"] = {"stimmen": {}, "von": wer, "t": time.time()}
+    mo["letzteCur"] = s["cur"]
+
+
 def track(s, aid, was, n=1):
     """Kleine Strichliste je Person für die Personalakten bei der Übergabe."""
     if not aid:
@@ -987,7 +1029,8 @@ def beute_pruefen(s):
 
 def board_wert(b):
     return sum(p * (2 if (c.get("rk") or {}).get(str(p)) else 1)
-               for c in b.get("cats", []) for p in b.get("pts", []) if (c.get("qh") or {}).get(str(p)))
+               for c in b.get("cats", []) for p in b.get("pts", [])
+               if (c.get("qh") or {}).get(str(p)) and not (c.get("aus") or {}).get(str(p)))
 
 
 def max_woerter(s):
@@ -1010,7 +1053,7 @@ def max_woerter(s):
         elif typ == "impostor":
             summe += r * p * max(0, n - 1)
         elif typ == "deppardy":
-            b = next((x for x in s["boards"] if x["id"] == m.get("opt")), None) or (s["boards"] or [None])[0]
+            b = board_waehlen(s, m)
             if b:
                 summe += board_wert(b) / kurs(m) * (n / t if m["mode"] == "team" else 1)
         elif typ == "atlas":
@@ -1144,6 +1187,17 @@ def wb_werten(s, m):
             erg["getaeuscht"].setdefault(ziel, []).append(voter)
     r["ergebnis"] = erg
     r["wbPhase"] = "aufgedeckt"
+
+
+def wette_optionen(it):
+    return [x.strip() for x in str((it or {}).get("opts") or "").split("\n") if x.strip()]
+
+
+def wette_richtig(it, antwort):
+    """Mit Antwortmöglichkeiten: exakt die richtige Option. Sonst nur ein Hinweis (wohl_richtig)."""
+    if wette_optionen(it):
+        return normtext(antwort) == normtext((it or {}).get("a"))
+    return wohl_richtig(antwort, (it or {}).get("a"))
 
 
 def bet_cap(s, aid):
@@ -1340,11 +1394,17 @@ def media_aus_datauri(html):
     return DATA_URI.sub(ersetze, html or "")
 
 
+def board_waehlen(s, m):
+    """Board einer Mission: das im Plan gewählte, sonst das erste in der Rotation."""
+    b = next((x for x in s["boards"] if x["id"] == (m or {}).get("opt")), None)
+    return b or next((x for x in s["boards"] if not x.get("aus")), None) or (s["boards"] or [None])[0]
+
+
 def board_normal(b):
     pts = sorted({int(p) for p in b.get("pts", []) if str(p).strip().lstrip("-").isdigit() and int(p) > 0})
     cats = []
     for c in b.get("cats", []):
-        cat = {"name": str(c.get("name", "Kategorie"))[:60], "qh": {}, "hh": {}, "ah": {}, "rk": {}, "bw": {}}
+        cat = {"name": str(c.get("name", "Kategorie"))[:60], "qh": {}, "hh": {}, "ah": {}, "rk": {}, "bw": {}, "aus": {}}
         alt = {"qh": "qs", "ah": "ans"}             # Deppardy v4: Klartext-Felder als Rückfall
         for key in ("qh", "hh", "ah"):
             src = c.get(key) if isinstance(c.get(key), dict) else {}
@@ -1356,11 +1416,14 @@ def board_normal(b):
         for p in pts:
             if (c.get("rk") or {}).get(str(p)):
                 cat["rk"][str(p)] = True
+            if (c.get("aus") or {}).get(str(p)):
+                cat["aus"][str(p)] = True
             bw = str((c.get("bw") or {}).get(str(p)) or "").strip()
             if bw:
                 cat["bw"][str(p)] = bw[:60]
         cats.append(cat)
-    return {"id": str(b.get("id") or uid()), "name": str(b.get("name") or "Board")[:80], "pts": pts, "cats": cats}
+    return dict({"id": str(b.get("id") or uid()), "name": str(b.get("name") or "Board")[:80], "pts": pts, "cats": cats},
+                **({"aus": True} if b.get("aus") else {}))
 
 
 class CmdError(Exception):
@@ -1482,6 +1545,21 @@ def _host_cmd(s, c, a):
         s["mole"]["bonus"] = max(0, min(50, int(a.get("n", 5))))
     elif c == "mole_vote":
         s["mole"]["voteOpen"] = bool(a.get("on"))
+    elif c == "misstrauen_set":
+        mo = s["mole"]
+        if "dauer" in a:
+            mo["dauer"] = bool(a["dauer"])
+            if mo["dauer"] and not mo["on"]:
+                mo["on"] = True
+                if mo["id"] not in ids and s["agents"]:
+                    mo["id"] = random.choice(s["agents"])["id"]
+        for k, hi in (("dauerBonus", 20), ("schattenBonus", 50)):
+            if k in a:
+                mo[k] = max(0, min(hi, int(a[k] or 0)))
+    elif c == "misstrauen_start":
+        misstrauen_starten(s)
+    elif c == "misstrauen_ende":
+        misstrauen_auswerten(s)
     elif c == "mole_resolve":
         mo = s["mole"]
         if mo["result"]:
@@ -1506,6 +1584,12 @@ def _host_cmd(s, c, a):
             # Die Prämie zahlt das Amt für Reinsprache aus eigener Kasse – kein Rucksack der Zelle wird angetastet
             s["scores"][mo["id"]] = s["scores"].get(mo["id"], 0) + mo["bonus"]
             res["praemie"] = mo["bonus"]
+        if mo.get("lauf"):
+            mo["lauf"] = None
+        if mo.get("schatten"):                    # Schattenkonto: erst jetzt offen und gutgeschrieben
+            res["schatten"] = mo["schatten"]
+            s["scores"][mo["id"]] = s["scores"].get(mo["id"], 0) + mo["schatten"]
+            mo["schatten"] = 0
         mo["result"], mo["voteOpen"] = res, False
         cue(s, "enttarnt" if caught else "entkommen")
     elif c == "story_set":
@@ -1596,9 +1680,14 @@ def _host_cmd(s, c, a):
                 s["mole"]["voteOpen"] = True
             s.update({"phase": "play", "rnd": {"ereignis": True}, "revealed": False, "open": False})
         elif m["type"] == "deppardy":
-            b = next((x for x in s["boards"] if x["id"] == m.get("opt")), None) or (s["boards"] or [None])[0]
+            b = board_waehlen(s, m)
             if not b:
                 raise CmdError("Im Archiv gibt es noch kein Deppardy-Board")
+            b = copy.deepcopy(b)
+            for cat in b["cats"]:                     # Felder außerhalb der Rotation bleiben leer
+                for p in list((cat.get("aus") or {}).keys()):
+                    for k in ("qh", "hh", "ah", "bw"):
+                        (cat.get(k) or {}).pop(p, None)
             s["dep"] = {"board": copy.deepcopy(b), "revealed": {}, "cell": None, "stage": 0,
                         "dur": s.get("depDur", 30), "tRun": False, "tEnd": 0, "tLeft": 0, "buzz": [], "wrong": []}
             s.update({"phase": "play", "rnd": {}, "revealed": False, "open": False})
@@ -1735,6 +1824,13 @@ def _host_cmd(s, c, a):
             if not ok and prev == "r":
                 add_gain(s, aid, -s["judgedPts"].pop(aid, step(m)))
             s["judged"][aid] = "r" if ok else "w"
+    elif c == "wette_auto":                  # alle offenen Einsätze nach der Antwort werten
+        it = item(s)
+        for x in s["agents"]:
+            aid = x["id"]
+            if aid in s["betDone"] or not s["bets"].get(aid):
+                continue
+            _host_cmd(s, "judge", {"id": aid, "ok": wette_richtig(it, (s["answers"].get(aid) or {}).get("v", ""))})
     elif c == "wb_treffer":                    # Fälschung trifft die echte Bedeutung
         r, aid = s["rnd"], a.get("id")
         if r.get("wbPhase") != "faelschen" or aid not in s["answers"]:
@@ -1930,6 +2026,13 @@ def _host_cmd(s, c, a):
                 break
         else:
             s["boards"].append(b)
+    elif c == "board_rotation":
+        for b in s["boards"]:
+            if b["id"] == a.get("id"):
+                if a.get("an"):
+                    b.pop("aus", None)
+                else:
+                    b["aus"] = True
     elif c == "board_del":
         s["boards"] = [x for x in s["boards"] if x["id"] != a.get("id")]
     elif c == "board_restore":
@@ -2009,6 +2112,20 @@ def _player_act(s, agent, a):
         if v not in by_id(s) or v == aid:
             raise CmdError("Ungültige Stimme")
         s["moleVotes"][aid] = v
+        return
+    if a.get("kind") == "misstrauen_antrag":
+        misstrauen_starten(s, aid)
+        return
+    if a.get("kind") == "misstrauen":
+        lauf = s["mole"].get("lauf")
+        if not lauf:
+            raise CmdError("Gerade läuft kein Misstrauensvotum")
+        v = a.get("v")
+        if v not in by_id(s) or v == aid:
+            raise CmdError("Ungültige Stimme")
+        lauf["stimmen"][aid] = v
+        if len(lauf["stimmen"]) >= len(s["agents"]):     # alle haben gewählt
+            misstrauen_auswerten(s)
         return
     if a.get("kind") in ("steal", "steal_skip"):          # Umlagern direkt am Gerät
         if not s["pendingSteal"] or s["thief"] != aid:
@@ -2105,7 +2222,11 @@ def _player_act(s, agent, a):
     elif t == "wette":
         if not s["showQ"]:
             raise CmdError("Frage noch nicht offen")
-        s["answers"][aid] = {"v": str(v or "").strip()[:80], "t": now}
+        v = str(v or "").strip()[:80]
+        opts = wette_optionen(item(s))
+        if opts and v not in opts:
+            raise CmdError("Bitte eine der Antwortmöglichkeiten wählen")
+        s["answers"][aid] = {"v": v, "t": now}
 
 
 # ---------------------------------------------------------------------------
@@ -2211,6 +2332,11 @@ def public_view(s, full=False):
     v["zielLive"] = {"ziel": ziel_wert(s), "stand": ziel_stand(s, ohne_maulwurf=False)}
     v["funk"] = s.get("funk") if s["screen"] in ("hq", "start") else None
     mo = s["mole"]
+    lauf = mo.get("lauf")
+    v["misstrauen"] = {"an": bool(mo["on"] and mo["id"] and mo.get("dauer") and not mo.get("result")),
+                       "laeuft": bool(lauf), "gewaehlt": len((lauf or {}).get("stimmen") or {}),
+                       "moeglich": mo.get("letzteCur") != s["cur"], "letztes": mo.get("dauerText"),
+                       "bonus": mo.get("dauerBonus", 2), "anzahl": len(mo.get("log") or [])}
     v["mole"] = {"on": mo["on"] and bool(mo["id"]), "voteOpen": mo["voteOpen"], "voted": list(s["moleVotes"].keys()),
                  "frage": (st.get("maulwurf") or {}).get("frage", "Wer ist der Maulwurf?")}
     if s["screen"] == "finale":
@@ -2240,6 +2366,8 @@ def public_view(s, full=False):
                              "text": fuell(mt.get("enttarnt" if r["caught"] else "entkommen", ""), anteil=r["anteil"], bonus=r["bonus"])}
             stat["maulwurf"] = {"code": ids[mo["id"]]["code"], "genommen": pro.get(mo["id"], {}).get("genommen", 0)}
             v["maulwurf"]["praemie"] = r.get("praemie", 0)
+            v["maulwurf"]["schatten"] = r.get("schatten", 0)
+            v["maulwurf"]["voten"] = [{"treffer": x["treffer"]} for x in mo.get("log") or []]
             # Hüter des Archivs kann nur werden, wer zur Zelle gehört
             v["hueterRanking"] = [x for x in ranking if x["id"] != mo["id"]]
         v["statistik"] = stat
@@ -2362,6 +2490,7 @@ def public_view(s, full=False):
         st["cat"] = it.get("cat")
         if s["showQ"]:
             st["q"] = it.get("q")
+            st["opts"] = wette_optionen(it)
         if rev:
             st["bets"] = s["bets"]
             st["betDone"] = s["betDone"]
@@ -2449,6 +2578,9 @@ def me_view(s, agent):
         # Gleiches Format für alle, damit niemand am Bildschirm des Nachbarn etwas erkennt
         me["rolle"] = {"maulwurf": ist, "text": fuell(mt.get("rolle" if ist else "zelle", ""), bonus=mo["bonus"])}
         me["moleVote"] = s["moleVotes"].get(aid)
+        lauf = mo.get("lauf")
+        if lauf:
+            me["misstrauenStimme"] = (lauf.get("stimmen") or {}).get(aid)
     if s["screen"] == "finale":
         me["bilanz"] = abend_statistik(s)["pro"].get(aid)
     if s["pendingSteal"] and s["thief"] == aid:
@@ -2556,6 +2688,7 @@ def host_view(s):
             extra["tally"] = vote_tally(s)
         if t == "wette":
             extra["betCaps"] = {a["id"]: bet_cap(s, a["id"]) for a in s["agents"]}
+            extra["wetteRichtig"] = {k: wette_richtig(item(s), x["v"]) for k, x in s["answers"].items()}
         if t in BUZZ:
             extra["feedMatch"] = [wohl_richtig(f["v"], item(s).get("a")) for f in s["feed"]]
             if t in ("zoom", "sound"):

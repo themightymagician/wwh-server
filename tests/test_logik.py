@@ -407,3 +407,73 @@ class Runde2026b(unittest.TestCase):
         s["finaleStufe"] = stufen.index("epilog")
         v = W.public_view(s)
         self.assertEqual(v["epilog"]["nr"], 1)
+
+
+class Runde2026c(unittest.TestCase):
+    """Dritte Runde: Einsatz mit Antwortmöglichkeiten, Deppardy-Rotation, Misstrauensvotum mit Schattenkonto."""
+
+    def test_einsatz_mit_antwortmoeglichkeiten(self):
+        s, ids = abend()
+        s["content"]["wette"] = [{"cat": "Geo", "q": "Hauptstadt Australiens?", "a": "Canberra", "opts": "Sydney\nCanberra\nMelbourne"}]
+        s["plan"] = [{"id": "x", "type": "wette", "mode": "solo", "pts": 0, "rounds": 1, "opt": ""}]
+        W.host_cmd(s, "mission_start", {})
+        W.host_cmd(s, "mission_begin", {})
+        a, b = s["agents"][0], s["agents"][1]
+        for x in ids:
+            s["scores"][x] = 10
+        W.player_act(s, a, {"kind": "bet", "v": 5})
+        W.player_act(s, b, {"kind": "bet", "v": 4})
+        W.host_cmd(s, "show_q", {})
+        self.assertEqual(W.public_view(s)["stage"]["opts"], ["Sydney", "Canberra", "Melbourne"])
+        with self.assertRaises(W.CmdError):
+            W.player_act(s, a, {"v": "Perth"})
+        W.player_act(s, a, {"v": "Canberra"})
+        W.player_act(s, b, {"v": "Sydney"})
+        W.host_cmd(s, "reveal", {})
+        W.host_cmd(s, "wette_auto", {})
+        self.assertEqual(s["gains"][a["id"]], 5)
+        self.assertEqual(s["gains"][b["id"]], -4)
+
+    def test_deppardy_felder_und_boards_aus_der_rotation(self):
+        s, ids = abend()
+        s["plan"] = [p for p in s["plan"] if p["type"] == "deppardy"]
+        s["plan"][0]["opt"] = ""
+        s["boards"][0]["cats"][0]["aus"] = {"100": True}
+        W.host_cmd(s, "mission_start", {})
+        W.host_cmd(s, "mission_begin", {})
+        with self.assertRaises(W.CmdError):
+            W.host_cmd(s, "dep_open", {"c": 0, "p": 100})
+        self.assertIn("0|100", W.public_view(s)["stage"]["leer"])
+        s2, _ = abend()
+        s2["boards"].append(dict(W.board_normal({"name": "Zweit", "pts": [100], "cats": [{"name": "K", "qh": {"100": "F"}}]}), id="b2"))
+        W.host_cmd(s2, "board_rotation", {"id": s2["boards"][0]["id"], "an": False})
+        self.assertEqual(W.board_waehlen(s2, {"opt": ""})["id"], "b2")
+
+    def test_misstrauensvotum_und_schattenkonto(self):
+        s, ids = abend()
+        W.host_cmd(s, "misstrauen_set", {"dauer": True})
+        mole = s["mole"]["id"]
+        andere = [a for a in s["agents"] if a["id"] != mole]
+        maul = W.by_id(s)[mole]
+        # Mehrheit trifft den Maulwurf: alle bekommen Wörter, auch er (sonst fiele er auf)
+        W.player_act(s, andere[0], {"kind": "misstrauen_antrag"})
+        with self.assertRaises(W.CmdError):
+            W.player_act(s, andere[1], {"kind": "misstrauen_antrag"})
+        for a in andere:
+            W.player_act(s, a, {"kind": "misstrauen", "v": mole})
+        W.player_act(s, maul, {"kind": "misstrauen", "v": andere[0]["id"]})
+        self.assertIsNone(s["mole"]["lauf"])
+        self.assertTrue(all(s["scores"][x] == 2 for x in ids))
+        self.assertNotIn(mole, str(W.public_view(s)["misstrauen"]))
+        # Daneben: Schattenkonto, unsichtbar und nicht umlagerbar
+        s["cur"] += 1
+        W.host_cmd(s, "misstrauen_start", {})
+        for a in andere:
+            W.player_act(s, a, {"kind": "misstrauen", "v": andere[0]["id"] if a is not andere[0] else andere[1]["id"]})
+        W.host_cmd(s, "misstrauen_ende", {})
+        self.assertEqual(s["mole"]["schatten"], 3)
+        self.assertEqual(W.total(s, mole), 2)
+        self.assertEqual(W.umlager_menge(s, mole)[0], 2)
+        W.host_cmd(s, "mole_resolve", {})                    # keine Abschlussstimmen → entkommen
+        self.assertEqual(s["mole"]["result"]["schatten"], 3)
+        self.assertEqual(W.total(s, mole), 2 + 5 + 3)

@@ -101,6 +101,9 @@ input::placeholder,textarea::placeholder{color:var(--stumm);}
 .karteikarte.verloren{filter:grayscale(1) contrast(.85);opacity:.62;}
 .karteikarte.verloren .kk-geborgen{color:#6b614f;border-color:#6b614f;}
 .karteikarte.verloren .kk-stempel{color:#4a4235;border-color:#4a4235;}
+.karteikarte.nurwort{padding-bottom:52px;}
+.karteikarte.nurwort.kompakt{padding-bottom:40px;}
+.karteikarte.nurwort .kk-geborgen{display:inline-block!important;}
 
 /* Einpassen: eine Zeile, die Schrift schrumpft statt umzubrechen */
 [data-fit]{white-space:nowrap;overflow:hidden;max-width:100%;}
