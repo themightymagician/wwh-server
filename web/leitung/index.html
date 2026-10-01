@@ -64,6 +64,7 @@ h2{font-family:var(--display);font-size:clamp(26px,2.4vw,40px);line-height:1;tex
 .plan .p b{font-family:var(--display);font-weight:400;font-size:22px;text-transform:uppercase;}
 .katalog{display:flex;gap:8px;flex-wrap:wrap;}
 .eintrag{border:1px solid var(--kante);background:var(--nacht-2);padding:14px 16px;display:grid;grid-template-columns:40px minmax(0,1fr) auto;gap:14px;}
+.eintrag.aus{opacity:.5;}
 .eintrag .felder{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;}
 .eintrag label{display:flex;flex-direction:column;gap:4px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--blass);}
 .eintrag label.breit{grid-column:1/-1;}
@@ -110,7 +111,7 @@ details.kat .karten{display:flex;flex-direction:column;gap:10px;padding:0 14px 1
 .dkarte .felder{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;}
 .dkarte label{display:flex;flex-direction:column;gap:4px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--blass);}
 .dkarte textarea{min-height:64px;resize:vertical;}
-.aeintrag{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1.5fr) minmax(0,.9fr) auto;gap:8px;align-items:center;border-bottom:1px solid var(--kante);padding:6px 0;}
+.aeintrag{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1.5fr) minmax(0,.9fr) 120px;gap:8px;align-items:center;border-bottom:1px solid var(--kante);padding:6px 0;}
 .aeintrag .fehl{border-color:var(--signal);}
 .regler{display:grid;grid-template-columns:130px 1fr 44px;gap:10px;align-items:center;font-size:13px;}
 .regler input{accent-color:var(--signal);width:100%;}
@@ -130,7 +131,7 @@ details.kat .karten{display:flex;flex-direction:column;gap:10px;padding:0 14px 1
 <script>
 const { esc, pad, poll, post, render, actions, fmtGain } = WWH;
 const app = document.getElementById('app'), nav = document.getElementById('nav'), meldung = document.getElementById('meldung');
-let S = null, M = null, LAN = '', GEO = {}, NAME2KEY = {};
+let S = null, M = null, LAN = '', GEO = {}, NAME2KEY = {}, ICH = {}, HOSTS = [];
 fetch('/geo.json').then(r => r.json()).then(g => { GEO = g; Object.entries(g).forEach(([k, v]) => { if (!v.kein) NAME2KEY[v.name.toLowerCase()] = k; }); if (S) zeichnen(); });
 const landName = k => (GEO[k] && GEO[k].name) || k || '';
 const ui = { tab: 'zentrale', archiv: 'schaetzen', autoMission: true, boardId: null, board: null, boardDirty: false, setId: null };
@@ -140,7 +141,7 @@ async function cmd(c, args) { try { await post('/leitung/api/cmd', { cmd: c, ...
 
 poll(() => '/leitung/api/state', d => {
   const war = S && S.screen;
-  S = d.state; M = d.meta; LAN = d.lan; if (d.now) zeitDiff = d.now - Date.now() / 1000;
+  S = d.state; M = d.meta; LAN = d.lan; ICH = d.ich || {}; HOSTS = d.hosts || []; if (d.now) zeitDiff = d.now - Date.now() / 1000;
   if (S.screen === 'mission' && war !== 'mission') ui.tab = 'mission';
   zeichnen();
 });
@@ -169,7 +170,8 @@ function zeichnen() {
       <button data-screen="hq" class="${S.screen === 'hq' ? 'an' : ''}">Zentrale</button>
       <button data-screen="mission" class="${S.screen === 'mission' ? 'an' : ''}" ${S.active ? '' : 'disabled'}>Mission</button>
       <button data-screen="finale" class="${S.screen === 'finale' ? 'an' : ''}">Übergabe</button></span>
-      <a class="btn klein" href="/leinwand" target="wwh_leinwand">Leinwand öffnen</a></div>`;
+      <a class="btn klein" href="/leinwand" target="wwh_leinwand">Leinwand öffnen</a><span class="klein" title="Angemeldet als">● ${esc(ICH.name || '')}${ICH.admin ? '' : ' (Gast)'}</span></div>
+    ${S.test ? `<div style="flex-basis:100%;background:var(--siegel);color:var(--papier-hell);padding:8px 14px;display:flex;gap:12px;align-items:center;justify-content:space-between"><span class="klein" style="color:var(--papier-hell)">Testlauf: ${esc(G(S.test.type).name)} – Punkte, Beute und Fortschritt werden danach zurückgesetzt</span><button class="btn klein hell" data-do="testende">Test beenden</button></div>` : ''}`;
   const seiten = { mission: seiteMission, zentrale: seiteZentrale, agenten: seiteAgenten, plan: seitePlan, archiv: seiteArchiv, system: seiteSystem };
   render(app, seiten[ui.tab]());
   WWH.passeText(app);
@@ -184,12 +186,13 @@ function hostUhr() {
   takt(); if (d.tRun) hTakt = setInterval(takt, 250);
 }
 nav.addEventListener('click', e => {
+  if (e.target.closest('[data-do="testende"]')) { cmd('test_ende'); ui.tab = 'archiv'; return; }
   const t = e.target.closest('[data-tab]'); if (t) { ui.tab = t.dataset.tab; zeichnen(); return; }
   const s = e.target.closest('[data-screen]'); if (s && !s.disabled) { s.dataset.screen === 'mission' ? cmd('mission_start') : cmd('screen', { name: s.dataset.screen }); }
 });
 
 // ------------------------------------------------------------------ Zentrale
-const STUFEN = { uebergabe: 'Übergabe', maulwurf: 'Maulwurf', ziel: 'Ziel der Zelle', hueter: 'Hüter des Archivs', bilanz: 'Bilanz', kartei: 'Beutekartei' };
+const STUFEN = { uebergabe: 'Übergabe', maulwurf: 'Maulwurf', ziel: 'Ziel der Zelle', hueter: 'Hüter des Archivs', bilanz: 'Bilanz', akten: 'Personalakten', kartei: 'Beutekartei', epilog: 'Epilog', abspann: 'Abspann' };
 function tageUebrig() { const st = S.story || {}, n = Math.max(1, S.plan.length); return S.cur < S.plan.length ? Math.ceil((st.tage || 7) * (n - S.cur) / n) : 0; }
 
 function boxProlog() {
@@ -261,8 +264,11 @@ function seiteZentrale() {
   links += boxProlog();
   if (ps) {
     links += `<div class="box alarm"><div class="klein signal">Umlagern</div>`;
-    if (!S.thief) links += `<p class="gross">Gleichstand an der Spitze. Wer darf umlagern?</p><div class="reihe">${ps.winners.filter(agent).map(id => `<button class="btn" data-do="dieb" data-id="${id}">${esc(code(id))}</button>`).join('')}</div>`;
-    else {
+    if (!S.thief) links += `<p class="gross">Gleichstand an der Spitze. Wer darf umlagern?</p><div class="reihe">${ps.winners.filter(agent).map(id => `<button class="btn" data-do="dieb" data-id="${id}">${esc(code(id))}</button>`).join('')}</div>
+      <div class="reihe"><button class="btn rot" data-do="stealzufall">🎲 Zufall entscheidet</button><button class="btn" data-do="stealalle">Alle nacheinander</button></div>
+      <p class="kbd">„Alle nacheinander“: Jede Person der Spitze bekommt die Frage in zufälliger Reihenfolge aufs Gerät.</p>`;
+    else if (ps.kette && ps.kette.length) links += `<p class="klein">Danach noch dran: ${ps.kette.map(code).map(esc).join(', ')}</p>`;
+    if (S.thief) {
       if (!ui.uziel || ui.uziel === ui.uopfer || !agent(ui.uziel)) ui.uziel = S.thief;
       links += `<p class="gross"><span class="display signal">${esc(code(S.thief))}</span> hat den Einsatz am besten erledigt und darf umlagern.</p>
       <p class="text blass">Die Frage steht jetzt auf dem Gerät von ${esc(code(S.thief))}. Wer kein Gerät hat, wählt hier: erst der Rucksack, aus dem genommen wird, dann wohin.</p>
@@ -272,7 +278,7 @@ function seiteZentrale() {
       if (ui.uopfer && agent(ui.uopfer)) links += `<div class="klein">Wohin?</div><div class="reihe">${sorted().filter(a => a.id !== ui.uopfer).map(a => `<button class="btn klein ${ui.uziel === a.id ? 'hell' : ''}" data-do="uziel" data-id="${a.id}">${a.id === S.thief ? 'In den eigenen Rucksack' : esc(a.code)}</button>`).join('')}</div>
         <div><button class="btn rot" data-do="opfer">Umlagern: ${esc(code(ui.uopfer))} → ${esc(code(ui.uziel))}</button></div>`;
     }
-    links += `<button class="btn link" data-do="verzicht">Verzichtet${S.verzichtBonus ? ' (+' + S.verzichtBonus + ' Wörter)' : ''}</button></div>`;
+    links += (S.thief ? `<button class="btn link" data-do="verzicht">Verzichtet${S.verzichtBonus ? ' (+' + S.verzichtBonus + ' Wörter)' : ''}</button>` : '') + '</div>';
   }
   if (S.lastSteal) links += `<p class="text" style="border-left:3px solid var(--signal);padding-left:12px">${esc(S.lastSteal)}</p>`;
   if (m) {
@@ -322,6 +328,10 @@ function seitePlan() {
   const mins = S.plan.reduce((acc, p) => acc + G(p.type).min * (G(p.type).ext || G(p.type).board ? 1 : p.rounds) + 3, 0);
   const rows = S.plan.map((p, i) => {
     const g = G(p.type), team = p.mode === 'team';
+    if (g.ereignis) return `<div class="p ${i === S.cur ? 'jetzt' : ''}" style="${i < S.cur ? 'opacity:.5;' : ''}border-style:dashed">
+      <span class="blass">${pad(i + 1)}</span><div><b>${esc(g.name)}</b><div class="klein">${i < S.cur ? 'erledigt' : 'Ereignis · Maulwurf'}</div></div>
+      <span></span><span class="klein">${p.type === 'maulwurf_los' ? 'Rollen werden verdeckt verteilt' : 'Abstimmung öffnet sich'}</span><span></span><span></span>
+      <span class="reihe"><button class="btn klein" data-do="pmove" data-i="${i}" data-d="-1">↑</button><button class="btn klein" data-do="pmove" data-i="${i}" data-d="1">↓</button><button class="btn klein" data-do="pdel" data-i="${i}">✕</button></span></div>`;
     return `<div class="p ${i === S.cur ? 'jetzt' : ''}" style="${i < S.cur ? 'opacity:.5' : ''}">
       <span class="blass">${pad(i + 1)}</span>
       <div><b>${esc(g.name)}</b><div class="klein">${i < S.cur ? 'erledigt' : '≈ ' + Math.round(g.min * (g.ext || g.board ? 1 : p.rounds)) + ' Min.'}</div></div>
@@ -336,7 +346,8 @@ function seitePlan() {
   }).join('');
   return `<div class="stapel"><div class="reihe" style="justify-content:space-between"><h2>Einsatzplan</h2><span class="klein">${S.plan.length} Missionen · ≈ ${Math.floor(mins / 60)} h ${pad(Math.round(mins % 60))} min</span></div>
     <div class="plan">${rows}</div>
-    <div class="klein">Mission anhängen</div><div class="katalog">${Object.keys(M.games).map(k => `<button class="btn klein" data-do="padd" data-x="${k}">+ ${esc(G(k).name)}</button>`).join('')}</div>
+    <div class="klein">Maulwurf fest einplanen</div><div class="katalog">${M.ereignisse.map(k => `<button class="btn klein" data-do="padd" data-x="${k}">+ ${esc(G(k).name)}</button>`).join('')}</div>
+    <div class="klein">Mission anhängen</div><div class="katalog">${Object.keys(M.games).filter(k => !G(k).ereignis).map(k => `<button class="btn klein" data-do="padd" data-x="${k}">+ ${esc(G(k).name)}</button>`).join('')}</div>
     <p class="kbd">Zellenmodus (Rangordnung, Mehr oder weniger, Atlas): <b>Sprecher</b> – alle sehen die Vorschläge live, eine Person schickt ab · <b>Abstimmung</b> – jede Person stimmt ab, die Mehrheit gilt (gut bei ungerader Zellengröße) · <b>Zuversicht</b> – jede Stimme zählt so stark, wie sicher die Person ist (Schieberegler). Takt (Bilderschrift, Schwärzung): Wer im ersten Takt richtig antwortet, birgt alles, danach je Takt die Hälfte.</p>
     <div><button class="btn link" data-do="preset">Plan auf Standard zurücksetzen</button></div></div>`;
 }
@@ -351,16 +362,21 @@ function seiteArchiv() {
   if (t === 'klang') return archivKopf(tabs) + archivKlang();
   if (t === 'deppardy') return archivKopf(tabs) + archivDeppardy();
   if (t === 'atlas') return archivKopf(tabs) + archivAtlas();
-  const eintraege = list.map((e, i) => `<div class="eintrag"><span class="blass">${pad(i + 1)}</span><div class="felder">${M.fields[t].map(([key, label, kind]) => {
+  const eintraege = list.map((e, i) => `<div class="eintrag ${e.aus ? 'aus' : ''}"><span class="blass">${pad(i + 1)}</span><div class="felder">${M.fields[t].map(([key, label, kind]) => {
       const v = e[key] || '', k = `c-${t}-${i}-${key}`;
       if (kind === 'area') return `<label class="breit">${esc(label)}<textarea class="feld" data-k="${k}" data-change="content" data-i="${i}" data-f="${key}">${esc(v)}</textarea></label>`;
       if (kind === 'img' || kind === 'audio') return `<label class="breit">${esc(label)}<div class="reihe"><input class="feld" style="flex:1" data-k="${k}" value="${esc(v)}" data-change="content" data-i="${i}" data-f="${key}" placeholder="URL oder Datei hochladen">
           <input type="file" accept="${kind === 'img' ? 'image/*' : 'audio/*'}" data-upload data-i="${i}" data-f="${key}"></div>
           ${v && kind === 'img' ? `<img src="${esc(v)}" alt="">` : ''}${v && kind === 'audio' && !/youtu\.?be/.test(v) ? `<audio controls preload="none" src="${esc(v)}"></audio>` : ''}</label>`;
       return `<label class="${kind === 'wide' ? 'breit' : ''}">${esc(label)}<input class="feld" data-k="${k}" value="${esc(v)}" data-change="content" data-i="${i}" data-f="${key}"></label>`;
-    }).join('')}</div><button class="btn link" data-do="cdel" data-i="${i}">Löschen</button></div>`).join('');
+    }).join('')}</div><div class="stapel" style="gap:8px;align-items:flex-end">
+      <label class="klein" style="display:flex;gap:6px;align-items:center;white-space:nowrap" title="Nur Einträge in der Rotation kommen im Spiel dran"><input type="checkbox" data-rot="${i}" ${e.aus ? '' : 'checked'}> in Rotation</label>
+      <button class="btn klein" data-do="testen" data-i="${i}" title="Dieses Spiel sofort mit genau diesem Eintrag starten">▶ Testen</button>
+      <button class="btn link" data-do="cdel" data-i="${i}">Löschen</button></div></div>`).join('');
   return `<div class="stapel"><div class="klein">Beweismittel · Deppardy &amp; Atlas pflegen ihre Inhalte selbst</div><h1>Archiv</h1>
     <div class="untertabs">${tabs}</div><p class="text blass">${esc(M.hints[t])} Änderungen werden beim Verlassen des Feldes gespeichert.</p>
+    <div class="reihe"><span class="klein">${list.filter(e => !e.aus).length} von ${list.length} Einträgen in der Rotation</span><button class="btn klein" data-do="rotalle" data-x="1">Alle an</button><button class="btn klein" data-do="rotalle" data-x="0">Alle aus</button>
+      <span class="klein" style="margin-left:auto">Testlauf als</span><span class="seg"><button class="${ui.testModus !== 'team' ? 'an' : ''}" data-do="testmodus" data-x="solo">Einzeln</button><button class="${ui.testModus === 'team' ? 'an' : ''}" data-do="testmodus" data-x="team">Zellen</button></span></div>
     ${(() => { const r = (S.extra.reihenfolge || {})[t]; return r && r.von ? `<div class="reihe"><span class="klein">Als Nächstes kommt Eintrag ${pad(r.naechster)} von ${pad(r.von)}${r.gespielt >= r.von ? ' – alle schon einmal gespielt' : ''}</span>
       <button class="btn klein" data-do="cursorweg" data-x="${t}" ${r.gespielt ? '' : 'disabled'}>Wieder von vorn</button></div>` : ''; })()}
     ${eintraege || '<p class="blass">Noch keine Einträge.</p>'}
@@ -385,6 +401,11 @@ function archivKartei() {
   const opt = Object.entries(WWH.VERMERK);
   return `<div class="raster" style="margin-top:18px"><div class="stapel">
       <p class="text blass">Jedes Beutewort bekommt beim Bergen eine Karteikarte auf Leinwand und Handy. Hier stehen die Einträge. ${fehlen.length ? `<span class="signal">${fehlen.length} Wörter haben noch keine Karte.</span>` : 'Alle Wörter haben eine Karte.'}</p>
+      <div class="box"><div class="klein">Beutewörter per KI ergänzen</div>
+        <p class="text" style="font-size:16px">1. „KI-Auftrag kopieren“ – der Text enthält alle Fragen ohne Beutewort, alle Wörter ohne Karteikarte und das Antwortformat. 2. In eine KI einfügen. 3. Die JSON-Antwort hier einfügen oder als Datei laden und übernehmen. Vorhandene Beutewörter werden nicht überschrieben.</p>
+        <div class="reihe"><button class="btn rot" data-do="kiauftrag">KI-Auftrag kopieren</button><button class="btn" data-do="kiauftragdl">als Datei</button><span class="klein" id="kiinfo"></span></div>
+        <textarea class="feld" id="kiimport" data-k="kiimport" style="min-height:90px" placeholder='{"beute": [...], "kartei": {...}}'></textarea>
+        <div class="reihe"><button class="btn" data-do="kiimport">Antwort übernehmen</button><label class="btn">Datei laden<input type="file" accept="application/json,.json,.txt" data-kiimport hidden></label>${S.beuteImportInfo ? `<span class="ok" style="color:var(--gruen)">✓ ${esc(S.beuteImportInfo)}</span>` : ''}</div></div>
       <div class="reihe"><input class="feld" style="flex:1" data-k="ksuche" id="ksuche" placeholder="Suchen …" value="${esc(ui.ksuche || '')}"><button class="btn link" data-do="krestore">Mitgelieferte Karten wiederherstellen</button></div>
       <div style="max-height:62vh;overflow:auto;border:1px solid var(--kante)">${liste.map(x => `<button data-do="kzeig" data-x="${esc(x.wort)}" style="display:flex;justify-content:space-between;gap:10px;width:100%;text-align:left;background:${x.wort === w ? 'var(--nacht-3)' : 'transparent'};border:none;border-bottom:1px solid var(--kante);padding:8px 12px;cursor:pointer">
           <span class="serif" style="font-size:17px">${K[x.wort] ? '' : '<span class="signal">● </span>'}${esc(x.wort)}</span><span class="klein">${esc(x.wo)}</span></button>`).join('')}</div></div>
@@ -441,6 +462,11 @@ function archivDrehbuch() {
       ${feld('Ziel ansagen ({ziel})', 'finale:ziel', F.ziel, true)}${feld('Ziel erreicht ({stand}, {ziel})', 'finale:zielErreicht', F.zielErreicht, true)}
       ${feld('Ziel verfehlt ({stand}, {ziel})', 'finale:zielVerfehlt', F.zielVerfehlt, true)}${feld('Hinweis: Maulwurf zählt nicht', 'finale:maulwurfZaehlt', F.maulwurfZaehlt, true)}
       ${feld('Überschrift der Beutewörter', 'finale:gerettet', F.gerettet)}
+      <h2>Epilog</h2>
+      ${(st.epilog || []).map((p, i) => `<div class="box"><div class="reihe" style="justify-content:space-between"><span class="klein">Epilog ${pad(i + 1)} · Platzhalter {zelle}, {gerettet}</span><button class="btn klein" data-do="depdel" data-i="${i}">✕</button></div>
+        ${feld('Titel', 'epilog:' + i + ':titel', p.titel)}${feld('Text', 'epilog:' + i + ':text', p.text, true)}</div>`).join('')}
+      <div><button class="btn" data-do="depadd">Epilog-Tafel hinzufügen</button></div>
+      ${feld('Abspann (eine Zeile pro Eintrag; Agenten, Einsatzorte und Beute kommen automatisch dazu)', 'abspann', st.abspann, true)}
       <h2>Maulwurf</h2>
       ${feld('Rollenkarte des Maulwurfs', 'maulwurf:rolle', MW.rolle, true)}${feld('Rollenkarte der Zelle', 'maulwurf:zelle', MW.zelle, true)}
       ${feld('Frage bei der Abstimmung', 'maulwurf:frage', MW.frage)}${feld('Text bei Enttarnung', 'maulwurf:enttarnt', MW.enttarnt, true)}${feld('Text bei Entkommen', 'maulwurf:entkommen', MW.entkommen, true)}</div></div>
@@ -451,6 +477,7 @@ function drehbuchFeld(df, v) {
   if (a === 'tage') st.tage = parseInt(v) || 7;
   else if (!b) st[a] = v;
   else if (a === 'prolog') st.prolog[+b][c] = v;
+  else if (a === 'epilog') st.epilog[+b][c] = v;
   else if (a === 'mission') { st.missionen = st.missionen || {}; st.missionen[b] = { ...(st.missionen[b] || {}), [c]: v }; }
   else { st[a] = { ...(st[a] || {}), [b]: v }; }
   drehbuchSenden(st);
@@ -465,11 +492,13 @@ function archivDeppardy() {
   if (!ui.boardId && S.boards[0]) ui.boardId = S.boards[0].id;
   const orig = S.boards.find(b => b.id === ui.boardId);
   if (!ui.boardDirty || !ui.board || ui.board.id !== ui.boardId) ui.board = orig ? structuredClone(orig) : null;
-  const liste = S.boards.map(b => `<button class="btn klein ${b.id === ui.boardId ? 'hell' : ''}" data-do="bwahl" data-id="${esc(b.id)}">${esc(b.name)}</button>`).join('');
+  const liste = S.boards.filter(b => !ui.nurMeine || b.autor === ICH.name).map(b => `<button class="btn klein ${b.id === ui.boardId ? 'hell' : ''}" data-do="bwahl" data-id="${esc(b.id)}" title="${b.autor ? 'vorbereitet von ' + esc(b.autor) : ''}">${esc(b.name)}${b.autor ? ` <span class="blass">· ${esc(b.autor)}</span>` : ''}</button>`).join('');
   let h = `<div class="stapel" style="margin-top:18px">
     <p class="text blass">Boards aus dem eigenständigen Deppardy lassen sich als .json importieren, auch ältere Versionen. Eingebettete Bilder und Töne legt der Server dabei als Dateien ab. Fragen, Tipps und Antworten dürfen HTML enthalten.</p>
+    <div class="reihe"><label class="klein" style="display:flex;gap:6px;align-items:center"><input type="checkbox" data-nurmeine ${ui.nurMeine ? 'checked' : ''}> nur meine Boards</label></div>
     <div class="reihe">${liste}</div>
     <div class="reihe"><button class="btn rot" data-do="bneu">Neues Board</button><label class="btn">Importieren (.json)<input type="file" accept="application/json,.json" data-bimport hidden></label>
+      <button class="btn" data-do="btest" ${ui.board && !ui.boardDirty ? '' : 'disabled'} title="${ui.boardDirty ? 'Erst speichern' : 'Board sofort als Testlauf spielen'}">▶ Testen</button>
       <button class="btn" data-do="bexport" ${ui.board ? '' : 'disabled'}>Exportieren</button><button class="btn" data-do="bdel" ${ui.board ? '' : 'disabled'}>Löschen</button>
       <button class="btn link" data-do="brestore">Hinterland-Board wiederherstellen</button></div></div>`;
   const b = ui.board;
@@ -513,14 +542,14 @@ function archivAtlas() {
   if (!set) return h;
   h += `<div class="stapel" style="margin-top:18px"><div class="reihe"><input class="feld" style="flex:1;font-size:20px" data-k="sname" data-sf="name" value="${esc(set.name)}">
       <input class="feld" style="flex:2" data-k="smarke" data-sf="marke" value="${esc(set.marke)}" placeholder="Leitfrage, z. B. Woher stammt dieses Gericht?"></div>
-    <div class="aeintrag klein"><span>Begriff</span><span>Land</span><span>Auch richtig</span><span>Notiz nach der Auflösung</span><span>Beutewort</span><span></span></div>
+    <div class="aeintrag klein"><span>Begriff</span><span>Land</span><span>Auch richtig</span><span>Notiz nach der Auflösung</span><span>Beutewort</span><span>Rotation · Test</span></div>
     ${set.eintraege.map((e, i) => `<div class="aeintrag">
       <input class="feld" data-k="se-${i}-t" data-sf="e:${i}:text" value="${esc(e.text)}">
       <input class="feld ${e.land ? '' : 'fehl'}" list="laender" data-k="se-${i}-l" data-sf="e:${i}:land" value="${esc(landName(e.land))}">
       <input class="feld" data-k="se-${i}-a" data-sf="e:${i}:auchOk" value="${esc(e.auchOk.map(landName).join(', '))}">
       <input class="feld" data-k="se-${i}-n" data-sf="e:${i}:notiz" value="${esc(e.notiz)}">
       <input class="feld ${e.beute && !(S.kartei || {})[e.beute] ? 'fehl' : ''}" data-k="se-${i}-b" data-sf="e:${i}:beute" value="${esc(e.beute || '')}" title="${e.beute && !(S.kartei || {})[e.beute] ? 'Noch keine Karteikarte' : ''}">
-      <button class="btn klein" data-do="sedel" data-i="${i}">✕</button></div>`).join('')}
+      <span class="reihe" style="gap:4px;flex-wrap:nowrap"><input type="checkbox" data-srot="${i}" ${e.aus ? '' : 'checked'} title="in Rotation"><button class="btn klein" data-do="stest" data-i="${i}" title="Testen">▶</button><button class="btn klein" data-do="sedel" data-i="${i}">✕</button></span></div>`).join('')}
     <div><button class="btn" data-do="seadd">Begriff hinzufügen</button></div></div>`;
   return h;
 }
@@ -535,6 +564,21 @@ function setFeld(sf, v) {
   setSenden(set);
 }
 
+async function testStarten(args) {
+  if (S.active && !S.test && !confirm('Gerade läuft eine Mission. Für den Test wird sie zurückgestellt und danach wiederhergestellt. Trotzdem testen?')) return;
+  await cmd('test_start', { ...args, mode: args.type === 'deppardy' ? 'solo' : (ui.testModus || null), trotzdem: true });
+  ui.tab = 'mission'; zeichnen();
+}
+async function kiAuftrag() {
+  try { const r = await fetch('/leitung/api/beute-auftrag', { cache: 'no-store' }); const j = await r.json(); const el = document.getElementById('kiinfo'); if (el) el.textContent = `${j.offen} Einträge ohne Beutewort · ${j.ohneKarte} Wörter ohne Karte`; return j; }
+  catch (e) { hinweis('Fehlgeschlagen: ' + e.message); return null; }
+}
+function kiImport(text) {
+  text = String(text || '').trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
+  const a = text.indexOf('{'), z = text.lastIndexOf('}');
+  try { const daten = JSON.parse(text.slice(a, z + 1)); cmd('beute_import', { daten }); }
+  catch (e) { hinweis('Kein gültiges JSON: ' + e.message); }
+}
 function contentSenden(list) { S.content[ui.archiv] = list; cmd('content_set', { type: ui.archiv, list }); }
 
 // ------------------------------------------------------------------ System
@@ -551,6 +595,15 @@ function seiteSystem() {
       <h2>Reihenfolge der Inhalte</h2>
       <p class="text blass">Jedes Spiel merkt sich, welcher Eintrag als Nächstes kommt – auch über einen Abend hinaus, damit beim zweiten Abend neue Fragen drankommen. Vor einem ganz neuen Abend mit denselben Leuten also nicht zurücksetzen.</p>
       <div><button class="btn" data-do="cursorallesweg">Alle Spiele wieder von vorn</button></div>
+      <h2>Impressum</h2>
+      <p class="text blass">Erscheint unter <b>${esc(basis())}impressum</b>. Verlinkt ist es auf dem Beitrittsbildschirm und im Warteraum der Handys sowie klein auf dem Startbild der Leinwand. Leer = kein Link.</p>
+      <textarea class="feld" data-k="impressum" id="impressum" style="min-height:140px" placeholder="Name, Anschrift, Kontakt …">${esc(S.impressum || '')}</textarea>
+      <div><button class="btn" data-do="impressum">Impressum speichern</button></div>
+      <h2>Zugänge zum Steuermodul</h2>
+      ${ICH.admin ? `<p class="text blass">Weitere Personen (z. B. zum Vorbereiten von Deppardy-Boards) bekommen einen eigenen Namen und ein eigenes Passwort. Anmelden mit genau diesem Namen. Das Hauptpasswort bleibt für Importe, Adressen und diese Liste.</p>
+        <div class="tabelle">${HOSTS.map(n => `<div class="zeile" style="grid-template-columns:1fr auto"><div class="wer"><b>${esc(n)}</b></div><div class="aktion"><button class="btn klein" data-do="hostdel" data-x="${esc(n)}">Entfernen</button></div></div>`).join('') || '<p class="blass">Noch keine weiteren Zugänge.</p>'}</div>
+        <div class="reihe"><input class="feld" style="flex:1" id="hostname" data-k="hostname" placeholder="Name"><input class="feld" style="flex:1" id="hostpw" data-k="hostpw" placeholder="Passwort (min. 4 Zeichen)"><button class="btn rot" data-do="hostadd">Zugang anlegen</button></div>`
+        : `<p class="text blass">Du bist als <b>${esc(ICH.name)}</b> angemeldet. Zugänge verwaltet die Leitung mit dem Hauptpasswort.</p>`}
       <h2>Deppardy und Atlas</h2>
       <p class="text blass">Beide Spiele sind eingebaut: Boards und Atlas-Sets pflegst du im Archiv, welches Board oder Set eine Mission nutzt, stellst du im Einsatzplan ein.</p></div></div>`;
 }
@@ -574,6 +627,13 @@ function seiteMission() {
         ${S.beispiel ? WWH.vorfuehrung(m.type, { zm: m.mode === 'team' ? m.zm : null, breite: '190px' }) : ''}</div></div>`;
   }
 
+  if (g.ereignis) {
+    const n = Object.keys(S.moleVotes).length;
+    return `<div class="raster cockpit"><div class="stapel">${kopf}${regeln(g)}
+      ${m.type === 'maulwurf_los' ? `<div class="box"><p class="text">Die Geräte zeigen jetzt die verdeckten Rollenkarten. Maulwurf: <b>${ui.zeigMole ? esc(code(S.mole.id)) : '●●●●●●'}</b> <button class="btn klein" data-do="mzeig">${ui.zeigMole ? 'Verbergen' : 'Anzeigen'}</button></p></div>`
+        : `<div class="box"><p class="text">${n} von ${S.agents.length} haben abgestimmt.</p><div class="reihe"><button class="btn ${S.mole.voteOpen ? 'rot' : ''}" data-do="mvote" data-x="${S.mole.voteOpen ? 0 : 1}">${S.mole.voteOpen ? 'Abstimmung schließen' : 'Abstimmung öffnen'}</button></div></div>`}
+      <div><button class="btn hell" data-do="fertig">Weiter zum nächsten Einsatz</button></div></div></div>`;
+  }
   if (m.type === 'deppardy' && S.dep) return `<div class="raster cockpit"><div class="stapel">${kopf}${cockpitDeppardy()}</div><div class="stapel">${punkteWertung()}</div></div>`;
   // play
   const it = S.rnd.item;
@@ -793,6 +853,21 @@ function wertung(m, step) {
 // ------------------------------------------------------------------ Aktionen
 actions(app, {
   missionStart: () => cmd('mission_start'),
+  stealzufall: () => cmd('steal_zufall'),
+  stealalle: () => cmd('steal_alle'),
+  testen: d => testStarten({ type: ui.archiv, i: +d.i }),
+  stest: d => testStarten({ type: 'atlas', atlas: [ui.setId, +d.i] }),
+  btest: () => testStarten({ type: 'deppardy', board: ui.boardId }),
+  testmodus: d => { ui.testModus = d.x; zeichnen(); },
+  rotalle: d => contentSenden((S.content[ui.archiv] || []).map(e => { const n = { ...e }; if (d.x === '1') delete n.aus; else n.aus = true; return n; })),
+  depadd: () => { const st = structuredClone(S.story || {}); st.epilog = [...(st.epilog || []), { titel: 'Neue Tafel', text: '' }]; drehbuchSenden(st); },
+  depdel: d => { if (!confirm('Epilog-Tafel löschen?')) return; const st = structuredClone(S.story || {}); st.epilog.splice(+d.i, 1); drehbuchSenden(st); },
+  impressum: () => { cmd('impressum_set', { text: document.getElementById('impressum').value }); hinweis('Impressum gespeichert'); },
+  hostadd: async () => { try { await post('/leitung/api/hosts', { name: document.getElementById('hostname').value, pw: document.getElementById('hostpw').value }); hinweis('Zugang angelegt'); } catch (e) { hinweis(e.message); } },
+  hostdel: async d => { if (!confirm('Zugang „' + d.x + '“ entfernen?')) return; try { await post('/leitung/api/hosts', { aktion: 'del', name: d.x }); } catch (e) { hinweis(e.message); } },
+  kiauftrag: async () => { const a = await kiAuftrag(); if (a) kopieren(a.text); },
+  kiauftragdl: async () => { const a = await kiAuftrag(); if (!a) return; const l = document.createElement('a'); l.href = URL.createObjectURL(new Blob([a.text], { type: 'text/plain' })); l.download = 'wwh-beute-auftrag.txt'; l.click(); },
+  kiimport: () => kiImport(document.getElementById('kiimport').value),
   finale: () => cmd('screen', { name: 'finale' }),
   dieb: d => cmd('steal_thief', { id: d.id }),
   uopfer: d => { ui.uopfer = d.id; zeichnen(); },
@@ -825,7 +900,9 @@ actions(app, {
   crestore: () => { if (confirm('Beispiele dieses Spiels wiederherstellen? Eigene Einträge dieses Spiels werden ersetzt.')) cmd('content_restore', { type: ui.archiv }); },
   joinurl: async () => { try { await post('/leitung/api/config', { joinUrl: document.getElementById('joinUrl').value }); hinweis('Gespeichert'); } catch (e) { hinweis(e.message); } },
   abbruch: () => { if (confirm('Mission abbrechen? Punkte dieser Mission verfallen, die Mission bleibt offen.')) cmd('mission_abort'); },
-  fertig: () => { if (S.phase === 'play' && !(S.revealed && S.round >= mission().rounds - 1) && !confirm('Es sind noch Runden offen. Trotzdem abschließen?')) return; cmd('mission_finish'); ui.tab = 'zentrale'; },
+  fertig: () => { const test = !!S.test;
+    if (!test && !G(mission().type).ereignis && S.phase === 'play' && !(S.revealed && S.round >= mission().rounds - 1) && !confirm('Es sind noch Runden offen. Trotzdem abschließen?')) return;
+    cmd('mission_finish'); ui.tab = test ? 'archiv' : 'zentrale'; },
   tcount: d => cmd('teams_count', { n: +d.x }),
   tmove: d => { const i = +d.i, j = +d.j, k = j + +d.d, ta = S.teamAnswers[i], n = (S.rnd.order || []).length;
     const f = (ta ? ta.v : 'ABCDEFGH'.slice(0, n)).split(''); [f[j], f[k]] = [f[k], f[j]]; cmd('set_team_answer', { idx: i, v: f.join('') }); },
@@ -922,6 +999,10 @@ app.addEventListener('change', async e => {
     } catch (err) { hinweis('Upload fehlgeschlagen: ' + err.message); }
     return;
   }
+  if (d.rot !== undefined) { const list = structuredClone(S.content[ui.archiv] || []); if (el.checked) delete list[+d.rot].aus; else list[+d.rot].aus = true; return contentSenden(list); }
+  if (d.srot !== undefined) { const set = structuredClone(S.atlasSets[ui.setId]); if (el.checked) delete set.eintraege[+d.srot].aus; else set.eintraege[+d.srot].aus = true; return setSenden(set); }
+  if (el.hasAttribute('data-nurmeine')) { ui.nurMeine = el.checked; return zeichnen(); }
+  if (el.hasAttribute('data-kiimport')) { const f = el.files[0]; if (f) kiImport(await f.text()); return; }
   if (el.hasAttribute('data-kupload')) {
     const f = el.files[0]; if (!f) return;
     hinweis('Lade hoch …');

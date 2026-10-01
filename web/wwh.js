@@ -161,6 +161,7 @@ const WWH = (() => {
     impostor: [
       ['<div class="vk">Geheimsache</div><div class="vkarte vf-tipp" style="min-height:90px;background:repeating-linear-gradient(-45deg,#26221b 0 10px,#1d1a15 10px 20px);color:var(--papier)"><div class="vh">Antippen</div></div>', 'Jedes Handy zeigt verdeckt die Parole.'],
       ['<div class="vkarte" style="min-height:90px"><div class="vk">Die Parole</div><div class="vh">Gartenzwerg</div></div>', 'Nur der Eindringling kennt bloß die Kategorie.'],
+      ['<div class="vk">Reihum ein Wort</div><div class="vblasen"><div class="vblase"><small>Tilde</small>„Mütze“</div><div class="vblase rechts"><small>Umlaut</small>„Angeln“</div><div class="vblase"><small>Genitiv</small>„Rasen“</div><div class="vblase rechts"><small>Ellipse</small>„Grün … irgendwie?“</div></div>', 'Reihum sagt jede Person ein Wort zur Parole.'],
       ['<div class="vk">Wer ist der Eindringling?</div><div class="vzwei"><div>Tilde</div><div class="an vf-tipp">Umlaut</div><div>Genitiv</div><div>Ellipse</div></div>', 'Reihum ein Wort sagen, dann abstimmen.'],
       ['<div class="vkarte"><div class="vk">Erkannt</div><div class="vh">Umlaut</div></div><div class="vplus">+3</div>', 'Erkannt: Alle anderen bergen Wörter.']],
     zoom: [
@@ -222,8 +223,19 @@ const WWH = (() => {
       el.querySelectorAll('.vf-bild').forEach((b, j) => b.classList.toggle('aktiv', j === i));
       el.querySelectorAll('.vf-text>span').forEach((b, j) => b.classList.toggle('aktiv', j === i));
     });
-  }, 3200);
+  }, 5200);
 
-  return { esc, pad, sleep, fmtGain, deNum, poll, post, render, actions, qr, karte, VERMERK,
+  // Propaganda-Plakat des Amtes. urteil: 'W' (Wahrheit) oder 'P' (Propaganda) nach dem Aufdecken
+  function plakat(o) {
+    const megafon = '<svg viewBox="0 0 40 30" aria-hidden="true"><path d="M3 11h7l18-9v26L10 19H3z" fill="#141210"/><path d="M8 19l3 9h5l-3-9" fill="#141210"/><path d="M32 9q5 6 0 12" stroke="#c23522" stroke-width="3" fill="none"/></svg>';
+    return `<div class="propaganda ${o.klein ? 'klein' : ''}"><i class="pp-ecke l"></i><i class="pp-ecke r"></i>
+      <div class="pp-kopf">Amt für Reinsprache · Bekanntmachung</div>
+      <div class="pp-ruf" data-fit="0.3">${esc(o.ruf)}!</div>
+      ${o.unter ? `<div class="pp-unter">${esc(o.unter)}</div>` : ''}
+      <div class="pp-fuss">${megafon}<span>${esc(o.fuss || 'Wer zweifelt, schadet der Ordnung')}</span>${megafon.replace('<svg', '<svg style="transform:scaleX(-1)"')}</div>
+      ${o.urteil ? `<div class="pp-urteil ${o.urteil === 'W' ? 'wahr' : 'luege'}">${o.urteil === 'W' ? 'Wahrheit' : 'Propaganda'}</div>` : ''}</div>`;
+  }
+
+  return { esc, pad, plakat, sleep, fmtGain, deNum, poll, post, render, actions, qr, karte, VERMERK,
     passeText, passeBox, sortierbar, ziehen, vorfuehrung };
 })();

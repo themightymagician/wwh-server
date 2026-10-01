@@ -82,8 +82,8 @@ html,body{height:100%;overflow:hidden;}
 .lupe.schloss .schild{position:absolute;inset:0;pointer-events:none;background:var(--schild) center/auto 88% no-repeat;transition:opacity 1s ease;filter:drop-shadow(0 4px 10px rgba(0,0,0,.6));}
 .lupe.schloss.offen .loch{-webkit-mask-size:auto 520%;mask-size:auto 520%;}
 .lupe.schloss.offen .schild{opacity:0;}
-:root{--schluesselloch:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 150'%3E%3Ccircle cx='50' cy='46' r='34'/%3E%3Cpath d='M30 66 L14 148 H86 L70 66 Z'/%3E%3C/svg%3E");
-  --schild:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 150'%3E%3Cpath d='M50 12 A34 34 0 0 1 70 66 L86 148 H14 L30 66 A34 34 0 0 1 50 12 Z' fill='none' stroke='%23b08a4a' stroke-width='3'/%3E%3C/svg%3E");}
+:root{--schluesselloch:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 150'%3E%3Cpath d='M34 76 A34 34 0 1 1 66 76 L82 148 H18 Z'/%3E%3C/svg%3E");
+  --schild:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 150'%3E%3Cpath d='M34 76 A34 34 0 1 1 66 76 L82 148 H18 Z' fill='none' stroke='%23b08a4a' stroke-width='3' stroke-linejoin='round'/%3E%3C/svg%3E");}
 .emoji{font-size:clamp(100px,14vw,280px);line-height:1.15;text-align:center;font-family:var(--emoji);}
 .loesung{align-self:flex-start;}
 .loesung .stempel{font-size:clamp(28px,3vw,60px);}
@@ -204,6 +204,15 @@ html,body{height:100%;overflow:hidden;}
 .zellenleiste .zl span{font-size:clamp(13px,1vw,18px);color:var(--papier-matt);}
 .rucksaecke .rs.erster b,.rucksaecke .rs.erster .zahl{color:var(--signal);}
 @media (max-width:1100px){.zentrale{grid-template-columns:1fr;}.zentrale>.links,.zentrale>.rechts{align-items:center;}.zielsaeule .saeule{display:none;}}
+/* Abspann: Credits laufen von unten nach oben durch (Animation, kein Scrollen) */
+.abspann{position:relative;height:100%;min-height:60vh;overflow:hidden;-webkit-mask-image:linear-gradient(transparent,#000 12%,#000 88%,transparent);mask-image:linear-gradient(transparent,#000 12%,#000 88%,transparent);}
+.abspann-rolle{position:absolute;left:0;right:0;top:100%;text-align:center;display:flex;flex-direction:column;gap:6px;animation:abspann 55s linear forwards;}
+.abspann-rolle p{margin:0;font-family:var(--serif);font-size:clamp(20px,1.9vw,36px);line-height:1.4;}
+.abspann-rolle p b{font-family:var(--display);font-weight:400;text-transform:uppercase;color:var(--signal);}
+.abspann-rolle p.luft{height:clamp(30px,4vh,60px);}
+.abspann-rolle .klein{margin-top:10px;}
+.abspann-titel{font-family:var(--display);text-transform:uppercase;font-size:clamp(48px,6vw,120px);line-height:.95;margin-bottom:30px;}
+@keyframes abspann{from{transform:translateY(0);}to{transform:translateY(calc(-100% - 70vh));}}
 @keyframes auftritt{from{opacity:0;transform:translateY(18px) scale(.98);}to{opacity:1;transform:none;}}
 .enthuellt{animation:auftritt .6s cubic-bezier(.2,1.2,.4,1) both;}
 </style>
@@ -237,6 +246,8 @@ const regeln = m => `<ol class="regeln">${m.rules.map(r => `<li>${esc(r)}</li>`)
 
 function zeichnen() {
   const m = V.mission;
+  // Der Abspann läuft durch – nicht bei jeder Kleinigkeit neu starten
+  if (V.screen === 'finale' && V.finaleArt === 'abspann' && alt && alt.screen === 'finale' && alt.finaleArt === 'abspann' && bühne.querySelector('.abspann')) return;
   let oben = '', mitte = '', unten = '';
   const missionsLabel = m ? `Mission ${pad(V.cur + 1)} / ${pad(V.planLen)}` : 'Einsatz beendet';
 
@@ -252,6 +263,7 @@ function zeichnen() {
         <div class="klein">${V.agents.length} Agent${V.agents.length === 1 ? '' : 'en'} eingetroffen</div>
         <div class="chips">${V.agents.map(a => `<span class="chip an">${wer(a)}</span>`).join('')}</div>
       </div></div>`;
+    if (V.impressum) unten = `<div class="fuss-impressum">Impressum: ${esc((V.joinUrl || location.origin + '/').replace(/^https?:\/\//, '').replace(/\/?$/, '/'))}impressum</div>`;
   }
 
   else if (V.screen === 'prolog') {
@@ -296,6 +308,7 @@ function zeichnen() {
     unten = fuss();
   }
   if (!unten && V.screen === 'mission') unten = fuss();
+  if (V.test) oben = oben.replace(/^<span>/, '<span><span class="status">Testlauf</span> · ');
   if (V.mole && V.mole.voteOpen && V.screen !== 'finale') oben = oben.replace(/<\/span>$/, ` · <span class="status">${esc(V.mole.frage)} ${V.mole.voted.length}/${V.agents.length}</span></span>`);
   render(bühne, `<div class="leiste">${oben}</div><div class="mitte"><div class="fit">${mitte}</div>${beiseite()}</div><div>${unten}</div>`);
   einpassen();
@@ -470,6 +483,25 @@ function uebergabe() {
   }
   if (art === 'hueter' && V.zielErgebnis && !V.zielErgebnis.erreicht)
     return `<div class="zweispaltig"><div class="stapel"><div class="klein">Das Archiv ist verloren</div><div class="titel">Kein Hüter</div><div class="unter">Übrig bleiben die Rucksäcke.</div></div><div class="rang">${rangliste(V.ranking)}</div></div>`;
+  if (art === 'akten') {
+    return `<div class="stapel" style="gap:clamp(16px,2vw,32px)"><div class="titel2">Personalakten</div><div class="unter" style="font-size:clamp(18px,1.6vw,30px)">Die Zentrale hat mitgeschrieben.</div>
+      <div class="zellen" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:24px">${(V.akten || []).map((a, i) => `<div class="zettel enthuellt" style="max-width:none;transform:rotate(${[-1.4, 1.1, -.6, 1.6, -1, .8][i % 6]}deg);animation-delay:${i * .25}s">
+        <div class="klein">${esc(a.titel)}</div><div class="inhalt"><b style="font-family:var(--display);font-weight:400;font-size:1.5em;text-transform:uppercase">${a.codes.map(esc).join(' & ')}</b>${V.namenZeigen ? ' <i>' + a.namen.map(esc).join(' & ') + '</i>' : ''}<br>${a.wert} ${esc(a.was)}</div></div>`).join('')}</div></div>`;
+  }
+  if (art === 'epilog') {
+    const e = V.epilog || {};
+    return `<div class="tafel enthuellt" style="max-width:min(1150px,80vw)"><span class="stempel marke">Epilog ${pad(e.nr || 1)}</span><div class="tafeltitel" style="text-shadow:${langerSchatten(28)}">${esc(e.titel)}</div><div class="tafeltext" style="${tafelGroesse(e.text)}">${esc(e.text)}</div></div>`;
+  }
+  if (art === 'abspann') {
+    const a = V.abspann || {};
+    const zeilen = esc(a.text || '').split('\n').map(z => z.trim() ? `<p>${z}</p>` : '<p class="luft"></p>').join('');
+    return `<div class="abspann"><div class="abspann-rolle">
+      <div class="abspann-titel">Wortgewandter Widerstand</div>${zeilen}
+      <p class="luft"></p><div class="klein">Die Agentinnen und Agenten</div>${(a.agenten || []).map(x => `<p><b>${esc(x.code)}</b> &nbsp; ${esc(x.name)}</p>`).join('')}
+      <p class="luft"></p><div class="klein">Einsatzorte</div>${(a.missionen || []).map(x => `<p>${esc(x)}</p>`).join('')}
+      <p class="luft"></p><div class="klein">Gerettet</div><p><b>${a.gerettet || 0}</b> Wörter auf Karteikarten</p>
+      <p class="luft"></p><p class="luft"></p><div class="abspann-titel" style="font-size:clamp(40px,5vw,96px)">Ende</div></div></div>`;
+  }
   if (art === 'kartei') {
     const gerettet = V.beute.filter(k => !k.verloren), weg = V.beute.filter(k => k.verloren);
     return `<div class="stapel" style="gap:clamp(14px,1.6vw,26px);min-height:0"><div class="reihe" style="justify-content:space-between;align-items:baseline"><div class="titel2">${esc(F.gerettet || 'Das habt ihr gerettet')}</div>
@@ -536,6 +568,12 @@ function loesung(text) { return `<div class="loesung enthuellt"><span class="ste
 function bühnenbild(st, m) {
   const ids = byId(), rev = V.revealed;
   switch (st.type) {
+    case 'maulwurf_los':
+      return `<div class="stapel enthuellt"><span class="stempel" style="align-self:flex-start;font-size:clamp(24px,2.4vw,46px)">Verdacht</span>
+        <div class="titel">Schaut auf eure Geräte</div><div class="unter">Jede Person hat jetzt verdeckt eine Rollenkarte. Antippen, lesen, wieder verdecken – niemand soll mitlesen.</div></div>`;
+    case 'maulwurf_wahl':
+      return `<div class="titel2">${esc(V.mole.frage)}</div><div class="unter">Stimmt verdeckt auf euren Geräten ab. Aufgelöst wird an der Grenze.</div>
+        ${abgegeben(st.voted, 'Stimme abgegeben')}`;
     case 'schaetzen': {
       let h = `<div class="frage">${esc(st.q)}</div>`;
       if (!rev) return h + abgegeben(st.answered, 'Schätzung abgegeben');
@@ -571,10 +609,8 @@ function bühnenbild(st, m) {
         <div class="klein">${st.attempts || 0} Funksprüche</div>${rev ? loesung(st.a) + gewinner(st) : ''}`;
     case 'hoeher': {
       const anders = st.claim === 'A' ? st.b : st.a;
-      let h = `<div class="plakat"><div class="klein">Das Amt verkündet</div><div class="titel">${esc(st.claimName)}!</div>
-        <div class="unter" style="color:#f4ecda">${esc(st.q)} – ${esc(st.claimName)}, nicht ${esc(anders)}.</div></div>`;
-      if (rev) h += `<div class="reihe enthuellt" style="gap:32px"><span class="urteil" style="color:${st.wahr === 'W' ? 'var(--gruen)' : 'var(--signal)'};border-color:currentColor">${st.wahr === 'W' ? 'Wahrheit' : 'Propaganda'}</span>
-        <span class="unter">${esc(st.a)}: ${esc(st.av)} · ${esc(st.b)}: ${esc(st.bv)}</span></div>`;
+      let h = `<div style="display:flex;justify-content:center"><div style="width:min(1100px,100%)">${WWH.plakat({ ruf: st.claimName, unter: `${st.q} – ${st.claimName}, nicht ${anders}.`, urteil: rev ? st.wahr : null })}</div></div>`;
+      if (rev) h += `<div class="unter enthuellt" style="text-align:center">${esc(st.a)}: ${esc(st.av)} · ${esc(st.b)}: ${esc(st.bv)}</div>`;
       const txt = { W: 'Wahrheit', P: 'Propaganda' };
       return h + `<div class="chips">${V.teams.map((t, i) => { const a = st.teamAnswers ? st.teamAnswers[i] : null, fertig = (st.teamAnswered || []).includes(String(i));
         return `<span class="chip ${fertig ? 'an' : ''}" style="${a && a === st.wahr ? 'border-color:var(--gruen);color:var(--gruen)' : ''}">Zelle ${'ABCD'[i]}${a ? ': ' + txt[a] + (a === st.wahr ? ' ✓' : ' ✗') : zellStimmen(st, i)}</span>`; }).join('')}</div>`;

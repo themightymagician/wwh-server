@@ -73,8 +73,10 @@ h2{margin:0;font-family:var(--display);font-weight:400;font-size:clamp(24px,7.5v
 .umlager button span{font-size:13px;color:var(--blass);}
 .umlager button.an{border-color:var(--signal);background:#2e1a15;}
 .umlager button:disabled{opacity:.35;}
-.plakat{background:#c23522;color:#f4ecda;padding:22px 20px;display:flex;flex-direction:column;gap:10px;transform:rotate(-1deg);box-shadow:0 10px 24px rgba(0,0,0,.4);}
-.plakat .display{font-size:clamp(28px,9vw,44px);line-height:.95;}
+.warteraum{border:1px solid var(--kante-hell);background:repeating-linear-gradient(-45deg,var(--nacht-2) 0 14px,var(--nacht) 14px 28px);padding:26px 20px;display:flex;flex-direction:column;gap:12px;align-items:flex-start;}
+.warteraum .punkte span{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--signal);margin-right:6px;animation:warten 1.4s infinite ease-in-out both;}
+.warteraum .punkte span:nth-child(2){animation-delay:.2s;}.warteraum .punkte span:nth-child(3){animation-delay:.4s;}
+@keyframes warten{0%,80%,100%{opacity:.2;transform:scale(.7);}40%{opacity:1;transform:scale(1);}}
 .schwarz{background:#15130f;color:transparent;border-radius:2px;padding:0 .2em;}
 .textblock{font-family:var(--serif);font-size:21px;line-height:1.5;white-space:pre-line;background:#f4edd8;color:#2b251b;padding:18px;}
 .optionen{display:flex;flex-direction:column;gap:8px;}
@@ -130,7 +132,7 @@ poll(() => '/api/view?t=' + encodeURIComponent(token || ''), d => {
 });
 
 function zeichnen() {
-  if (!token || !ME) { kopf.hidden = true; return render(app, beitritt()); }
+  if (!token || !ME) { kopf.hidden = true; render(app, beitritt()); return autofokus(); }
   kopf.hidden = false;
   kopf.innerHTML = `<div><div class="klein">Deckname</div><div class="code">${esc(ME.code)}</div></div>
     <div class="wort"><div class="klein">Im Rucksack</div><b class="${ME.gain ? 'plus' : ''}">${ME.total}${ME.gain ? ' <small>' + fmtGain(ME.gain) + '</small>' : ''}</b></div>`;
@@ -149,8 +151,18 @@ function zeichnen() {
   if (ME.umlagern) html = umlagernKarte() + html;
   render(app, html);
   WWH.passeText(app);
+  autofokus();
   atlas();
   taktUhr();
+}
+// Taucht ein neues Eingabefeld auf, steht der Cursor gleich darin – einmal pro Feld und Runde
+function autofokus() {
+  const feld = app.querySelector('input.feld:not([type=range]):not([disabled]), textarea.feld:not([disabled])');
+  if (!feld) return;
+  const key = (lokal.key || '') + '|' + (feld.dataset.k || feld.id), aktiv = document.activeElement;
+  if (key === lokal.fokus || (aktiv && aktiv !== document.body && app.contains(aktiv) && aktiv.matches('input,textarea'))) return;
+  lokal.fokus = key;
+  try { feld.focus({ preventScroll: true }); feld.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) {}
 }
 let zeitDiff = 0;
 
@@ -189,7 +201,7 @@ function beitritt() {
     <h1>Wortgewandter Widerstand</h1>
     <p class="text">Trag deinen Namen ein. Deinen Decknamen bekommst du von der Zentrale.</p>
     <input class="feld gross" data-k="name" id="name" maxlength="40" autocomplete="nickname" placeholder="Dein Name" enterkeyhint="go">
-    <button class="btn rot voll" data-do="beitreten">Der Zelle beitreten</button>`;
+    <button class="btn rot voll" data-do="beitreten">Der Zelle beitreten</button>${impressumLink()}`;
 }
 
 function rules(m) { return `<ol class="regeln">${m.rules.map(r => `<li>${esc(r)}</li>`).join('')}</ol>`; }
@@ -233,18 +245,23 @@ function prolog() {
     ${t ? `<h1>${esc(t.titel)}</h1><p class="text">${esc(t.text)}</p>` : ''}${einsatzkarte()}${rolle()}`;
 }
 
+function impressumLink() { return V && V.impressum ? `<div class="fuss-impressum"><a href="/impressum" target="_blank" rel="noopener">Impressum</a></div>` : ''; }
+
+// Warteraum: Nach dem Beitreten und zwischen den Einsätzen zeigt das Gerät nur, dass es gleich weitergeht.
+// Den nächsten Einsatz sehen alle erst, wenn die Zentrale ihn auf der Leinwand eröffnet.
 function warten() {
-  const m = V.mission, pos = V.ranking.findIndex(r => r.id === ME.id), mi = SY().mission || {};
-  let h = `<p class="pause">${V.screen === 'start' ? 'Du bist drin. Gleich geht es los.' : 'Warte auf den nächsten Einsatz.'}</p>`;
+  const pos = V.ranking.findIndex(r => r.id === ME.id);
+  let h = `<div class="warteraum"><div class="klein">${V.screen === 'start' ? 'Warteraum der Zelle' : 'Zentrale'}</div>
+    <h2>${V.screen === 'start' ? 'Du bist drin.' : 'Warte auf den nächsten Einsatzbefehl.'}</h2>
+    <p class="text" style="font-size:16px">${V.screen === 'start' ? `Dein Deckname ist <b>${esc(ME.code)}</b>. Die Zentrale wartet, bis alle eingetroffen sind – dann geht es gemeinsam los.` : 'Schau auf die Leinwand. Sobald der Einsatz beginnt, erscheint er hier.'}</p>
+    <div class="punkte"><span></span><span></span><span></span></div></div>`;
   if (V.screen !== 'start') h += tage();
   if (V.funk && V.funk.text) h += `<div class="karte"><div class="klein">Funkspruch der Zentrale</div><p class="text">${esc(V.funk.text)}</p></div>`;
   if (V.lastSteal) h += `<p class="pause">${esc(V.lastSteal)}</p>`;
   if (V.pendingSteal && V.thief) h += `<p class="pause">${esc(V.thief)} darf jetzt umlagern …</p>`;
   if (V.screen !== 'start' && V.zielLive && V.zielLive.ziel > 0) h += `<div class="klein">Die Zelle hat ${V.zielLive.stand} von ${V.zielLive.ziel} Wörtern beisammen</div>`;
-  if (m) h += `<div class="karte hell"><div class="klein" style="color:#5c5446">Einsatz ${pad(V.cur + 1)} / ${pad(V.planLen)} · ${esc(m.name)}</div>
-    <h1 style="font-size:clamp(28px,8.5vw,44px)">${esc(mi.ort || m.name)}</h1>${mi.lage ? `<p class="text" style="font-style:italic">${esc(mi.lage)}</p>` : ''}${rules(m)}</div>`;
   if (V.screen !== 'start' && pos >= 0) h += `<div class="klein">Dein Rucksack liegt auf Platz ${pos + 1} von ${V.ranking.length}</div>`;
-  return h + rolle();
+  return h + rolle() + impressumLink();
 }
 
 function einweisung() {
@@ -297,6 +314,9 @@ function finale() {
   if (art === 'hueter' && V.zielErgebnis && !V.zielErgebnis.erreicht)
     return `<h1>Kein Hüter</h1><p class="text">Das Archiv ist verloren. Übrig bleiben die Rucksäcke.</p>
       <div class="rang">${V.ranking.map((r, i) => `<div class="${r.id === ME.id ? 'ich' : ''}"><span>${pad(i + 1)}</span><b>${esc(r.code)}</b><span>${r.total}</span></div>`).join('')}</div>`;
+  if (art === 'akten') return `<h1>Personalakten</h1>` + (V.akten || []).map(a => `<div class="karte"><div class="klein">${esc(a.titel)}</div><h2>${a.codes.map(esc).join(' & ')}</h2><p class="text" style="font-size:16px">${a.wert} ${esc(a.was)}</p></div>`).join('');
+  if (art === 'epilog') return `<div class="klein">Epilog ${V.epilog.nr} / ${V.epilog.von}</div><h1>${esc(V.epilog.titel)}</h1><p class="text">${esc(V.epilog.text)}</p>`;
+  if (art === 'abspann') return `<h1>Ende</h1><p class="text" style="white-space:pre-line">${esc(V.abspann.text)}</p><div class="klein">Danke, ${esc(ME.code)}.</div>${impressumLink()}`;
   if (art === 'kartei') return `<h1>${esc(F.gerettet || 'Das habt ihr gerettet')}</h1><div class="klein">${V.beute.length} Karteikarten</div>
     <div class="kartei" style="grid-template-columns:1fr">${V.beute.map(k => WWH.karte(k, { klein: true })).join('')}</div>`;
   if (art === 'bilanz') return (V.beute && V.beute.length ? `<div class="karte"><div class="klein">${esc(F.gerettet || 'Das habt ihr gerettet')}</div><p class="text">${V.beute.map(b => esc(b.wort)).join(' · ')}</p></div>` : '') + `<h1>${esc(F.frage || '')}</h1>${st.umgelagert ? `<p class="text">${st.umgelagert} Wörter haben unterwegs den Rucksack gewechselt – ${st.anteil} % der gesamten Beute.</p>` : `<p class="text">${esc(F.keine || '')}</p>`}
@@ -383,13 +403,15 @@ atlasSenden.onclick = async () => { const k = lokal.wahl; if (!k) return; await 
 
 function spiel() {
   const st = V.stage, m = V.mission, t = st.type, offen = V.open && !V.revealed;
+  if (t === 'maulwurf_los') return `<div class="klein">${esc(m.name)}</div><h1>Eure Rollen</h1><p class="text">Tippe die Karte an – aber so, dass niemand mitliest.</p>${rolle()}`;
+  if (t === 'maulwurf_wahl') return `<div class="klein">${esc(m.name)}</div>${ME.moleVote ? '' : '<p class="pause">Oben abstimmen. Ändern geht bis zur Übergabe.</p>'}${rolle()}`;
   if (t === 'deppardy') return deppardy(st);
   if (t === 'atlas') return atlasText(st);
   return spielInnen(st, m, t, offen) + (st.karte ? WWH.karte(st.karte, { neu: true }) : '');
 }
 
 function spielInnen(st, m, t, offen) {
-  let h = `<div class="klein">${esc(m.name)} · Runde ${V.round + 1} / ${m.rounds}</div>`;
+  let h = `<div class="klein">${V.test ? '<span class="signal">Testlauf</span> · ' : ''}${esc(m.name)} · Runde ${V.round + 1} / ${m.rounds}</div>`;
 
   if (t === 'schaetzen') {
     h += `<p class="text">${esc(st.q)}</p>`;
@@ -425,8 +447,7 @@ function spielInnen(st, m, t, offen) {
   else if (t === 'hoeher') {
     const cur = ME.teamAnswer && ME.teamAnswer.v, anders = st.claim === 'A' ? st.b : st.a, mein = ME.zelle && ME.zelle.mein;
     const wahl = zellModus() === 'sprecher' ? cur : mein && mein.v, txt = { W: 'Wahrheit', P: 'Propaganda' };
-    h += `<div class="plakat"><div class="klein" style="color:#f4ecda">Das Amt verkündet</div><div class="display">${esc(st.claimName)}!</div>
-      <div class="serif" style="font-size:17px">${esc(st.q)} – ${esc(st.claimName)}, nicht ${esc(anders)}.</div></div>` + meineZelle();
+    h += WWH.plakat({ ruf: st.claimName, unter: `${st.q} – ${st.claimName}, nicht ${anders}.`, urteil: V.revealed ? st.wahr : null }) + meineZelle();
     if (offen) h += zuversichtRegler();
     h += `<div class="ab">${[['W', 'Wahrheit'], ['P', 'Propaganda']].map(([x, l]) => `<button data-do="ab" data-x="${x}" class="${wahl === x ? 'an' : ''}" ${offen ? '' : 'disabled'}><b style="font-size:26px">${l}</b></button>`).join('')}</div>`;
     if (offen) h += zellVorschlaege(v => `<span class="serif">${txt[v] || v}</span>`);
@@ -521,7 +542,7 @@ actions(app, {
     catch (e) { hinweis(e.message); }
   },
   antwort: () => { const v = wert(); if (!v) return hinweis('Erst etwas eintippen'); senden({ v }); leeren(); },
-  funk: () => { const v = wert(); if (!v) return; senden({ v }); leeren(); },
+  funk: () => { const v = wert(); if (!v) return; senden({ v }); leeren(); lokal.fokus = null; const e = document.getElementById('eingabe'); if (e) e.focus(); },
   einsatz: () => { senden({ kind: 'bet', v: parseInt(wert()) || 0 }); leeren(); },
   folge: () => zelleSenden(lokal.reihe.join(''), true),
   hoch: d => { const i = +d.i, r = lokal.reihe; [r[i - 1], r[i]] = [r[i], r[i - 1]]; reiheGeaendert(); },
