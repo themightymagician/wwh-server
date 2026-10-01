@@ -112,6 +112,13 @@ details.kat .karten{display:flex;flex-direction:column;gap:10px;padding:0 14px 1
 .dkarte textarea{min-height:64px;resize:vertical;}
 .aeintrag{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1.5fr) minmax(0,.9fr) auto;gap:8px;align-items:center;border-bottom:1px solid var(--kante);padding:6px 0;}
 .aeintrag .fehl{border-color:var(--signal);}
+.regler{display:grid;grid-template-columns:130px 1fr 44px;gap:10px;align-items:center;font-size:13px;}
+.regler input{accent-color:var(--signal);width:100%;}
+.mini-sort{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:3px;}
+.mini-sort li{display:grid;grid-template-columns:1fr auto;gap:6px;align-items:center;background:var(--nacht-3);padding:3px 4px 3px 8px;font-family:var(--serif);font-size:14px;}
+.mini-sort li button{background:none;border:1px solid var(--kante-hell);color:var(--papier);width:24px;height:22px;padding:0;cursor:pointer;font-size:11px;}
+.vorschl{font-size:12px;color:var(--blass);line-height:1.5;}
+.vorschl b{color:var(--papier);font-weight:500;}
 @media (max-width:900px){.aeintrag{grid-template-columns:1fr 1fr;}}
 </style>
 </head>
@@ -165,6 +172,7 @@ function zeichnen() {
       <a class="btn klein" href="/leinwand" target="wwh_leinwand">Leinwand öffnen</a></div>`;
   const seiten = { mission: seiteMission, zentrale: seiteZentrale, agenten: seiteAgenten, plan: seitePlan, archiv: seiteArchiv, system: seiteSystem };
   render(app, seiten[ui.tab]());
+  WWH.passeText(app);
   hostUhr();
 }
 let hTakt = null, zeitDiff = 0;
@@ -215,8 +223,21 @@ function boxRegeln() {
     <div class="reihe"><span class="text">Unterwegs beschädigt:</span>${zahl('stealVerlust', S.stealVerlust, 0, 100)}<span class="blass">% der umgelagerten Wörter gehen verloren</span></div>
     <div class="reihe"><span class="text">Verzicht:</span>${zahl('verzichtBonus', S.verzichtBonus, 0, 20)}<span class="blass">Wörter Dank der Zentrale</span></div>
     <div class="reihe"><span class="text">Ziel der Zelle:</span><span class="seg"><button class="${S.ziel < 0 ? 'an' : ''}" data-do="zielart" data-x="auto">Auto</button><button class="${S.ziel > 0 ? 'an' : ''}" data-do="zielart" data-x="fest">Fest</button><button class="${S.ziel === 0 ? 'an' : ''}" data-do="zielart" data-x="aus">Aus</button></span>
-      ${S.ziel > 0 ? zahl('ziel', S.ziel, 1, 9999, 90) : ''}<span class="blass">${z.wert > 0 ? `${z.wert} Wörter${S.ziel < 0 ? ' (8 pro Person)' : ''} · jetzt ${z.stand}${S.mole.on ? ` · ohne Maulwurf ${z.ohneMaulwurf}` : ''}` : 'kein gemeinsames Ziel'}</span></div>
-    <p class="kbd">Der Rucksack des Maulwurfs zählt bei der Übergabe nicht für das Ziel. Wer umlagert, vernichtet also Wörter der Zelle.</p></div>`;
+      ${S.ziel > 0 ? zahl('ziel', S.ziel, 1, 9999, 90) : ''}${S.ziel < 0 ? zahl('zielProzent', S.zielProzent, 1, 100) + '<span class="blass">% vom Höchstwert</span>' : ''}
+      <span class="blass">${z.wert > 0 ? `${z.wert} Wörter${S.ziel < 0 ? ` (höchstens ${z.max} laut Einsatzplan)` : ''} · jetzt ${z.stand}${S.mole.on ? ` · ohne Maulwurf ${z.ohneMaulwurf}` : ''}` : 'kein gemeinsames Ziel'}</span></div>
+    <p class="kbd">„Auto“ rechnet aus dem Einsatzplan aus, wie viele Wörter die Zelle höchstens bergen kann (alle Runden, alle Personen, Deppardy-Brett und Atlas-Kurs), und nimmt davon den eingestellten Anteil. Der Rucksack des Maulwurfs zählt bei der Übergabe nicht für das Ziel. Wer umlagert, vernichtet also Wörter der Zelle.</p></div>`;
+}
+
+function boxAnzeige() {
+  const schalter = (k, an, text) => `<div class="reihe"><span class="seg"><button class="${an ? '' : 'an'}" data-do="schalter" data-k="${k}" data-x="0">Aus</button><button class="${an ? 'an' : ''}" data-do="schalter" data-k="${k}" data-x="1">An</button></span><span class="text" style="font-size:16px">${text}</span></div>`;
+  const k = S.klang || {}, mu = k.musik || {};
+  return `<div class="box"><div class="klein">Leinwand</div>
+    ${schalter('namenZeigen', S.namenZeigen, 'Echte Namen neben den Decknamen zeigen')}
+    ${schalter('beispiel', S.beispiel, 'Vor jedem Einsatz ein Beispiel zeigen (Leinwand und Geräte)')}
+    ${schalter('schluesselloch', S.schluesselloch, 'Bildarchiv durchs Schlüsselloch')}
+    <div class="reihe"><span class="seg"><button class="${k.an ? '' : 'an'}" data-do="klangan" data-x="0">Aus</button><button class="${k.an ? 'an' : ''}" data-do="klangan" data-x="1">An</button></span><span class="text" style="font-size:16px">Ton: Signaltöne${mu.url ? ' und Musik' : ''}</span>
+      ${mu.url ? `<button class="btn klein ${mu.an ? 'hell' : ''}" data-do="musikan">${mu.an ? '♪ Musik läuft' : '♪ Musik starten'}</button>` : ''}<button class="btn link" data-do="klangarchiv">Einstellen …</button></div>
+    <p class="kbd">Auf der Leinwand einmal „Ton freigeben“ klicken – das verlangt der Browser.</p></div>`;
 }
 
 function boxMaulwurf() {
@@ -241,9 +262,16 @@ function seiteZentrale() {
   if (ps) {
     links += `<div class="box alarm"><div class="klein signal">Umlagern</div>`;
     if (!S.thief) links += `<p class="gross">Gleichstand an der Spitze. Wer darf umlagern?</p><div class="reihe">${ps.winners.filter(agent).map(id => `<button class="btn" data-do="dieb" data-id="${id}">${esc(code(id))}</button>`).join('')}</div>`;
-    else links += `<p class="gross"><span class="display signal">${esc(code(S.thief))}</span> hat den Einsatz am besten erledigt und darf umlagern. Aus wessen Rucksack? <span class="blass">(genommen / angekommen)</span></p>
+    else {
+      if (!ui.uziel || ui.uziel === ui.uopfer || !agent(ui.uziel)) ui.uziel = S.thief;
+      links += `<p class="gross"><span class="display signal">${esc(code(S.thief))}</span> hat den Einsatz am besten erledigt und darf umlagern.</p>
+      <p class="text blass">Die Frage steht jetzt auf dem Gerät von ${esc(code(S.thief))}. Wer kein Gerät hat, wählt hier: erst der Rucksack, aus dem genommen wird, dann wohin.</p>
+      <div class="klein">Aus wessen Rucksack? (genommen / angekommen)</div>
       <div class="reihe">${sorted().filter(a => a.id !== S.thief && total(a.id) > 0).map(a => { const v = (S.extra.umlagerVorschau || {})[a.id] || [0, 0];
-        return `<button class="btn" data-do="opfer" data-id="${a.id}" title="nimmt ${v[0]}, davon kommen ${v[1]} an">${esc(a.code)} · ${total(a.id)} <span class="blass">(−${v[0]} / +${v[1]})</span></button>`; }).join('') || '<span class="blass">Alle Rucksäcke sind leer.</span>'}</div>`;
+        return `<button class="btn ${ui.uopfer === a.id ? 'hell' : ''}" data-do="uopfer" data-id="${a.id}" title="nimmt ${v[0]}, davon kommen ${v[1]} an">${esc(a.code)} · ${total(a.id)} <span class="blass">(−${v[0]} / +${v[1]})</span></button>`; }).join('') || '<span class="blass">Alle Rucksäcke sind leer.</span>'}</div>`;
+      if (ui.uopfer && agent(ui.uopfer)) links += `<div class="klein">Wohin?</div><div class="reihe">${sorted().filter(a => a.id !== ui.uopfer).map(a => `<button class="btn klein ${ui.uziel === a.id ? 'hell' : ''}" data-do="uziel" data-id="${a.id}">${a.id === S.thief ? 'In den eigenen Rucksack' : esc(a.code)}</button>`).join('')}</div>
+        <div><button class="btn rot" data-do="opfer">Umlagern: ${esc(code(ui.uopfer))} → ${esc(code(ui.uziel))}</button></div>`;
+    }
     links += `<button class="btn link" data-do="verzicht">Verzichtet${S.verzichtBonus ? ' (+' + S.verzichtBonus + ' Wörter)' : ''}</button></div>`;
   }
   if (S.lastSteal) links += `<p class="text" style="border-left:3px solid var(--signal);padding-left:12px">${esc(S.lastSteal)}</p>`;
@@ -258,6 +286,7 @@ function seiteZentrale() {
     links += `<div class="box hell"><div class="klein">Alle Einsätze abgeschlossen</div><h1>Die Übergabe</h1><button class="btn rot" data-do="finale">Übergabe auf der Leinwand beginnen</button></div>`;
   }
   links += boxRegeln();
+  links += boxAnzeige();
   links += boxMaulwurf();
   const fortschritt = S.plan.map((p, i) => `<span class="pill ${i === S.cur ? 'an' : ''}" style="${i < S.cur ? 'opacity:.45' : ''}">${pad(i + 1)} ${esc(((S.story || {}).missionen || {})[p.type]?.ort || G(p.type).name)}</span>`).join(' ');
   const stat = S.extra.statistik;
@@ -298,7 +327,9 @@ function seitePlan() {
       <div><b>${esc(g.name)}</b><div class="klein">${i < S.cur ? 'erledigt' : '≈ ' + Math.round(g.min * (g.ext || g.board ? 1 : p.rounds)) + ' Min.'}</div></div>
       ${p.type === 'deppardy' ? `<select class="feld kurz" style="width:180px" data-change="popt" data-i="${i}" data-k="po-${p.id}">${S.boards.map(b => `<option value="${esc(b.id)}" ${p.opt === b.id ? 'selected' : ''}>${esc(b.name)}</option>`).join('')}</select>`
         : p.type === 'atlas' ? `<select class="feld kurz" style="width:180px" data-change="popt" data-i="${i}" data-k="po-${p.id}"><option value="">Alle Sets gemischt</option>${Object.entries(S.atlasSets).map(([k, v]) => `<option value="${esc(k)}" ${p.opt === k ? 'selected' : ''}>${esc(v.name)}</option>`).join('')}</select>` : ''}
-      <span class="seg"><button class="${team ? '' : 'an'}" data-do="pmode" data-i="${i}" data-x="solo">Einzeln</button><button class="${team ? 'an' : ''}" data-do="pmode" data-i="${i}" data-x="team">Zellen</button></span>
+      <span class="reihe" style="gap:6px"><span class="seg"><button class="${team ? '' : 'an'}" data-do="pmode" data-i="${i}" data-x="solo">Einzeln</button><button class="${team ? 'an' : ''}" data-do="pmode" data-i="${i}" data-x="team">Zellen</button></span>
+        ${team && M.teamSpiele.includes(p.type) ? `<select class="feld kurz" style="width:150px;padding:6px" data-change="pzm" data-i="${i}" data-k="pz-${p.id}" title="Wie die Zelle zu ihrer Antwort kommt">${[['sprecher', 'Sprecher'], ['mehrheit', 'Abstimmung'], ['zuversicht', 'Zuversicht']].map(([k, l]) => `<option value="${k}" ${(p.zm || 'sprecher') === k ? 'selected' : ''}>${l}</option>`).join('')}</select>` : ''}
+        ${M.taktSpiele.includes(p.type) ? `<label class="klein" title="Zeittakt in Sekunden: im ersten Takt volle Wörter, danach je Takt die Hälfte. 0 = aus">Takt <input class="feld kurz" style="width:58px" type="number" min="0" max="300" data-k="pt-${p.id}" value="${p.takt || 0}" data-change="ptakt" data-i="${i}"> s</label>` : ''}</span>
       <label class="klein">Runden <input class="feld kurz" style="width:64px" type="number" min="1" data-k="pr-${p.id}" value="${p.rounds}" data-change="prounds" data-i="${i}" ${g.ext || g.board ? 'disabled' : ''}></label>
       <label class="klein">${g.kurs ? 'Punkte / Wort' : 'Wörter'} <input class="feld kurz" style="width:${g.kurs ? 76 : 64}px" type="number" min="${g.kurs ? 1 : 0}" data-k="pp-${p.id}" value="${p.pts}" data-change="ppts" data-i="${i}" title="${g.kurs ? 'Umrechnungskurs: so viele Punkte ergeben ein Wort' : 'Wörter pro Treffer'}"></label>
       <span class="reihe"><button class="btn klein" data-do="pmove" data-i="${i}" data-d="-1">↑</button><button class="btn klein" data-do="pmove" data-i="${i}" data-d="1">↓</button><button class="btn klein" data-do="pdel" data-i="${i}">✕</button></span></div>`;
@@ -306,6 +337,7 @@ function seitePlan() {
   return `<div class="stapel"><div class="reihe" style="justify-content:space-between"><h2>Einsatzplan</h2><span class="klein">${S.plan.length} Missionen · ≈ ${Math.floor(mins / 60)} h ${pad(Math.round(mins % 60))} min</span></div>
     <div class="plan">${rows}</div>
     <div class="klein">Mission anhängen</div><div class="katalog">${Object.keys(M.games).map(k => `<button class="btn klein" data-do="padd" data-x="${k}">+ ${esc(G(k).name)}</button>`).join('')}</div>
+    <p class="kbd">Zellenmodus (Rangordnung, Mehr oder weniger, Atlas): <b>Sprecher</b> – alle sehen die Vorschläge live, eine Person schickt ab · <b>Abstimmung</b> – jede Person stimmt ab, die Mehrheit gilt (gut bei ungerader Zellengröße) · <b>Zuversicht</b> – jede Stimme zählt so stark, wie sicher die Person ist (Schieberegler). Takt (Bilderschrift, Schwärzung): Wer im ersten Takt richtig antwortet, birgt alles, danach je Takt die Hälfte.</p>
     <div><button class="btn link" data-do="preset">Plan auf Standard zurücksetzen</button></div></div>`;
 }
 function planSenden(plan, cur) { S.plan = plan; if (cur != null) S.cur = cur; cmd('plan_set', { plan, cur: cur ?? S.cur }); }
@@ -313,9 +345,10 @@ function planSenden(plan, cur) { S.plan = plan; if (cur != null) S.cur = cur; cm
 // ------------------------------------------------------------------ Archiv
 function seiteArchiv() {
   const t = ui.archiv, list = S.content[t] || [];
-  const tabs = `<button class="${t === 'drehbuch' ? 'an' : ''}" data-do="atab" data-x="drehbuch">Drehbuch</button><button class="${t === 'kartei' ? 'an' : ''}" data-do="atab" data-x="kartei">Beutekartei <span class="blass">${beuteWoerter().filter(x => !(S.kartei || {})[x.wort]).length || ''}</span></button>` + M.internal.concat(M.special).map(k => `<button class="${k === t ? 'an' : ''}" data-do="atab" data-x="${k}">${esc(G(k).name)} <span class="blass">${k === 'deppardy' ? S.boards.length : k === 'atlas' ? Object.keys(S.atlasSets).length : (S.content[k] || []).length}</span></button>`).join('');
+  const tabs = `<button class="${t === 'drehbuch' ? 'an' : ''}" data-do="atab" data-x="drehbuch">Drehbuch</button><button class="${t === 'klang' ? 'an' : ''}" data-do="atab" data-x="klang">Klang</button><button class="${t === 'kartei' ? 'an' : ''}" data-do="atab" data-x="kartei">Beutekartei <span class="blass">${beuteWoerter().filter(x => !(S.kartei || {})[x.wort]).length || ''}</span></button>` + M.internal.concat(M.special).map(k => `<button class="${k === t ? 'an' : ''}" data-do="atab" data-x="${k}">${esc(G(k).name)} <span class="blass">${k === 'deppardy' ? S.boards.length : k === 'atlas' ? Object.keys(S.atlasSets).length : (S.content[k] || []).length}</span></button>`).join('');
   if (t === 'drehbuch') return archivKopf(tabs) + archivDrehbuch();
   if (t === 'kartei') return archivKopf(tabs) + archivKartei();
+  if (t === 'klang') return archivKopf(tabs) + archivKlang();
   if (t === 'deppardy') return archivKopf(tabs) + archivDeppardy();
   if (t === 'atlas') return archivKopf(tabs) + archivAtlas();
   const eintraege = list.map((e, i) => `<div class="eintrag"><span class="blass">${pad(i + 1)}</span><div class="felder">${M.fields[t].map(([key, label, kind]) => {
@@ -361,6 +394,28 @@ function archivKartei() {
       <label class="klein" style="display:flex;flex-direction:column;gap:4px">Herkunft (optional)<input class="feld" data-k="k-her" data-kf="herkunft" data-w="${esc(w)}" value="${esc(k.herkunft || '')}"></label>
       <label class="klein" style="display:flex;flex-direction:column;gap:4px">Vermerk des Amtes<select class="feld" data-kf="vermerk" data-w="${esc(w)}"><option value="">—</option>${opt.map(([key, lbl]) => `<option value="${key}" ${k.vermerk === key ? 'selected' : ''}>${lbl}</option>`).join('')}</select></label>
       ${K[w] ? `<div><button class="btn link" data-do="kdel" data-x="${esc(w)}">Karte löschen</button></div>` : ''}` : '<p class="blass">Noch keine Beutewörter im Archiv.</p>'}</div></div>`;
+}
+
+// ---- Klang: Musik in Dauerschleife und Signaltöne. Gespielt wird nur auf der Leinwand.
+function archivKlang() {
+  const k = S.klang || {}, mu = k.musik || {}, cues = k.cues || {};
+  const datei = (label, f, art, v) => `<div class="eintrag" style="grid-template-columns:minmax(0,1fr)"><label class="breit" style="display:flex;flex-direction:column;gap:4px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--blass)">${esc(label)}
+      <div class="reihe"><input class="feld" style="flex:1" data-k="kl-${f}-${art || ''}" value="${esc(v || '')}" data-change="klangurl" data-f="${f}" data-art="${art || ''}" placeholder="${f === 'cue' ? 'leer = eingebauter Signalton' : 'Datei hochladen oder Adresse'}">
+      <input type="file" accept="audio/*" data-kupload="${f}" data-art="${art || ''}">${f === 'cue' ? `<button class="btn klein" data-do="klangtest" data-x="${art}">Testen</button>` : ''}</div>
+      ${v ? `<audio controls preload="none" src="${esc(v)}" style="width:100%"></audio>` : ''}</label></div>`;
+  return `<div class="raster" style="margin-top:18px"><div class="stapel">
+      <p class="text blass">Musik und Töne spielt nur die Leinwand. Dort einmal „Ton freigeben“ klicken. Beim Abhören und während einer offenen Deppardy-Frage schweigt die Musik von selbst, bei Signaltönen wird sie kurz leiser.</p>
+      <div class="reihe"><span class="text">Ton insgesamt</span><span class="seg"><button class="${k.an ? '' : 'an'}" data-do="klangan" data-x="0">Aus</button><button class="${k.an ? 'an' : ''}" data-do="klangan" data-x="1">An</button></span></div>
+      <h2>Musik</h2>
+      <div class="reihe"><span class="seg"><button class="${mu.an ? '' : 'an'}" data-do="musikan" data-x="0">Aus</button><button class="${mu.an ? 'an' : ''}" data-do="musikan" data-x="1">Läuft</button></span>
+        <span class="klein">Lautstärke</span><input type="range" min="0" max="100" value="${mu.vol ?? 35}" data-k="kl-mvol" data-change="klangvol" data-f="musik" style="accent-color:var(--signal)"></div>
+      ${datei('Hintergrund (Zentrale, Prolog, Übergabe – läuft in Missionen leiser weiter)', 'url', '', mu.url)}
+      ${datei('Während der Spiele (optional, ersetzt den Hintergrund)', 'spiel', '', mu.spiel)}</div>
+    <div class="stapel"><h2>Signaltöne</h2>
+      <div class="reihe"><span class="seg"><button class="${k.signale ? '' : 'an'}" data-do="signale" data-x="0">Aus</button><button class="${k.signale ? 'an' : ''}" data-do="signale" data-x="1">Eingebaute Töne</button></span>
+        <span class="klein">Lautstärke</span><input type="range" min="0" max="100" value="${k.vol ?? 80}" data-k="kl-vol" data-change="klangvol" data-f="signal" style="accent-color:var(--signal)"></div>
+      <p class="text blass">Ohne eigene Datei erklingt ein eingebauter Ton. Eigene Dateien (kurz, z. B. 1–4 Sekunden) ersetzen ihn.</p>
+      ${M.cues.map(([art, label]) => datei(label, 'cue', art, cues[art])).join('')}</div></div>`;
 }
 
 function archivDrehbuch() {
@@ -514,7 +569,9 @@ function seiteMission() {
       <span class="reihe"><span class="seg">${[2, 3, 4].map(n => `<button class="${S.teamCount === n ? 'an' : ''}" data-do="tcount" data-x="${n}">${n}</button>`).join('')}</span><button class="btn klein" data-do="treroll">Neu würfeln</button></span></div>${zellenKarten()}</div>` : '';
     return `<div class="raster cockpit"><div class="stapel">${kopf}${regeln(g)}${zellen}
       <div><button class="btn rot" data-do="beginnen" data-ext="${g.ext || ''}">${g.ext ? g.name + ' öffnen und starten' : 'Einsatz beginnen'}</button></div></div>
-      <div class="stapel"><p class="text blass">Die Leinwand zeigt gerade Regeln${m.mode === 'team' ? ' und Zellen' : ''}. Die Geräte zeigen dasselbe, bei Zellen zusätzlich die eigene.</p></div></div>`;
+      <div class="stapel"><p class="text blass">Die Leinwand zeigt gerade Regeln${m.mode === 'team' ? ' und Zellen' : ''}. Die Geräte zeigen dasselbe, bei Zellen zusätzlich die eigene.</p>
+        <div class="reihe"><span class="seg"><button class="${S.beispiel ? '' : 'an'}" data-do="schalter" data-k="beispiel" data-x="0">Aus</button><button class="${S.beispiel ? 'an' : ''}" data-do="schalter" data-k="beispiel" data-x="1">An</button></span><span class="klein">Beispiel als Animation</span></div>
+        ${S.beispiel ? WWH.vorfuehrung(m.type, { zm: m.mode === 'team' ? m.zm : null, breite: '190px' }) : ''}</div></div>`;
   }
 
   if (m.type === 'deppardy' && S.dep) return `<div class="raster cockpit"><div class="stapel">${kopf}${cockpitDeppardy()}</div><div class="stapel">${punkteWertung()}</div></div>`;
@@ -569,7 +626,8 @@ function cockpitAtlas(it) {
     <div class="loesung"><div class="klein">Richtig</div><span class="display">${esc(landName(it.land))}</span>
       ${it.auchOk && it.auchOk.length ? `<p class="text">Auch richtig: ${it.auchOk.map(landName).map(esc).join(', ')}</p>` : ''}${it.notiz ? `<p class="text blass">${esc(it.notiz)}</p>` : ''}</div>
     <div class="tabelle">${(S.extra.units || []).map(u => { const t = tips[u.key], r = S.revealed ? res[u.key] : prev[u.key];
-      return `<div class="zeile"><div class="wer"><b>${esc(u.label)}</b><span>${t && t.by && u.key.startsWith('t') ? 'getippt von ' + esc(t.by === 'leitung' ? 'Moderation' : code(t.by)) : ''}</span></div>
+      const vs = u.key.startsWith('t') ? u.members.filter(id => S.vorschlaege && S.vorschlaege[id]).map(id => `<b>${esc(code(id))}</b>: ${esc(landName(S.vorschlaege[id].v))}${mission().zm === 'zuversicht' ? ` (${S.vorschlaege[id].c} %)` : ''}`) : [];
+      return `<div class="zeile"><div class="wer"><b>${esc(u.label)}</b><span>${t && t.by && u.key.startsWith('t') ? (t.by === 'zelle' ? 'Ergebnis der Zelle' : 'getippt von ' + esc(t.by === 'leitung' ? 'Moderation' : code(t.by))) : ''}</span>${vs.length ? `<div class="vorschl">${vs.join('<br>')}</div>` : ''}</div>
         <div class="mitte">${t ? `<span class="serif" style="font-size:17px">${esc(landName(t.v))}</span>` : '<span class="blass">wartet</span>'}${r ? `<span class="pill ${r.hit ? 'gut' : ''}">${r.pts} P.${r.hit ? '' : ' · ' + r.km.toLocaleString('de-DE') + ' km'}</span>` : ''}${!S.revealed && r ? '<span class="blass">(Vorschau)</span>' : ''}</div><div></div></div>`; }).join('')}</div>`;
 }
 
@@ -600,7 +658,7 @@ function bühne(m, it, step) {
   if (t === 'schaetzen') h = `<p class="gross">${esc(it.q)}</p><div class="loesung"><div class="klein">Lösung</div><span class="display">${esc(it.a)} ${esc(it.unit || '')}</span></div>`;
   if (t === 'ranking') {
     const ln = it.items.split('\n').map(s => s.trim()).filter(Boolean);
-    h = `<p class="gross">${esc(it.q)}</p><div class="loesung"><div class="klein">Richtige Folge</div><span class="display">${esc(x.rankCode)}</span>
+    h = `<p class="gross">${esc(it.q)}</p><div class="loesung"><div class="klein">Richtige Reihenfolge</div>
       <ol class="regeln" style="margin-top:8px">${ln.map(s => `<li>${esc(s)}</li>`).join('')}</ol></div>`;
   }
   if (t === 'impostor') h = `<div class="loesung"><div class="klein">Eindringling</div><span class="display">${esc(code(S.rnd.spy))}</span><p class="text">Parole: <b>${esc(it.word)}</b> · Kategorie des Eindringlings: ${esc(it.cat)}</p></div>
@@ -616,7 +674,8 @@ function bühne(m, it, step) {
   if (t === 'hoeher') h = `<div class="loesung"><div class="klein">Das Amt verkündet</div><span class="display">${esc(S.rnd.claim === 'A' ? it.a : it.b)}!</span>
       <p class="text">Richtig ist: <b>${x.propaganda === 'W' ? 'Wahrheit' : x.propaganda === 'P' ? 'Propaganda' : 'Werte prüfen'}</b></p></div><p class="gross">${esc(it.q)}</p><div class="reihe"><div class="loesung" style="flex:1"><div class="klein">A</div><span class="display">${esc(it.a)}</span><p class="text">${esc(it.av)}</p></div>
       <div class="loesung" style="flex:1"><div class="klein">B</div><span class="display">${esc(it.b)}</span><p class="text">${esc(it.bv)}</p></div></div><p class="text">Richtig: <b>${esc(x.hoeherCorrect || 'Gleichstand / Werte prüfen')}</b></p>`;
-  if (t === 'emoji') h = `<div style="font-size:72px;line-height:1.1">${esc(it.e)}</div><div class="loesung"><div class="klein">Lösung</div><span class="display">${esc(it.a)}</span></div>`;
+  if (t === 'emoji') h = `<div class="emojizeile" style="font-size:72px;line-height:1.15">${esc(it.e)}</div><div class="loesung"><div class="klein">Lösung</div><span class="display">${esc(it.a)}</span></div>`;
+  if (t === 'sound') h += rauschRegler();
   if (t === 'woerterbuch') {
     const r = S.rnd, code = id => ((agent(id) || {}).code || '?');
     h = `<div class="loesung"><div class="klein">Beschlagnahmt</div><span class="display">${esc(it.wort)}</span> <span class="klein">${esc(it.art || '')}</span><p class="text">Echt: <b>${esc(it.def)}</b></p></div>`;
@@ -637,7 +696,7 @@ function bühne(m, it, step) {
       <div class="box"><div class="reihe" style="justify-content:space-between"><span class="klein">Antworten · <span class="signal">●</span> passt zu „${esc(x.schwarzWort)}“</span>
         <button class="btn klein ${S.revealed ? 'rot' : ''}" data-do="awardschwarz">Alle ● als richtig werten</button></div>
       <div class="funk">${Object.entries(S.answers).map(([id, a]) => `<div class="${S.judged[id] === 'r' ? 'r' : ''}" style="grid-template-columns:110px 1fr auto"><b>${esc(code(id))}</b><span class="serif">${(x.schwarzMatch || {})[id] ? '<span class="signal">● </span>' : ''}${esc(a.v)}</span>
-        <span class="reihe"><button class="btn klein" data-do="judge" data-id="${id}" data-x="1">✓ +${step}</button><button class="btn klein" data-do="judge" data-id="${id}" data-x="0">✗</button></span></div>`).join('') || '<p class="blass">Noch keine Antwort.</p>'}</div></div>`;
+        <span class="reihe"><button class="btn klein" data-do="judge" data-id="${id}" data-x="1">✓ +${(x.antwortWert || {})[id] || step}</button><button class="btn klein" data-do="judge" data-id="${id}" data-x="0">✗</button></span></div>`).join('') || '<p class="blass">Noch keine Antwort.</p>'}</div></div>`;
   }
   if (t === 'wette') h = `<div class="loesung"><div class="klein">Kategorie</div><span class="display">${esc(it.cat)}</span><p class="gross">${esc(it.q)}</p><p class="text">Antwort: <b>${esc(it.a)}</b></p></div>`;
   const bw = (it.beute || '').trim();
@@ -645,13 +704,22 @@ function bühne(m, it, step) {
     + (bw ? `<div class="klein">${S.revealed ? 'Geborgen – steht jetzt auf Leinwand und Handys' : 'Beutewort dieser Runde, erscheint beim Aufdecken'}</div>${WWH.karte({ ...((S.kartei || {})[bw] || {}), wort: bw }, { klein: true })}` : '');
 }
 
+const RAUSCH_NAMEN = { tiefpass: 'Dumpf (Tiefpass)', rauschen: 'Rauschen', knistern: 'Knistern', brummen: 'Brummen', pfeifen: 'Pfeifen', verzerrung: 'Verzerrung', aussetzer: 'Aussetzer', leiern: 'Leiern' };
+function rauschRegler() {
+  const r = S.rausch || {};
+  return `<details class="box" ${ui.rauschOffen ? 'open' : ''} id="rauschbox"><summary class="klein" style="cursor:pointer">Störgeräusche · Stärke auf Stufe 1, nimmt mit jeder Stufe ab</summary>
+    ${Object.keys(M.rausch).map(k => `<div class="regler"><span>${RAUSCH_NAMEN[k] || k}</span><input type="range" min="0" max="100" step="5" value="${r[k] ?? 0}" data-k="ra-${k}" data-change="rausch" data-f="${k}"><span class="blass">${r[k] ?? 0}</span></div>`).join('')}
+    <p class="kbd">Dumpf, Verzerrung und Aussetzer wirken nur auf hochgeladene Dateien. Rauschen, Knistern, Brummen, Pfeifen und Leiern liegen auch über fremden mp3-Adressen.</p>
+    <div><button class="btn link" data-do="rauschreset">Standardwerte</button></div></details>`;
+}
+
 function funk(m, step) {
   const feed = S.feed.map((f, i) => ({ ...f, i, passt: (S.extra.feedMatch || [])[i], wert: (S.extra.feedWert || [])[i] })).sort((a, b) => a.t - b.t);
   if (!feed.length) return `<div class="box"><div class="klein">Funksprüche</div><p class="blass">Noch keine Antwort eingegangen.</p></div>`;
   const t0 = feed[0].t;
-  return `<div class="box"><div class="klein">Funksprüche, der Reihe nach · ✓ gibt ${m.type === 'zoom' ? 'je nach Zoomstufe' : '+' + step} · <span class="signal">●</span> sieht nach der Lösung aus</div><div class="funk">${feed.map(f => `<div class="${S.judged[f.id] === 'r' ? 'r' : ''}">
+  return `<div class="box"><div class="klein">Funksprüche, der Reihe nach · ✓ gibt ${m.type === 'zoom' || m.type === 'sound' ? 'je nach Stufe' : m.takt ? 'je nach Zeittakt' : '+' + step} · <span class="signal">●</span> sieht nach der Lösung aus</div><div class="funk">${feed.map(f => `<div class="${S.judged[f.id] === 'r' ? 'r' : ''}">
       <span class="blass">+${(f.t - t0).toFixed(1)} s</span><b>${esc(code(f.id))}</b><span class="serif">${f.passt ? '<span class="signal">● </span>' : ''}${esc(f.v)}</span>
-      <span class="reihe">${f.wert ? `<span class="klein">Stufe ${(f.z || 0) + 1}</span>` : ''}<button class="btn klein ${f.passt ? 'rot' : ''}" data-do="judge" data-id="${f.id}" data-i="${f.i}" data-x="1">✓${f.wert ? ' +' + f.wert : ''}</button><button class="btn klein" data-do="judge" data-id="${f.id}" data-x="0">✗</button></span></div>`).join('')}</div></div>`;
+      <span class="reihe">${f.wert && m.type !== 'emoji' ? `<span class="klein">Stufe ${(f.z || 0) + 1}</span>` : ''}<button class="btn klein ${f.passt ? 'rot' : ''}" data-do="judge" data-id="${f.id}" data-i="${f.i}" data-x="1">✓${f.wert ? ' +' + f.wert : ''}</button><button class="btn klein" data-do="judge" data-id="${f.id}" data-x="0">✗</button></span></div>`).join('')}</div></div>`;
 }
 
 function wertung(m, step) {
@@ -664,10 +732,25 @@ function wertung(m, step) {
       h += `<div class="reihe"><button class="btn ${rev && !S.awarded ? 'rot' : ''}" data-do="awardteams" ${S.awarded || !n ? 'disabled' : ''}>${S.awarded ? 'Richtige Zellen belohnt' : `+${step} an ${n} richtige Zelle${n === 1 ? '' : 'n'}`}</button>
       ${t === 'ranking' ? `<span class="klein">${S.rnd.schnellste != null ? 'Tempo-Bonus +1 an Zelle ' + 'ABCD'[S.rnd.schnellste] : 'Die schnellste richtige Zelle bekommt +1'}</span>` : ''}</div>`;
     }
+    const zm = m.zm || 'sprecher', ZMN = { sprecher: 'Sprecher', mehrheit: 'Abstimmung', zuversicht: 'Zuversicht' };
+    if (M.teamSpiele.includes(t)) h += `<div class="klein">Zellenmodus: ${ZMN[zm]}</div>`;
+    const ln = t === 'ranking' && S.rnd.item ? S.rnd.item.items.split('\n').map(z => z.trim()).filter(Boolean) : [];
+    const order = (S.rnd.order && S.rnd.order.length === ln.length) ? S.rnd.order : ln.map((_, j) => j);
+    const textVon = l => ln[order['ABCDEFGH'.indexOf(l)]] || '?';
+    const wertText = v => t === 'ranking' ? v.split('').map(textVon).map(esc).join(' › ') : t === 'hoeher' ? ({ W: 'Wahrheit', P: 'Propaganda' }[v] || esc(v)) : esc(landName(v));
     h += `<div class="tabelle">${S.teams.map((ids, i) => {
       const ta = S.teamAnswers[i], ok = (x.teamCorrect || [])[i];
-      const eingabe = (t === 'ranking' || t === 'hoeher') && S.phase === 'play'
-        ? `<input class="feld kurz" data-k="ta-${i}" value="${esc(ta ? ta.v : '')}" placeholder="${t === 'hoeher' ? 'W oder P' : 'z. B. CADB'}" data-change="teamanswer" data-i="${i}">${ta ? `<span class="pill ${ok ? 'gut' : 'schlecht'}">${ok ? 'richtig' : 'falsch'}</span>` : '<span class="blass">wartet</span>'}${ta && !ok && t === 'ranking' && x.teamPlaces ? `<span class="klein">${x.teamPlaces[i]} von ${S.rnd.item.items.split('\n').filter(z => z.trim()).length} am richtigen Platz</span>` : ''}` : '';
+      const vs = ids.filter(id => S.vorschlaege && S.vorschlaege[id]).map(id => `<b>${esc(code(id))}</b>: ${wertText(S.vorschlaege[id].v)}${zm === 'zuversicht' ? ` (${S.vorschlaege[id].c} %)` : ''}`);
+      let eingabe = '';
+      if (t === 'hoeher' && S.phase === 'play') eingabe = `<input class="feld kurz" data-k="ta-${i}" value="${esc(ta ? ta.v : '')}" placeholder="W oder P" data-change="teamanswer" data-i="${i}">`;
+      if (t === 'ranking' && S.phase === 'play') {
+        const folge = (ta ? ta.v : order.map((_, j) => 'ABCDEFGH'[j]).join('')).split('');
+        eingabe = `<ol class="mini-sort">${folge.map((l, j) => `<li><span>${esc(textVon(l))}</span><span><button data-do="tmove" data-i="${i}" data-j="${j}" data-d="-1" ${j ? '' : 'disabled'}>↑</button><button data-do="tmove" data-i="${i}" data-j="${j}" data-d="1" ${j < folge.length - 1 ? '' : 'disabled'}>↓</button></span></li>`).join('')}</ol>`;
+      }
+      if ((t === 'ranking' || t === 'hoeher') && S.phase === 'play') eingabe += (ta ? `<span class="pill ${ok ? 'gut' : 'schlecht'}">${ok ? 'richtig' : 'falsch'}</span>` : '<span class="blass">wartet</span>')
+        + (ta && !ok && t === 'ranking' && x.teamPlaces ? `<span class="klein">${x.teamPlaces[i]} von ${ln.length} am richtigen Platz</span>` : '')
+        + (ta && ta.by === 'zelle' ? `<span class="klein">${ta.n || 0} Stimme${ta.n === 1 ? '' : 'n'}</span>` : '');
+      if (vs.length) eingabe += `<div class="vorschl" style="flex-basis:100%">${vs.join(' · ')}</div>`;
       return `<div class="zeile"><div class="wer"><b>Zelle ${'ABCD'[i]}</b><span>${ids.filter(agent).map(code).map(esc).join(' · ')}</span></div>
         <div class="mitte">${eingabe}</div>
         <div class="aktion"><span class="plus">${fmtGain(S.gains[ids[0]])}</span><button class="btn klein" data-do="gteam" data-i="${i}" data-d="-${step}">−${step}</button><button class="btn klein" data-do="gteam" data-i="${i}" data-d="${step}">+${step}</button></div></div>`;
@@ -712,7 +795,16 @@ actions(app, {
   missionStart: () => cmd('mission_start'),
   finale: () => cmd('screen', { name: 'finale' }),
   dieb: d => cmd('steal_thief', { id: d.id }),
-  opfer: d => cmd('steal_victim', { id: d.id }),
+  uopfer: d => { ui.uopfer = d.id; zeichnen(); },
+  uziel: d => { ui.uziel = d.id; zeichnen(); },
+  opfer: () => { cmd('steal_victim', { id: ui.uopfer, ziel: ui.uziel || S.thief }); ui.uopfer = ui.uziel = null; },
+  schalter: d => cmd('settings', { [d.k]: d.x === '1' }),
+  klangan: d => cmd('klang_set', { klang: { an: d.x === '1' } }),
+  signale: d => cmd('klang_set', { klang: { signale: d.x === '1' } }),
+  musikan: d => cmd('klang_set', { klang: { musik: { an: d.x != null ? d.x === '1' : !S.klang.musik.an } } }),
+  klangarchiv: () => { ui.tab = 'archiv'; ui.archiv = 'klang'; zeichnen(); },
+  klangtest: d => cmd('klang_test', { art: d.x }),
+  rauschreset: () => cmd('rausch_reset'),
   verzicht: () => cmd('steal_skip'),
   add: () => { const e = document.getElementById('neuName'); const n = e.value.trim(); if (n) { cmd('agent_add', { name: n }); e.value = ''; } },
   del: d => { if (confirm(code(d.id) + ' wirklich entfernen? Das Gerät ist dann abgemeldet.')) cmd('agent_del', { id: d.id }); },
@@ -725,7 +817,7 @@ actions(app, {
   pmode: d => { const p = structuredClone(S.plan); p[+d.i].mode = d.x; planSenden(p); },
   pmove: d => { const i = +d.i, j = i + +d.d; if (j < 0 || j >= S.plan.length) return; const p = structuredClone(S.plan); [p[i], p[j]] = [p[j], p[i]]; planSenden(p); },
   pdel: d => { const i = +d.i; planSenden(S.plan.filter((_, j) => j !== i), i < S.cur ? S.cur - 1 : S.cur); },
-  padd: d => { const g = G(d.x); planSenden([...S.plan, { type: d.x, mode: g.mode, pts: g.pts, rounds: g.rounds }]); },
+  padd: d => { const g = G(d.x); planSenden([...S.plan, { type: d.x, mode: g.mode, pts: g.pts, rounds: g.rounds, zm: 'sprecher', takt: 0 }]); },
   preset: () => { if (confirm('Plan auf den Standardablauf zurücksetzen?')) cmd('plan_reset'); },
   atab: d => { ui.archiv = d.x; zeichnen(); },
   cadd: () => contentSenden([...(S.content[ui.archiv] || []), {}]),
@@ -735,6 +827,8 @@ actions(app, {
   abbruch: () => { if (confirm('Mission abbrechen? Punkte dieser Mission verfallen, die Mission bleibt offen.')) cmd('mission_abort'); },
   fertig: () => { if (S.phase === 'play' && !(S.revealed && S.round >= mission().rounds - 1) && !confirm('Es sind noch Runden offen. Trotzdem abschließen?')) return; cmd('mission_finish'); ui.tab = 'zentrale'; },
   tcount: d => cmd('teams_count', { n: +d.x }),
+  tmove: d => { const i = +d.i, j = +d.j, k = j + +d.d, ta = S.teamAnswers[i], n = (S.rnd.order || []).length;
+    const f = (ta ? ta.v : 'ABCDEFGH'.slice(0, n)).split(''); [f[j], f[k]] = [f[k], f[j]]; cmd('set_team_answer', { idx: i, v: f.join('') }); },
   treroll: () => cmd('teams_reroll'),
   beginnen: d => { if (d.ext) window.open('/leitung/' + d.ext, 'wwh_ext'); cmd('mission_begin'); },
   showq: () => cmd('show_q'),
@@ -828,6 +922,18 @@ app.addEventListener('change', async e => {
     } catch (err) { hinweis('Upload fehlgeschlagen: ' + err.message); }
     return;
   }
+  if (el.hasAttribute('data-kupload')) {
+    const f = el.files[0]; if (!f) return;
+    hinweis('Lade hoch …');
+    try {
+      const r = await fetch('/leitung/api/upload', { method: 'POST', headers: { 'X-Filename': encodeURIComponent(f.name) }, body: f });
+      const j = await r.json(); if (!j.ok) throw new Error(j.error);
+      const art = el.dataset.kupload;
+      await cmd('klang_set', { klang: art === 'cue' ? { cues: { [el.dataset.art]: j.url } } : { musik: { [art]: j.url } } });
+      hinweis('Hochgeladen');
+    } catch (err) { hinweis('Upload fehlgeschlagen: ' + err.message); }
+    return;
+  }
   if (el.hasAttribute('data-bimport')) {
     const f = el.files[0]; if (!f) return;
     try { const b = JSON.parse(await f.text()); if (!b.cats || !b.pts) throw new Error('kein Deppardy-Board'); await cmd('board_save', { board: b, neu: true }); hinweis('„' + (b.name || 'Board') + '“ importiert'); }
@@ -860,6 +966,11 @@ app.addEventListener('change', async e => {
     case 'rename': return cmd('agent_rename', { id: d.id, name: v });
     case 'prounds': { const p = structuredClone(S.plan); p[+d.i].rounds = Math.max(1, parseInt(v) || 1); return planSenden(p); }
     case 'ppts': { const p = structuredClone(S.plan); p[+d.i].pts = Math.max(0, parseInt(v) || 0); return planSenden(p); }
+    case 'pzm': { const p = structuredClone(S.plan); p[+d.i].zm = v; return planSenden(p); }
+    case 'ptakt': { const p = structuredClone(S.plan); p[+d.i].takt = Math.max(0, parseInt(v) || 0); return planSenden(p); }
+    case 'rausch': return cmd('rausch_set', { rausch: { [d.f]: +v } });
+    case 'klangvol': return cmd('klang_set', { klang: d.f === 'musik' ? { musik: { vol: +v } } : { vol: +v } });
+    case 'klangurl': return cmd('klang_set', { klang: d.f === 'cue' ? { cues: { [d.art]: v.trim() } } : { musik: { [d.f]: v.trim() } } });
     case 'content': { const list = structuredClone(S.content[ui.archiv] || []); list[+d.i] = { ...list[+d.i], [d.f]: v }; return contentSenden(list); }
     case 'answer': return cmd('set_answer', { id: d.id, v });
     case 'bet': return cmd('set_bet', { id: d.id, v: parseInt(v) || 0 });
@@ -867,7 +978,7 @@ app.addEventListener('change', async e => {
   }
 });
 app.addEventListener('input', e => { if (e.target.id === 'ksuche') { ui.ksuche = e.target.value; clearTimeout(ui.kt); ui.kt = setTimeout(zeichnen, 250); return; } const d = e.target.dataset; if (d.bf && e.target.type !== 'checkbox') boardFeld(d.bf, e.target); });
-app.addEventListener('toggle', e => { if (e.target.matches('details.kat')) { if (e.target.open) ui.offen = +e.target.dataset.ci; else if (ui.offen === +e.target.dataset.ci) ui.offen = null; } }, true);
+app.addEventListener('toggle', e => { if (e.target.id === 'rauschbox') ui.rauschOffen = e.target.open; if (e.target.matches('details.kat')) { if (e.target.open) ui.offen = +e.target.dataset.ci; else if (ui.offen === +e.target.dataset.ci) ui.offen = null; } }, true);
 // Deppardy-Tastatur im Cockpit
 document.addEventListener('keydown', e => {
   if (ui.tab !== 'mission' || !S || !S.dep || S.phase !== 'play' || !S.dep.cell) return;

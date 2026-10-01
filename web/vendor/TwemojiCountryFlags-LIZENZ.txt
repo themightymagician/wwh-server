@@ -1,0 +1,4 @@
+TwemojiCountryFlags.woff2 – aus dem npm-Paket „country-flag-emoji-polyfill“ (TalkJS, MIT).
+Die Flaggen-Grafiken stammen aus Twemoji (https://twemoji.twitter.com) und stehen unter
+Creative Commons Attribution 4.0 International (CC BY 4.0): https://creativecommons.org/licenses/by/4.0/
+Unverändert übernommen. Die Schrift enthält nur Flaggen und sorgt dafür, dass Windows statt „FR“ eine Flagge zeigt.

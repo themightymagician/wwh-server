@@ -107,6 +107,6 @@
   "zelle": "Du gehörst zur Zelle. Aber die Zentrale ist sicher: Einer von euch arbeitet für das Amt, und was er sammelt, geht der Zelle verloren. Beobachte, wer umlagert – bei der Übergabe wird abgestimmt.",
   "frage": "Wer ist der Maulwurf?",
   "enttarnt": "Enttarnt. Die Zelle beschlagnahmt den Rucksack des Maulwurfs – jede andere Person erhält {anteil} Wörter daraus.",
-  "entkommen": "Entkommen. Der Maulwurf verschwindet mit seinem Rucksack über die Grenze. Das Amt zahlt {bonus} Wörter Prämie."
+  "entkommen": "Entkommen. Der Maulwurf verschwindet mit seinem Rucksack über die Grenze. Seine Prämie von {bonus} Wörtern zahlt das Amt für Reinsprache aus eigener Kasse – kein Rucksack der Zelle wird dafür angerührt."
  }
 }

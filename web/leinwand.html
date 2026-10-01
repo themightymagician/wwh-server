@@ -11,7 +11,12 @@
 html,body{height:100%;overflow:hidden;}
 #bühne{height:100vh;display:grid;grid-template-rows:auto 1fr auto;outline:1px solid var(--kante);outline-offset:-14px;padding:clamp(28px,3.4vw,64px);gap:clamp(18px,2.4vw,40px);}
 .leiste{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:clamp(12px,.9vw,16px);letter-spacing:.2em;text-transform:uppercase;color:var(--blass);}
-.mitte{min-height:0;overflow:auto;display:flex;flex-direction:column;justify-content:safe center;gap:clamp(16px,2vw,36px);}
+/* Kein Scrollen auf der Leinwand: .fit wird bei Bedarf als Ganzes verkleinert (siehe einpassen()) */
+.mitte{min-height:0;overflow:hidden;display:flex;gap:clamp(20px,2.4vw,44px);align-items:stretch;}
+.fit{flex:1 1 0;min-width:0;display:flex;flex-direction:column;justify-content:safe center;gap:clamp(16px,2vw,36px);}
+.beiseite{flex:0 0 clamp(300px,28vw,520px);min-width:0;display:flex;flex-direction:column;justify-content:center;}
+.beiseite .karteikarte{width:100%;}
+.name-zusatz{font-family:var(--serif);font-style:italic;text-transform:none;color:var(--blass);font-size:.62em;margin-left:.4em;letter-spacing:0;}
 .titel{font-family:var(--display);text-transform:uppercase;line-height:.9;font-size:clamp(56px,8vw,170px);hyphens:auto;}
 .titel.start{font-size:clamp(48px,5.8vw,140px);}
 .zweispaltig>*{min-width:0;}
@@ -46,7 +51,16 @@ html,body{height:100%;overflow:hidden;}
 .zelle h3{margin:0;font-family:var(--display);font-weight:400;font-size:clamp(28px,2.4vw,44px);text-transform:uppercase;color:var(--signal);}
 .zelle div{font-family:var(--serif);font-size:clamp(18px,1.4vw,26px);}
 .items{display:grid;gap:12px;}
-.item{display:grid;grid-template-columns:64px 1fr auto;gap:18px;align-items:center;border:1px solid var(--kante);background:var(--nacht-2);padding:14px 20px;font-family:var(--serif);font-size:clamp(22px,2vw,38px);}
+.item{display:grid;grid-template-columns:64px 1fr auto;gap:18px;align-items:center;border:1px solid var(--kante);background:var(--nacht-2);padding:14px 20px;font-family:var(--serif);font-size:clamp(22px,2vw,38px);white-space:nowrap;}
+.zellfolgen{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;}
+.zellfolge{border:1px solid var(--kante-hell);padding:12px 16px;display:flex;flex-direction:column;gap:6px;}
+.zellfolge.richtig{border-color:var(--gruen);background:#1f2616;}
+.zellfolge h4{margin:0;font-family:var(--display);font-weight:400;text-transform:uppercase;font-size:clamp(20px,1.7vw,32px);color:var(--signal);}
+.zellfolge.richtig h4{color:var(--gruen);}
+.zellfolge ol{margin:0;padding-left:1.4em;font-family:var(--serif);font-size:clamp(16px,1.3vw,24px);line-height:1.35;white-space:nowrap;}
+.taktbalken{display:flex;flex-direction:column;gap:8px;max-width:900px;width:100%;align-self:center;}
+.taktbalken .reihe{justify-content:space-between;font-size:clamp(14px,1.1vw,20px);letter-spacing:.12em;text-transform:uppercase;color:var(--blass);}
+.taktbalken b{font-family:var(--display);font-weight:400;font-size:clamp(28px,2.6vw,50px);color:var(--signal);letter-spacing:0;}
 .item .bu{font-family:var(--display);font-size:1.4em;color:var(--signal);}
 .ab{display:grid;grid-template-columns:1fr auto 1fr;gap:clamp(18px,2vw,40px);align-items:stretch;}
 .ab .seite{border:3px solid var(--kante);padding:clamp(20px,2.4vw,44px);display:flex;flex-direction:column;gap:12px;background:var(--nacht-2);}
@@ -55,9 +69,22 @@ html,body{height:100%;overflow:hidden;}
 .ab .name{font-family:var(--serif);font-size:clamp(28px,2.8vw,56px);line-height:1.15;}
 .ab .wert{font-family:var(--display);font-size:clamp(34px,3.4vw,68px);}
 .ab .oder{align-self:center;font-family:var(--serif);font-style:italic;font-size:clamp(24px,2vw,40px);color:var(--blass);}
-.lupe{position:relative;overflow:hidden;border:1px solid var(--kante-hell);height:min(60vh,720px);aspect-ratio:4/3;max-width:100%;margin:0 auto;background:#000;}
-.lupe img{width:100%;height:100%;object-fit:contain;transition:transform 1.4s cubic-bezier(.2,.7,.2,1);}
-.emoji{font-size:clamp(100px,14vw,280px);line-height:1.05;text-align:center;}
+.lupe{position:relative;overflow:hidden;border:1px solid var(--kante-hell);height:min(60vh,720px);aspect-ratio:4/3;max-width:100%;margin:0 auto;background:#000;flex-shrink:0;}
+.lupe img{width:100%;height:100%;object-fit:contain;transition:transform 1.4s cubic-bezier(.2,.7,.2,1);display:block;}
+/* Bildarchiv: Blick durchs Schlüsselloch einer Aktenschrank-Tür */
+.lupe.schloss{border-color:#3a2a1a;background:
+  radial-gradient(ellipse 60% 50% at 50% 45%,rgba(255,220,160,.06),transparent 70%),
+  repeating-linear-gradient(92deg,rgba(0,0,0,.18) 0 3px,transparent 3px 11px),
+  linear-gradient(180deg,#3b2717,#2a1b10 55%,#1d130b);}
+.lupe.schloss .loch{position:absolute;inset:0;background:#000;
+  -webkit-mask:var(--schluesselloch) center/auto 88% no-repeat;mask:var(--schluesselloch) center/auto 88% no-repeat;
+  transition:-webkit-mask-size 1.8s cubic-bezier(.5,0,.2,1),mask-size 1.8s cubic-bezier(.5,0,.2,1);}
+.lupe.schloss .schild{position:absolute;inset:0;pointer-events:none;background:var(--schild) center/auto 88% no-repeat;transition:opacity 1s ease;filter:drop-shadow(0 4px 10px rgba(0,0,0,.6));}
+.lupe.schloss.offen .loch{-webkit-mask-size:auto 520%;mask-size:auto 520%;}
+.lupe.schloss.offen .schild{opacity:0;}
+:root{--schluesselloch:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 150'%3E%3Ccircle cx='50' cy='46' r='34'/%3E%3Cpath d='M30 66 L14 148 H86 L70 66 Z'/%3E%3C/svg%3E");
+  --schild:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 150'%3E%3Cpath d='M50 12 A34 34 0 0 1 70 66 L86 148 H14 L30 66 A34 34 0 0 1 50 12 Z' fill='none' stroke='%23b08a4a' stroke-width='3'/%3E%3C/svg%3E");}
+.emoji{font-size:clamp(100px,14vw,280px);line-height:1.15;text-align:center;font-family:var(--emoji);}
 .loesung{align-self:flex-start;}
 .loesung .stempel{font-size:clamp(28px,3vw,60px);}
 .zahl{font-family:var(--display);font-size:clamp(80px,11vw,220px);line-height:.9;color:var(--signal);}
@@ -71,6 +98,9 @@ html,body{height:100%;overflow:hidden;}
 .fuss i{font-style:normal;color:var(--signal);margin-left:4px;}
 .status{color:var(--signal);}
 .ton{position:fixed;right:24px;bottom:24px;z-index:100;}
+.vf-platz{display:flex;justify-content:center;}
+.vf-platz .vf{--vfb:clamp(200px,15vw,280px);--vft:clamp(240px,20vw,380px);}
+.vf-platz .vf-text{font-size:clamp(15px,1.15vw,22px);min-height:3.6em;}
 .stapel{display:flex;flex-direction:column;gap:clamp(12px,1.4vw,24px);}
 /* Deppardy */
 .brett{display:grid;gap:8px;height:100%;min-height:0;}
@@ -81,7 +111,7 @@ html,body{height:100%;overflow:hidden;}
 .depkarte{display:grid;grid-template-rows:auto 1fr auto;gap:clamp(12px,1.6vw,26px);height:100%;min-height:0;}
 .depkopf{display:flex;justify-content:space-between;align-items:baseline;gap:20px;}
 .depkopf .wert{font-family:var(--display);font-size:clamp(48px,5vw,100px);color:var(--signal);line-height:.9;}
-.depfrage{font-family:var(--serif);font-size:clamp(30px,3.3vw,66px);line-height:1.22;max-width:32ch;overflow:auto;}
+.depfrage{font-family:var(--serif);font-size:clamp(30px,3.3vw,66px);line-height:1.22;max-width:32ch;}
 .depfrage img{max-height:42vh;max-width:100%;display:block;margin:10px 0;}
 .depfrage audio{display:none;}
 .deptipp{font-family:var(--serif);font-style:italic;font-size:clamp(22px,2vw,38px);color:var(--papier-matt);border-left:4px solid var(--signal);padding-left:18px;}
@@ -101,7 +131,7 @@ html,body{height:100%;overflow:hidden;}
 .plakat .klein{color:#f4ecda;opacity:.85;}
 .urteil{align-self:flex-start;border:6px solid;font-family:var(--display);text-transform:uppercase;font-size:clamp(34px,4vw,80px);padding:4px 24px;transform:rotate(-6deg);}
 .karten-haufen{display:flex;flex-wrap:wrap;gap:clamp(12px,1.4vw,24px);}
-.karten-haufen .kk{background:#f4edd8;color:#2b251b;border-left:6px solid #c8463a;padding:14px 20px;font-family:var(--serif);font-size:clamp(20px,1.9vw,36px);box-shadow:0 8px 18px rgba(0,0,0,.4);display:flex;gap:14px;align-items:baseline;}
+.karten-haufen .kk{background:#f4edd8;color:#2b251b;border-left:6px solid #c8463a;padding:14px 20px;font-family:var(--serif);font-size:clamp(20px,1.9vw,36px);box-shadow:0 8px 18px rgba(0,0,0,.4);display:flex;gap:14px;align-items:baseline;white-space:nowrap;}
 .karten-haufen .kk b{font-family:var(--display);font-weight:400;color:#c23522;}
 .textblock{font-family:var(--serif);font-size:clamp(30px,3.4vw,68px);line-height:1.35;white-space:pre-line;background:#f4edd8;color:#2b251b;padding:clamp(24px,3vw,56px);max-width:1200px;box-shadow:0 20px 50px rgba(0,0,0,.45);}
 .textblock .schwarz{background:#15130f;color:transparent;border-radius:3px;padding:0 .15em;}
@@ -133,6 +163,7 @@ html,body{height:100%;overflow:hidden;}
 
 /* Einsatzbefehl als Akte */
 .zentrale{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,min(980px,56vw)) minmax(0,1fr);gap:clamp(20px,2.4vw,48px);align-items:center;min-height:0;}
+.zentrale>.rechts .vf{align-self:center;}
 .zentrale>.links{display:flex;flex-direction:column;gap:22px;align-items:flex-end;}
 .zentrale>.rechts{display:flex;flex-direction:column;gap:22px;align-items:flex-start;}
 .akte{position:relative;background:linear-gradient(178deg,#efe6d1 0%,#e7dcc3 100%);color:#1d1a14;padding:clamp(22px,min(3vw,4.6vh),54px) clamp(30px,3.4vw,60px) clamp(20px,min(2.6vw,4vh),44px);
@@ -182,7 +213,6 @@ html,body{height:100%;overflow:hidden;}
 <div id="bühne"><div></div><div class="mitte"><p class="blass">Verbinde mit der Zentrale …</p></div><div></div></div>
 <audio id="ton" preload="auto"></audio>
 <div class="weltkarte" id="leinwandkarte" hidden></div>
-<div id="lwkarte" style="position:fixed;right:3.5vw;bottom:12vh;width:min(470px,30vw);z-index:20" hidden></div>
 <div class="ton" id="tonsperre" hidden><button class="btn rot" id="tonan">Ton freigeben</button></div>
 <script src="/qrcode.js"></script>
 <script src="/vendor/d3.v7.min.js"></script>
@@ -194,12 +224,15 @@ const { esc, pad, poll, render, fmtGain } = WWH;
 const bühne = document.getElementById('bühne'), ton = document.getElementById('ton'), sperre = document.getElementById('tonsperre');
 let V = null, audioN = null, tonFrei = false, letzteLupe = null;
 
-document.getElementById('tonan').onclick = () => { tonFrei = true; sperre.hidden = true; ton.play().then(() => ton.pause()).catch(() => {}); try { fxBauen().ctx.resume(); } catch (e) {} if (V) steuereTon(); };
+document.getElementById('tonan').onclick = () => { tonFrei = true; sperre.hidden = true; ton.play().then(() => ton.pause()).catch(() => {}); try { fxBauen().ctx.resume(); } catch (e) {} if (V) { steuereTon(); klangSteuern(); } };
 
 let zeitDiff = 0, alt = null;
-poll(() => '/api/view?full=1', d => { V = d.view; zeitDiff = V.now - Date.now() / 1000; klang(); zeichnen(); steuereTon(); alt = V; });
+poll(() => '/api/view?full=1', d => { V = d.view; zeitDiff = V.now - Date.now() / 1000; klang(); zeichnen(); steuereTon(); klangSteuern(); cuesSpielen(); alt = V; });
 
 const byId = () => Object.fromEntries(V.agents.map(a => [a.id, a]));
+// Deckname, auf Wunsch mit echtem Namen daneben
+const wer = a => a ? esc(a.code) + (V.namenZeigen && a.name ? `<span class="name-zusatz">${esc(a.name)}</span>` : '') : '?';
+const werId = id => wer(byId()[id]);
 const regeln = m => `<ol class="regeln">${m.rules.map(r => `<li>${esc(r)}</li>`).join('')}</ol>`;
 
 function zeichnen() {
@@ -217,7 +250,7 @@ function zeichnen() {
       <div class="stapel" style="align-items:flex-start">
         ${V.joinOpen ? `<div class="qr">${WWH.qr(url, 8)}</div><div class="url">${esc(url.replace(/^https?:\/\//, ''))}</div>` : `<div class="unter">Beitritt geschlossen</div>`}
         <div class="klein">${V.agents.length} Agent${V.agents.length === 1 ? '' : 'en'} eingetroffen</div>
-        <div class="chips">${V.agents.map(a => `<span class="chip an">${esc(a.code)}</span>`).join('')}</div>
+        <div class="chips">${V.agents.map(a => `<span class="chip an">${wer(a)}</span>`).join('')}</div>
       </div></div>`;
   }
 
@@ -246,7 +279,7 @@ function zeichnen() {
   else if (V.phase === 'intro') {
     const mi = SY().mission || {};
     oben = `<span>Einsatz ${pad(V.cur + 1)} / ${pad(V.planLen)} · ${esc(m.name)}</span><span>${tageText()}</span>`;
-    mitte = `<div class="zentrale"><div class="links"></div>${akte(m)}<div class="rechts"></div></div>`;
+    mitte = `<div class="zentrale"><div class="links"></div>${akte(m)}<div class="rechts">${V.beispiel ? `<div class="vf-platz">${WWH.vorfuehrung(m.type, { zm: m.mode === 'team' ? m.zm : null })}</div>` : ''}</div></div>`;
     unten = m.mode === 'team' && V.teams && V.teams.length ? zellenleiste() : rucksaecke();
   }
 
@@ -264,13 +297,24 @@ function zeichnen() {
   }
   if (!unten && V.screen === 'mission') unten = fuss();
   if (V.mole && V.mole.voteOpen && V.screen !== 'finale') oben = oben.replace(/<\/span>$/, ` · <span class="status">${esc(V.mole.frage)} ${V.mole.voted.length}/${V.agents.length}</span></span>`);
-  render(bühne, `<div class="leiste">${oben}</div><div class="mitte">${mitte}</div><div>${unten}</div>`);
+  render(bühne, `<div class="leiste">${oben}</div><div class="mitte"><div class="fit">${mitte}</div>${beiseite()}</div><div>${unten}</div>`);
+  einpassen();
   lupe();
   uhr();
+  taktUhr();
   atlasKarte();
-  beuteKarte();
   szene();
 }
+
+// Nichts darf scrollen oder unschön umbrechen: erst einzelne Zeilen, dann den ganzen Inhalt verkleinern
+function einpassen() {
+  const mitte = bühne.querySelector('.mitte'), fit = bühne.querySelector('.fit');
+  if (!mitte || !fit) return;
+  fit.style.zoom = '';
+  WWH.passeText(bühne);
+  WWH.passeBox(mitte, fit, 0.4);
+}
+window.addEventListener('resize', () => { if (V) { einpassen(); atlasKarte(); } });
 
 const SY = () => V.story || {};
 function tageText() { const h = SY().stunden || 0, t = Math.floor(h / 24), r = h % 24;
@@ -307,11 +351,11 @@ function akteEnde() {
     <div class="akte-lage" style="border:none;margin-bottom:0">Packt eure Rucksäcke. Die Zentrale wartet an der Grenze.</div></div>`;
 }
 function zellenleiste() {
-  return `<div class="zellenleiste">${V.teams.map((t, i) => `<div class="zl"><b>Zelle ${'ABCD'[i]}</b><span>${t.map(a => esc(a.code)).join(' · ')}</span></div>`).join('')}</div>`;
+  return `<div class="zellenleiste">${V.teams.map((t, i) => `<div class="zl"><b>Zelle ${'ABCD'[i]}</b><span>${t.map(wer).join(' · ')}</span></div>`).join('')}</div>`;
 }
 function rucksaecke() {
   if (!V.ranking || !V.ranking.length) return '';
-  return `<div class="rucksaecke">${V.ranking.map((r, i) => `<div class="rs ${i === 0 && r.total > 0 ? 'erster' : ''}"><span class="nr">${pad(i + 1)}</span><b>${esc(r.code)}</b><span class="zahl">${r.total}</span>${r.gain ? `<span class="plus">${fmtGain(r.gain)}</span>` : ''}</div>`).join('')}</div>`;
+  return `<div class="rucksaecke">${V.ranking.map((r, i) => `<div class="rs ${i === 0 && r.total > 0 ? 'erster' : ''}"><span class="nr">${pad(i + 1)}</span><b>${wer(r)}</b><span class="zahl">${r.total}</span>${r.gain ? `<span class="plus">${fmtGain(r.gain)}</span>` : ''}</div>`).join('')}</div>`;
 }
 function zielSaeule() {
   const z = V.zielLive; if (!z || !(z.ziel > 0)) return '';
@@ -345,12 +389,17 @@ const SZENEN = {
   rucksack: () => `<div class="sz"><svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
       <defs><linearGradient id="szR" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#000" stop-opacity=".6"/><stop offset="1" stop-color="#000" stop-opacity="0"/></linearGradient></defs>
       <polygon points="1060,800 1380,800 1640,900 1180,900" fill="url(#szR)"/>
-      <g fill="#0f0d0a" stroke="#2c271f" stroke-width="5">
-        <path d="M1130 300 q0 -80 90 -80 h40 q90 0 90 80 v470 q0 30 -30 30 h-160 q-30 0 -30 -30 z"/>
-        <path d="M1150 330 q90 60 180 0 v90 q-90 40 -180 0 z"/>
-        <rect x="1165" y="560" width="150" height="140" rx="18"/>
-        <path d="M1200 220 q40 -70 80 0" fill="none" stroke-width="16"/></g>
-      <g transform="translate(1330 560) rotate(12)"><line x1="0" y1="0" x2="0" y2="60" stroke="#8a3a2c" stroke-width="3"/>
+      <g fill="#0f0d0a" stroke="#2c271f" stroke-width="5" stroke-linejoin="round">
+        <path d="M1188 352 q-58 0 -62 64 l-12 330 q-2 44 42 50 h12" fill="none" stroke-width="18"/>
+        <path d="M1352 352 q58 0 62 64 l12 330 q2 44 -42 50 h-12" fill="none" stroke-width="18"/>
+        <path d="M1110 400 q0 -120 120 -128 h80 q120 8 120 128 v350 q0 46 -46 46 h-228 q-46 0 -46 -46 z"/>
+        <path d="M1110 412 q160 -62 320 0 q-14 -150 -150 -150 h-20 q-136 0 -150 150 z"/>
+        <path d="M1110 412 q160 70 320 0 v34 q-160 78 -320 0 z"/>
+        <rect x="1160" y="580" width="220" height="168" rx="26"/>
+        <path d="M1160 624 h220" fill="none" stroke-width="4"/>
+        <rect x="1254" y="452" width="32" height="54" rx="6"/>
+        <path d="M1232 272 q38 -64 76 0" fill="none" stroke-width="16"/></g>
+      <g transform="translate(1418 600) rotate(12)"><line x1="0" y1="0" x2="0" y2="60" stroke="#8a3a2c" stroke-width="3"/>
         <rect x="-38" y="60" width="76" height="46" fill="#c23522" fill-opacity=".7"/>
         <text x="0" y="92" text-anchor="middle" font-family="Anton, Impact, sans-serif" font-size="26" fill="#f4ecda" fill-opacity=".85">WWH</text></g>
     </svg><div class="sz-vignette"></div></div>`,
@@ -405,9 +454,10 @@ function uebergabe() {
     if (!mw) return `<div class="titel2">${esc(mo.frage)}</div><div class="unter">${mo.voteOpen ? 'Abstimmung läuft – auf euren Geräten.' : 'Die Zentrale zählt die Stimmen.'}</div>
       <div class="chips">${V.agents.map(a => `<span class="chip ${mo.voted.includes(a.id) ? 'an' : ''}">${esc(a.code)}</span>`).join('')}</div>`;
     const tally = Object.entries(mw.tally).sort((a, b) => b[1] - a[1]);
-    return `<div class="zweispaltig"><div class="stapel enthuellt"><div class="klein">Der Maulwurf war</div><div class="titel">${esc(mw.code)}</div><div class="unter">alias ${esc(mw.name)}</div>
+    return `<div class="zweispaltig"><div class="stapel enthuellt"><div class="klein">Der Maulwurf war</div><div class="titel" data-fit>${esc(mw.code)}</div><div class="unter">alias ${esc(mw.name)}</div>
         <span class="stempel" style="align-self:flex-start;font-size:clamp(26px,2.6vw,50px)">${mw.caught ? 'Enttarnt' : 'Entkommen'}</span></div>
       <div class="stapel"><div class="frage" style="font-size:clamp(22px,2vw,38px)">${esc(mw.text)}</div>
+        ${!mw.caught && mw.praemie ? `<div class="zettel alarm" style="transform:rotate(-1deg)"><div class="klein">Zahlungsanweisung · Amt für Reinsprache</div><div class="inhalt">${mw.praemie} Wörter Prämie an ${esc(mw.code)} – aus der Kasse des Amtes. Die Rucksäcke der Zelle bleiben unberührt.</div></div>` : ''}
         <div class="chips">${tally.map(([c, n]) => `<span class="chip an">${esc(c)}: ${n}</span>`).join('') || '<span class="klein">Keine Stimmen</span>'}</div></div></div>`;
   }
   if (art === 'ziel') {
@@ -421,35 +471,43 @@ function uebergabe() {
   if (art === 'hueter' && V.zielErgebnis && !V.zielErgebnis.erreicht)
     return `<div class="zweispaltig"><div class="stapel"><div class="klein">Das Archiv ist verloren</div><div class="titel">Kein Hüter</div><div class="unter">Übrig bleiben die Rucksäcke.</div></div><div class="rang">${rangliste(V.ranking)}</div></div>`;
   if (art === 'kartei') {
+    const gerettet = V.beute.filter(k => !k.verloren), weg = V.beute.filter(k => k.verloren);
     return `<div class="stapel" style="gap:clamp(14px,1.6vw,26px);min-height:0"><div class="reihe" style="justify-content:space-between;align-items:baseline"><div class="titel2">${esc(F.gerettet || 'Das habt ihr gerettet')}</div>
-      <span class="klein">${V.beute.length} Karteikarte${V.beute.length === 1 ? '' : 'n'}</span></div>
-      <div class="kartei" style="grid-template-columns:repeat(auto-fill,minmax(clamp(240px,19vw,340px),1fr))">${V.beute.map(k => WWH.karte(k, { klein: true })).join('')}</div></div>`;
+      <span class="klein">${gerettet.length} Karteikarte${gerettet.length === 1 ? '' : 'n'} gerettet${weg.length ? ` · ${weg.length} verloren` : ''}</span></div>
+      <div class="kartei" style="grid-template-columns:repeat(auto-fill,minmax(clamp(240px,19vw,340px),1fr))">${gerettet.concat(weg).map(k => WWH.karte(k, { klein: true })).join('')}</div></div>`;
   }
   if (art === 'bilanz') {
     const zeile = (label, wert, sub) => `<div class="stapel" style="gap:6px;border-top:1px solid var(--kante);padding-top:14px"><div class="klein">${label}</div><div class="titel2" style="font-size:clamp(26px,2.5vw,50px);overflow-wrap:anywhere">${wert}</div>${sub ? `<div class="unter" style="font-size:clamp(16px,1.3vw,24px)">${sub}</div>` : ''}</div>`;
-    const beute = V.beute && V.beute.length ? `<div class="stapel" style="gap:8px"><div class="klein">${esc(F.gerettet || 'Das habt ihr gerettet')}</div><div class="chips">${V.beute.map(b => `<span class="chip an">${esc(b.wort)}</span>`).join('')}</div></div>` : '';
+    const geb = (V.beute || []).filter(b => !b.verloren);
+    const beute = geb.length ? `<div class="stapel" style="gap:8px"><div class="klein">${esc(F.gerettet || 'Das habt ihr gerettet')}</div><div class="chips">${geb.map(b => `<span class="chip an">${esc(b.wort)}</span>`).join('')}</div></div>` : '';
     let h = `<div class="titel2">${esc(F.frage || '')}</div>`;
     if (!st.umgelagert) return h + `<div class="frage">${esc(F.keine || '')}</div>` + beute;
     h += `<div class="zellen" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:28px">
-      ${zeile('Umgelagert', st.umgelagert + ' Wörter', st.anteil + ' % der gesamten Beute, in ' + st.zuege + ' Zügen')}
-      ${st.unterwegs ? zeile('Unterwegs zerstört', st.unterwegs + ' Wörter', 'beim Umlagern beschädigt – für alle verloren') : ''}
-      ${st.meist ? zeile('Die größte Raffhand', st.meist.codes.map(esc).join(' & '), st.meist.wert + ' Wörter aus fremden Rucksäcken genommen') : ''}
+      ${zeile('Umgelagert', woerter(st.umgelagert), st.anteil + ' % der gesamten Beute, in ' + st.zuege + ' Zügen')}
+      ${st.unterwegs ? zeile('Unterwegs zerstört', woerter(st.unterwegs), 'beim Umlagern beschädigt – für alle verloren') : ''}
+      ${st.fuerAndere ? zeile('Zur Sicherheit', woerter(st.fuerAndere), 'in fremde Rucksäcke umgelagert – ' + st.fuerSich + ' landeten im eigenen') : ''}
+      ${st.meist ? zeile('Die größte Raffhand', st.meist.codes.map(esc).join(' & '), st.meist.wert + ' Wörter für sich selbst umgelagert') : ''}
       ${st.erleichtert ? zeile('Am meisten erleichtert', st.erleichtert.codes.map(esc).join(' & '), st.erleichtert.wert + ' Wörter verloren') : ''}
       ${st.unbestechlich && st.unbestechlich.length ? zeile('Unbestechlich', st.unbestechlich.map(esc).join(', '), 'durfte umlagern – und hat verzichtet') : ''}
       ${st.maulwurf ? zeile('Der Maulwurf', esc(st.maulwurf.code), st.maulwurf.genommen + ' Wörter umgelagert') : ''}</div>`;
     return h + beute;
   }
-  const [c, ...rest] = V.ranking;
+  // Ist der Maulwurf aufgeflogen oder entkommen, kann er nicht Hüter des Archivs werden
+  const [c, ...rest] = V.hueterRanking || V.ranking;
   return c ? `<div class="zweispaltig"><div class="stapel enthuellt">
       <div class="klein">${esc(F.hueter || 'Hüterin oder Hüter des Archivs')}</div>
-      <div class="titel">${esc(c.code)}</div><div class="unter">alias ${esc(c.name)}</div>
+      <div class="titel" data-fit>${esc(c.code)}</div><div class="unter">alias ${esc(c.name)}</div>
       <span class="stempel" style="align-self:flex-start;font-size:clamp(24px,2.4vw,46px)">${c.total} Wörter</span></div>
       <div class="rang rest">${rest.map((r, i) => `<div><span class="nr">${pad(i + 2)}</span><b>${esc(r.code)}<small>${esc(r.name)}</small></b><span class="pk">${r.total}</span></div>`).join('')}</div></div>` : '';
 }
 
+const woerter = n => n + (n === 1 ? ' Wort' : ' Wörter');
 function modus(m) { return m.mode === 'team' ? 'Zelleneinsatz' : 'Einzeleinsatz'; }
 function rangliste(list) { return list.map((r, i) => `<div><span class="nr">${pad(i + 1)}</span><b>${esc(r.code)}<small>${esc(r.name)}</small></b><span class="pk">${r.total}</span></div>`).join(''); }
 function zellen() { return `<div class="zellen">${V.teams.map((t, i) => `<div class="zelle"><h3>Zelle ${'ABCD'[i]}</h3>${t.map(a => `<div>${esc(a.code)} <span class="blass">· ${esc(a.name)}</span></div>`).join('')}</div>`).join('')}</div>`; }
+// Wie viele aus der Zelle haben schon gewählt (Abstimmung / Zuversicht)?
+function zellStimmen(st, i) { const m = V.mission; if (!m || !m.zm || m.zm === 'sprecher' || !st.teamVotes) return '';
+  return ` · ${st.teamVotes[i] || 0}/${(V.teams[i] || []).length}`; }
 function status() {
   if (V.revealed) return 'aufgedeckt';
   const st = V.stage;
@@ -459,18 +517,18 @@ function status() {
   return V.open ? 'Abgabe offen' : 'Abgabe geschlossen';
 }
 function fuss() {
-  return `<div class="fuss">${V.ranking.map(r => `<span><b>${esc(r.code)}</b>${r.total}${r.gain ? `<i>${fmtGain(r.gain)}</i>` : ''}</span>`).join('')}</div>`;
+  return `<div class="fuss">${V.ranking.map(r => `<span><b>${wer(r)}</b>${r.total}${r.gain ? `<i>${fmtGain(r.gain)}</i>` : ''}</span>`).join('')}</div>`;
 }
 function abgegeben(ids, label) {
   const set = new Set(ids || []);
-  return `<div class="stapel" style="gap:8px"><div class="klein">${label}</div><div class="chips">${V.agents.map(a => `<span class="chip ${set.has(a.id) ? 'an' : ''}">${esc(a.code)}</span>`).join('')}</div></div>`;
+  return `<div class="stapel" style="gap:8px"><div class="klein">${label}</div><div class="chips">${V.agents.map(a => `<span class="chip ${set.has(a.id) ? 'an' : ''}">${wer(a)}</span>`).join('')}</div></div>`;
 }
 function zellenAbgabe(st, pruef) {
   const done = new Set(st.teamAnswered || []);
   return `<div class="chips">${V.teams.map((t, i) => {
     const ans = st.teamAnswers ? st.teamAnswers[i] : null;
     const ok = pruef && ans ? pruef(ans) : null;
-    return `<span class="chip ${done.has(String(i)) ? 'an' : ''}" style="${ok === true ? 'border-color:var(--gruen);color:var(--gruen)' : ''}">Zelle ${'ABCD'[i]}${ans ? ': ' + esc(ans) + (ok === true ? ' ✓' : ok === false ? ' ✗' : '') : ''}</span>`;
+    return `<span class="chip ${done.has(String(i)) ? 'an' : ''}" style="${ok === true ? 'border-color:var(--gruen);color:var(--gruen)' : ''}">Zelle ${'ABCD'[i]}${ans ? (ok === true ? ' ✓' : ok === false ? ' ✗' : '') : zellStimmen(st, i)}</span>`;
   }).join('')}</div>`;
 }
 function loesung(text) { return `<div class="loesung enthuellt"><span class="stempel">${esc(text)}</span></div>`; }
@@ -482,27 +540,31 @@ function bühnenbild(st, m) {
       let h = `<div class="frage">${esc(st.q)}</div>`;
       if (!rev) return h + abgegeben(st.answered, 'Schätzung abgegeben');
       h += `<div class="stapel enthuellt"><div class="klein">Lösung</div><div class="zahl">${esc(Number.isNaN(WWH.deNum(st.a)) ? st.a : WWH.deNum(st.a).toLocaleString('de-DE'))} <span style="font-size:.35em;color:var(--papier)">${esc(st.unit || '')}</span></div></div>`;
-      h += `<div class="tipps">${(st.guesses || []).map(g => `<div class="tipp ${st.closest.includes(g.id) ? 'nah' : ''}"><b>${esc(ids[g.id] ? ids[g.id].code : '?')}</b><span>${esc(g.v)}${g.diff != null && !st.closest.includes(g.id) ? ` <span class="blass">± ${g.diff.toLocaleString('de-DE')}</span>` : ''}</span></div>`).join('')}</div>`;
+      h += `<div class="tipps">${(st.guesses || []).map(g => `<div class="tipp ${st.closest.includes(g.id) ? 'nah' : ''}"><b>${wer(ids[g.id])}</b><span>${esc(g.v)}${g.diff != null && !st.closest.includes(g.id) ? ` <span class="blass">± ${g.diff.toLocaleString('de-DE')}</span>` : ''}</span></div>`).join('')}</div>`;
       return h;
     }
     case 'ranking': {
-      const sol = rev ? st.solution : null;
+      const sol = rev ? st.solution : null, text = Object.fromEntries(st.items.map(it => [it.letter, it.text]));
       let h = `<div class="frage" style="font-size:clamp(26px,2.6vw,50px)">${esc(st.q)}</div>`;
-      if (!rev) h += `<div class="karten-haufen">${st.items.map((it, i) => `<div class="kk" style="transform:rotate(${[-4, 3, -2, 5, -3, 2][i % 6]}deg) translateY(${[0, 14, -6, 8, -10, 4][i % 6]}px)"><span>${esc(it.text)}</span></div>`).join('')}</div>`;
-      else h += `<div class="items enthuellt">${sol.map((s, i) => `<div class="item"><span class="bu">${pad(i + 1)}</span><span>${esc(s)}</span><span></span></div>`).join('')}</div>`;
-      return h + zellenAbgabe(st, rev ? a => a === st.code : null);
+      if (!rev) return h + `<div class="karten-haufen">${st.items.map((it, i) => `<div class="kk" style="transform:rotate(${[-4, 3, -2, 5, -3, 2][i % 6]}deg) translateY(${[0, 14, -6, 8, -10, 4][i % 6]}px)"><span>${esc(it.text)}</span></div>`).join('')}</div>` + zellenAbgabe(st, null);
+      h += `<div class="items enthuellt">${sol.map((s, i) => `<div class="item"><span class="bu">${pad(i + 1)}</span><span>${esc(s)}</span><span></span></div>`).join('')}</div>`;
+      // Die Reihenfolgen der Zellen als Text – keine Buchstabencodes
+      return h + `<div class="zellfolgen">${V.teams.map((t, i) => { const a = (st.teamAnswers || {})[i];
+        return `<div class="zellfolge ${a === st.code ? 'richtig' : ''}"><h4>Zelle ${'ABCD'[i]} ${a ? (a === st.code ? '✓' : '✗') : ''}</h4>${a ? `<ol>${a.split('').map(l => `<li>${esc(text[l] || '?')}</li>`).join('')}</ol>` : '<span class="klein">keine Abgabe</span>'}</div>`; }).join('')}</div>`;
     }
     case 'impostor': {
       if (!rev) return `<div class="titel2">Reihum ein Wort</div><div class="unter">Wer kennt die Parole nicht?</div>${V.open ? abgegeben(st.voted, 'Stimme abgegeben') : ''}`;
       const tally = Object.entries(st.tally || {}).sort((a, b) => b[1] - a[1]);
-      return `<div class="klein">Der Eindringling war</div><div class="titel enthuellt">${esc(st.spy)}</div>
+      return `<div class="klein">Der Eindringling war</div><div class="titel enthuellt" data-fit>${esc(st.spy)}</div>
         <div class="unter">Parole: ${esc(st.word)} · Kategorie: ${esc(st.cat)}</div>
-        <div class="chips">${tally.map(([id, n]) => `<span class="chip an">${esc(ids[id] ? ids[id].code : '?')}: ${n}</span>`).join('')}</div>
+        <div class="chips">${tally.map(([id, n]) => `<span class="chip an">${wer(ids[id])}: ${n}</span>`).join('')}</div>
         ${st.spyResult ? `<div class="frage" style="font-size:clamp(22px,2vw,38px)">${st.spyResult === 'caught' ? 'Erkannt. Alle anderen bergen Wörter.' : 'Unerkannt. Der Eindringling birgt doppelt.'}</div>` : ''}`;
     }
-    case 'zoom':
-      return `<div class="lupe"><img id="lupe" src="${esc(st.img)}" alt="" style="transform-origin:${st.origin};transform:scale(${letzteLupe && letzteLupe.img === st.img ? letzteLupe.scale : st.scale})"></div>
+    case 'zoom': {
+      const start = letzteLupe && letzteLupe.img === st.img ? letzteLupe : st, bild = `<img id="lupe" src="${esc(st.img)}" alt="" style="transform-origin:${st.origin};transform:${lupenTrafo(start)}">`;
+      return `${st.loch ? `<div class="lupe schloss ${letzteLupe && letzteLupe.img === st.img && letzteLupe.offen ? 'offen' : ''}" id="lupenrahmen"><div class="loch">${bild}</div><div class="schild"></div></div>` : `<div class="lupe">${bild}</div>`}
         <div class="leiste"><span>Stufe ${st.step} / ${st.steps}</span><span>${st.attempts || 0} Funksprüche</span></div>${rev ? loesung(st.a) + gewinner(st) : ''}`;
+    }
     case 'sound':
       return `<div class="titel2">Abgehört</div>${/youtu\.?be/.test(st.src || '') ? `<div class="unter">Der Mitschnitt läuft in einem eigenen Tab.</div>` : `<div class="unter">Band ${V.round + 1}${rev ? '' : ` · Rauschen Stufe ${st.stufe} von ${st.stufen}`}</div>
         <div class="uhr" style="max-width:520px"><i style="width:${100 * (st.stufe - 1) / Math.max(1, st.stufen - 1)}%"></i></div>`}
@@ -515,64 +577,86 @@ function bühnenbild(st, m) {
         <span class="unter">${esc(st.a)}: ${esc(st.av)} · ${esc(st.b)}: ${esc(st.bv)}</span></div>`;
       const txt = { W: 'Wahrheit', P: 'Propaganda' };
       return h + `<div class="chips">${V.teams.map((t, i) => { const a = st.teamAnswers ? st.teamAnswers[i] : null, fertig = (st.teamAnswered || []).includes(String(i));
-        return `<span class="chip ${fertig ? 'an' : ''}" style="${a && a === st.wahr ? 'border-color:var(--gruen);color:var(--gruen)' : ''}">Zelle ${'ABCD'[i]}${a ? ': ' + txt[a] + (a === st.wahr ? ' ✓' : ' ✗') : ''}</span>`; }).join('')}</div>`;
+        return `<span class="chip ${fertig ? 'an' : ''}" style="${a && a === st.wahr ? 'border-color:var(--gruen);color:var(--gruen)' : ''}">Zelle ${'ABCD'[i]}${a ? ': ' + txt[a] + (a === st.wahr ? ' ✓' : ' ✗') : zellStimmen(st, i)}</span>`; }).join('')}</div>`;
     }
     case 'woerterbuch': {
-      let h = `<div class="reihe" style="align-items:baseline;gap:20px"><div class="titel2">${esc(st.wort)}</div>${st.art ? `<span class="unter">${esc(st.art)}</span>` : ''}</div>`;
+      let h = `<div class="reihe" style="align-items:baseline;gap:20px;flex-wrap:nowrap"><div class="titel2" data-fit style="flex:0 1 auto">${esc(st.wort)}</div>${st.art ? `<span class="unter">${esc(st.art)}</span>` : ''}</div>`;
       if (st.phase === 'faelschen') return h + `<div class="unter">Erfindet eine Bedeutung, die echt klingt – im Gerät.</div>` + abgegeben(st.answered, 'Fälschung abgegeben');
       const code = id => ((V.agents.find(a => a.id === id) || {}).code || '?');
       h += `<div class="optionen">${(st.optionen || []).map(o => `<div class="option ${rev && o.echt ? 'echt enthuellt' : ''}"><span class="bu">${'ABCDEFGHIJKLMNOP'[o.nr]}</span><span>${esc(o.text)}</span>
-        ${rev ? `<span class="von">${o.echt ? 'echt' : 'Fälschung von ' + esc(code(o.von))}<br>${o.stimmen.length ? o.stimmen.map(code).map(esc).join(', ') : '–'}</span>` : '<span></span>'}</div>`).join('')}</div>`;
+        ${rev ? `<span class="von">${o.echt ? 'echt' : 'Fälschung von ' + werId(o.von)}<br>${o.stimmen.length ? o.stimmen.map(werId).join(', ') : '–'}</span>` : '<span></span>'}</div>`).join('')}</div>`;
       if (!rev) h += abgegeben(st.voted, 'Stimme abgegeben');
       return h;
     }
     case 'schwaerzung': {
       const balken = '█'.repeat(Math.max(3, st.laenge || 5));
       let h = `<div class="textblock">${esc(st.vor)}${rev ? `<span class="enthuellt-wort enthuellt">${esc(st.wort)}</span>` : `<span class="schwarz">${balken}</span>`}${esc(st.nach)}</div>
-        ${st.quelle ? `<div class="unter" style="font-size:clamp(18px,1.4vw,28px)">${esc(st.quelle)}</div>` : ''}`;
+        ${st.quelle ? `<div class="unter" style="font-size:clamp(18px,1.4vw,28px)">${esc(st.quelle)}</div>` : ''}${taktBalken(st)}`;
       if (!rev) return h + abgegeben(st.answered, 'Antwort abgegeben');
       const code = id => ((V.agents.find(a => a.id === id) || {}).code || '?');
-      return h + `<div class="chips">${(st.antworten || []).map(a => `<span class="chip ${a.ok ? 'an' : ''}" style="${a.ok ? 'border-color:var(--gruen);color:var(--gruen)' : ''}">${esc(code(a.id))}: ${esc(a.v)}</span>`).join('')}</div>`;
+      return h + `<div class="chips">${(st.antworten || []).map(a => `<span class="chip ${a.ok ? 'an' : ''}" style="${a.ok ? 'border-color:var(--gruen);color:var(--gruen)' : ''}">${werId(a.id)}: ${esc(a.v)}</span>`).join('')}</div>`;
     }
     case 'emoji':
-      return `<div class="emoji">${esc(st.e)}</div>${st.cat ? `<div class="unter" style="text-align:center">Kategorie: ${esc(st.cat)}</div>` : ''}
-        <div class="klein" style="text-align:center">${st.attempts || 0} Funksprüche</div>${rev ? `<div style="text-align:center">${loesung(st.a)}</div>` + gewinner(st) : ''}`;
+      return `<div class="emoji" data-fit="0.15">${esc(st.e)}</div>${st.cat ? `<div class="unter" style="text-align:center">Kategorie: ${esc(st.cat)}</div>` : ''}${taktBalken(st)}
+        <div class="klein" style="text-align:center">${st.attempts || 0} Funksprüche</div>${rev ? `<div style="text-align:center">${loesung(st.a)}</div><div style="text-align:center">${gewinner(st)}</div>` : ''}`;
     case 'atlas': {
       const ids = new Set(st.answered || []);
-      let h = `<div class="atlaskopf"><div class="stapel" style="gap:6px"><div class="unter" style="font-size:clamp(18px,1.6vw,30px)">${esc(st.marke)}</div><div class="titel2">${esc(st.text)}</div></div>
-        <div class="chips">${st.units.map(u => `<span class="chip ${ids.has(u.key) ? 'an' : ''}">${esc(u.label)}${rev && st.res[u.key] ? ' · ' + st.res[u.key].pts : ''}</span>`).join('')}</div></div>`;
+      const unitName = u => u.key.startsWith('t') ? esc(u.label) : werId(u.key);
+      let h = `<div class="atlaskopf"><div class="stapel" style="gap:6px;min-width:0;flex:1"><div class="unter" style="font-size:clamp(18px,1.6vw,30px)">${esc(st.marke)}</div><div class="titel2" data-fit>${esc(st.text)}</div></div>
+        <div class="chips">${st.units.map(u => `<span class="chip ${ids.has(u.key) ? 'an' : ''}">${unitName(u)}${rev && st.res[u.key] ? ' · ' + st.res[u.key].pts : ''}</span>`).join('')}</div></div>`;
       h += `<div id="kartenplatz"></div>`;
       if (rev) h += `<div class="reihe"><span class="stempel enthuellt" style="font-size:clamp(22px,2.2vw,42px)">${esc(st.zielName)}</span>${st.notiz ? `<span class="unter" style="font-size:clamp(18px,1.5vw,28px);flex:1">${esc(st.notiz)}</span>` : ''}</div>`;
       return h;
     }
     case 'wette': {
-      let h = `<div class="klein">Kategorie</div><div class="titel2">${esc(st.cat)}</div>`;
+      let h = `<div class="klein">Kategorie</div><div class="titel2" data-fit>${esc(st.cat)}</div>`;
       if (!st.q) return h + abgegeben(st.betPlaced, 'Einsatz gesetzt');
       h += `<div class="frage">${esc(st.q)}</div>`;
       if (!rev) return h + abgegeben(st.answered, 'Antwort abgegeben');
       h += loesung(st.a);
       h += `<div class="tipps">${V.agents.map(a => { const b = (st.bets || {})[a.id] || 0, d = (st.betDone || {})[a.id];
-        return `<div class="tipp ${d === 'r' ? 'nah' : ''}"><b>${esc(a.code)}</b><span>${d === 'r' ? '+' + b : d === 'w' ? '−' + b : 'setzt ' + b}</span></div>`; }).join('')}</div>`;
+        return `<div class="tipp ${d === 'r' ? 'nah' : ''}"><b>${wer(a)}</b><span>${d === 'r' ? '+' + b : d === 'w' ? '−' + b : 'setzt ' + b}</span></div>`; }).join('')}</div>`;
       return h;
     }
   }
   return '';
 }
 function gewinner(st) {
-  const ids = byId(), w = (st.winners || []).map(id => ids[id] && ids[id].code).filter(Boolean);
-  return w.length ? `<div class="unter">Geknackt von ${w.map(esc).join(', ')}</div>` : '';
+  const ids = byId(), w = (st.winners || []).filter(id => ids[id]).map(id => wer(ids[id]));
+  return w.length ? `<div class="unter">Geknackt von ${w.join(', ')}</div>` : '';
+}
+// Zeittakt (Bilderschrift, Schwärzung): volle Wörter nur im ersten Takt, danach jeweils die Hälfte
+function taktBalken(st) {
+  if (!st.takt || V.revealed) return '';
+  return `<div class="taktbalken"><div class="reihe"><span>Richtig bringt jetzt <b id="taktwert"></b></span><span id="taktrest"></span></div><div class="uhr"><i id="taktbalken"></i></div></div>`;
+}
+let taktTimer = null, taktStufe = null;
+function taktUhr() {
+  clearInterval(taktTimer);
+  const tk = V.screen === 'mission' && V.stage && V.stage.takt;
+  if (!tk || V.revealed) { taktStufe = null; return; }
+  const takt = () => {
+    const vergangen = Math.max(0, Date.now() / 1000 + zeitDiff - tk.t0), stufe = Math.floor(vergangen / tk.s);
+    const wert = Math.max(1, Math.round(tk.voll * Math.pow(0.5, stufe))), rest = tk.s - (vergangen % tk.s);
+    const w = document.getElementById('taktwert'), r = document.getElementById('taktrest'), b = document.getElementById('taktbalken');
+    if (w) w.textContent = wert + ' Wort' + (wert === 1 ? '' : 'e');
+    if (r) r.textContent = wert > 1 ? 'noch ' + Math.ceil(rest) + ' s' : 'ab jetzt fest';
+    if (b) b.style.width = (wert > 1 ? 100 * rest / tk.s : 0) + '%';
+    if (taktStufe !== null && stufe > taktStufe && wert >= 1 && stufe <= 8) signal('takt');
+    taktStufe = stufe;
+  };
+  takt(); taktTimer = setInterval(takt, 200);
 }
 
-// ---- Beutewort als Karteikarte, schiebt sich nach dem Aufdecken ins Bild
+// ---- Beutewort als Karteikarte: bekommt eine eigene Spalte, damit sie nie Antworten oder Punkte verdeckt
 let letzteKarte = '';
-function beuteKarte() {
-  const el = document.getElementById('lwkarte');
+function beiseite() {
   const st = V.screen === 'mission' && V.stage;
   const k = st && (st.karte || (st.cell && st.cell.karte));
-  if (!k) { el.hidden = true; letzteKarte = ''; return; }
-  const neu = k.wort !== letzteKarte;
-  if (neu || el.hidden) { el.innerHTML = WWH.karte(k, { neu: true }); letzteKarte = k.wort; }
-  el.hidden = false;
+  if (!k) { letzteKarte = ''; return ''; }
+  const key = k.wort + (k.verloren ? '-' : '+'), neu = key !== letzteKarte;
+  letzteKarte = key;
+  return `<aside class="beiseite">${WWH.karte(k, { neu })}</aside>`;
 }
 
 // ---- Deppardy
@@ -614,18 +698,20 @@ function uhr() {
 
 // Töne wie im Deppardy-Original, erzeugt im Browser
 let ac = null;
-function ton_(art) {
+function ton_(art, lautst) {
   if (!tonFrei) return;
+  if (V && V.klang && V.klang.an === false && typeof art === 'string') return;
   const folgen = { open: [[440, 0, .09], [660, .08, .14]], hint: [[587, 0, .12]], reveal: [[523, 0, .1], [659, .09, .1], [784, .18, .26]],
     plus: [[880, 0, .08], [1175, .07, .16]], minus: [[311, 0, .16], [208, .13, .26]], timeout: [[420, 0, .22], [300, .22, .22], [190, .44, .5]],
     buzz: [[988, 0, .07], [988, .09, .07]] };
   try {
     ac = ac || new (window.AudioContext || window.webkitAudioContext)();
     if (ac.state === 'suspended') ac.resume();
-    (folgen[art] || []).forEach(([f, t, d]) => {
+    const spitze = 0.18 * (lautst ?? ((V && V.klang && V.klang.vol != null ? V.klang.vol : 80) / 80));
+    (Array.isArray(art) ? art : folgen[art] || []).forEach(([f, t, d]) => {
       const o = ac.createOscillator(), g = ac.createGain(), s0 = ac.currentTime + t;
       o.type = 'triangle'; o.frequency.value = f; o.connect(g); g.connect(ac.destination);
-      g.gain.setValueAtTime(0.0001, s0); g.gain.linearRampToValueAtTime(0.18, s0 + .012); g.gain.exponentialRampToValueAtTime(0.0001, s0 + d);
+      g.gain.setValueAtTime(0.0001, s0); g.gain.linearRampToValueAtTime(Math.max(0.0002, spitze), s0 + .012); g.gain.exponentialRampToValueAtTime(0.0001, s0 + d);
       o.start(s0); o.stop(s0 + d + .03);
     });
   } catch (e) {}
@@ -668,45 +754,91 @@ async function atlasKarte() {
   lwKarte.klassen(kl);
   lwKarte.notizen({ pins, linien });
 }
-window.addEventListener('resize', () => { if (V) atlasKarte(); });
 
-// Vergrößerungsglas: vom alten auf den neuen Zoom animieren
+// Vergrößerungsglas: vom alten auf den neuen Zoom animieren.
+// Mit Schlüsselloch wird der Bildausschnitt in die Mitte geschoben, sonst läge er neben dem Loch.
+function lupenTrafo(st) {
+  const [ox, oy] = String(st.origin || '50% 50%').split(' ').map(parseFloat), max = 10;
+  const f = st.loch ? Math.max(0, Math.min(1, (st.scale - 1) / (max - 1))) : 0;
+  return `translate(${((50 - ox) * f).toFixed(2)}%, ${((50 - oy) * f).toFixed(2)}%) scale(${st.scale})`;
+}
 function lupe() {
   const img = document.getElementById('lupe');
   const st = V.stage;
   if (!img || !st || st.type !== 'zoom') { letzteLupe = null; return; }
-  requestAnimationFrame(() => requestAnimationFrame(() => { img.style.transform = 'scale(' + st.scale + ')'; }));
-  letzteLupe = { img: st.img, scale: st.scale };
+  const rahmen = document.getElementById('lupenrahmen'), offen = !!V.revealed;
+  requestAnimationFrame(() => requestAnimationFrame(() => { img.style.transform = lupenTrafo(st); if (rahmen) rahmen.classList.toggle('offen', offen); }));
+  letzteLupe = { img: st.img, scale: st.scale, origin: st.origin, loch: st.loch, offen };
 }
 
 // Ton: gesteuert aus dem Steuermodul
-// Rauschen: Tiefpass und Bandrauschen, je Stufe etwas klarer. Klappt nur mit Dateien vom eigenen Server –
-// fremde Adressen spielen ohne Filter, weil der Browser deren Ton sonst stumm schaltet.
+// Störgeräusche „Abgehört“: Tiefpass, Verzerrung und Aussetzer bearbeiten das Band selbst – das klappt nur mit
+// Dateien vom eigenen Server. Rauschen, Knistern, Brummen, Pfeifen und Leiern liegen auch über fremden Adressen.
+// Jede Störung nimmt mit den Stufen ab; die Stärke stellt die Moderation im Cockpit ein.
 const tonFx = new Audio(); tonFx.preload = 'auto';
 let fx = null;
-const RAUSCH = [[320, .20], [650, .14], [1300, .09], [2600, .05], [6000, .02], [20000, 0]];
+function rauschPuffer(ctx, art) {
+  const n = ctx.sampleRate * 3, puffer = ctx.createBuffer(1, n, ctx.sampleRate), d = puffer.getChannelData(0);
+  if (art === 'rauschen') { let b = 0; for (let i = 0; i < n; i++) { const w = Math.random() * 2 - 1; b = 0.97 * b + 0.03 * w; d[i] = b * 5 + w * 0.35; } }
+  else { for (let i = 0; i < n; i++) d[i] = 0; for (let k = 0; k < n / 900; k++) { const p = Math.floor(Math.random() * (n - 40)), a = (Math.random() * 2 - 1) * (Math.random() < .15 ? 1 : .45);
+    for (let j = 0; j < 30; j++) d[p + j] += a * Math.exp(-j / 4); } }
+  return puffer;
+}
 function fxBauen() {
   if (fx) return fx;
   const ctx = new (window.AudioContext || window.webkitAudioContext)();
-  const quelle = ctx.createMediaElementSource(tonFx), tief = ctx.createBiquadFilter(), laut = ctx.createGain();
-  tief.type = 'lowpass'; tief.Q.value = 0.9;
-  const puffer = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate), d = puffer.getChannelData(0);
-  let b = 0; for (let i = 0; i < d.length; i++) { b = 0.97 * b + 0.03 * (Math.random() * 2 - 1); d[i] = b * 6 + (Math.random() * 2 - 1) * 0.25; }
-  const rauschen = ctx.createBufferSource(); rauschen.buffer = puffer; rauschen.loop = true;
-  const rauschLaut = ctx.createGain(); rauschLaut.gain.value = 0;
-  quelle.connect(tief); tief.connect(laut); laut.connect(ctx.destination);
-  rauschen.connect(rauschLaut); rauschLaut.connect(ctx.destination); rauschen.start();
-  fx = { ctx, tief, rauschLaut };
+  const g = (v = 0) => { const x = ctx.createGain(); x.gain.value = v; return x; };
+  // Band: Quelle → Tiefpass → (trocken | verzerrt) → Aussetzer → Ausgang
+  const quelle = ctx.createMediaElementSource(tonFx), tief = ctx.createBiquadFilter(), trocken = g(1), nass = g(0), aus = g(1);
+  tief.type = 'lowpass'; tief.Q.value = 1.1; tief.frequency.value = 20000;
+  const verzerr = ctx.createWaveShaper(), kurve = new Float32Array(1024);
+  for (let i = 0; i < 1024; i++) { const x = i / 512 - 1; kurve[i] = Math.tanh(x * 9) * 0.6 + Math.round(x * 6) / 10; }
+  verzerr.curve = kurve; verzerr.oversample = '2x';
+  quelle.connect(tief); tief.connect(trocken); tief.connect(verzerr); verzerr.connect(nass);
+  trocken.connect(aus); nass.connect(aus); aus.connect(ctx.destination);
+  // Störgeräusche, unabhängig vom Band
+  const quelleAus = (puffer, filter) => { const q = ctx.createBufferSource(); q.buffer = puffer; q.loop = true; q.start(); if (filter) { q.connect(filter); return filter; } return q; };
+  const gR = g(), gK = g(), gB = g(), gP = g();
+  quelleAus(rauschPuffer(ctx, 'rauschen')).connect(gR);
+  const hoch = ctx.createBiquadFilter(); hoch.type = 'highpass'; hoch.frequency.value = 1200;
+  quelleAus(rauschPuffer(ctx, 'knistern'), hoch).connect(gK);
+  const brumm = ctx.createOscillator(), brumm2 = ctx.createOscillator(), brummTief = ctx.createBiquadFilter();
+  brumm.type = 'sawtooth'; brumm.frequency.value = 50; brumm2.type = 'sine'; brumm2.frequency.value = 150;
+  brummTief.type = 'lowpass'; brummTief.frequency.value = 420; brumm.connect(brummTief); brumm2.connect(brummTief); brummTief.connect(gB); brumm.start(); brumm2.start();
+  const pfeif = ctx.createOscillator(), lfo = ctx.createOscillator(), lfoTiefe = g(420);
+  pfeif.type = 'sine'; pfeif.frequency.value = 2100; lfo.frequency.value = 0.23; lfo.connect(lfoTiefe); lfoTiefe.connect(pfeif.frequency); pfeif.connect(gP); pfeif.start(); lfo.start();
+  [gR, gK, gB, gP].forEach(x => x.connect(ctx.destination));
+  fx = { ctx, tief, trocken, nass, aus, gR, gK, gB, gP, f: 0, werte: {} };
   return fx;
 }
-function fxStufe(stufe) {
-  if (!fx) return;
-  const [f, r] = RAUSCH[Math.max(0, Math.min(RAUSCH.length - 1, stufe))], t = fx.ctx.currentTime;
-  fx.tief.frequency.setTargetAtTime(f, t, 0.3);
-  fx.rauschLaut.gain.setTargetAtTime(tonFx.paused ? 0 : r, t, 0.2);
+const STOER = { rauschen: .55, knistern: .7, brummen: .22, pfeifen: .045 };
+// Stärke 0…1 je Regler auf der aktuellen Stufe (Stufe 1 = voll, letzte Stufe = sauber)
+function stoerung(st, r) { const n = Math.max(2, st.stufen || 6), f = V.revealed ? 0 : Math.max(0, 1 - (st.stufe - 1) / (n - 1)); return f * ((st.rausch || {})[r] ?? 0) / 100; }
+function fxStufe() {
+  const st = V && V.stage;
+  if (!fx || !st || st.type !== 'sound') return;
+  const t = fx.ctx.currentTime, el = aktivesBand(), laeuft = el && !el.paused;
+  const tiefSt = stoerung(st, 'tiefpass');
+  fx.tief.frequency.setTargetAtTime(20000 * Math.pow(160 / 20000, tiefSt), t, 0.3);
+  const v = stoerung(st, 'verzerrung');
+  fx.nass.gain.setTargetAtTime(v * 0.9, t, 0.2); fx.trocken.gain.setTargetAtTime(1 - v * 0.55, t, 0.2);
+  Object.entries(STOER).forEach(([k, max]) => fx['g' + k[0].toUpperCase()].gain.setTargetAtTime(laeuft ? stoerung(st, k) * max : 0, t, 0.15));
 }
-tonFx.addEventListener('play', () => { if (V && V.stage && V.stage.type === 'sound') fxStufe(V.revealed ? 99 : V.stage.stufe - 1); });
-tonFx.addEventListener('pause', () => { if (fx) fx.rauschLaut.gain.setTargetAtTime(0, fx.ctx.currentTime, 0.1); });
+function aktivesBand() { return !tonFx.paused ? tonFx : !ton.paused ? ton : (tonFx.src ? tonFx : ton.src ? ton : null); }
+[tonFx, ton].forEach(a => { a.addEventListener('play', fxStufe); a.addEventListener('pause', fxStufe); a.preservesPitch = false; a.mozPreservesPitch = false; a.webkitPreservesPitch = false; });
+// Leiern (Tonhöhe schwankt) und Aussetzer – laufen per Takt, solange ein Band spielt
+let aussetzerBis = 0;
+setInterval(() => {
+  const st = V && V.stage, el = aktivesBand();
+  if (!st || st.type !== 'sound' || !el || el.paused) return;
+  const t = performance.now() / 1000, l = stoerung(st, 'leiern');
+  try { el.playbackRate = Math.max(0.5, 1 + l * (0.035 * Math.sin(t * 2 * Math.PI * 0.55) + 0.015 * Math.sin(t * 2 * Math.PI * 3.3))); } catch (e) {}
+  const a = stoerung(st, 'aussetzer'), jetzt = Date.now();
+  if (jetzt > aussetzerBis && Math.random() < a * 0.09) aussetzerBis = jetzt + 80 + Math.random() * 420 * a;
+  const leise = jetzt < aussetzerBis ? 0.06 : 1;
+  if (el === tonFx && fx) fx.aus.gain.setTargetAtTime(leise, fx.ctx.currentTime, 0.015);
+  else el.volume = leise;
+}, 90);
 
 function steuereTon() {
   const st = V.stage;
@@ -718,9 +850,10 @@ function steuereTon() {
     if (el.src !== abs) { el.src = abs; }
     if (!anderes.paused) anderes.pause();
     if (!tonFrei) sperre.hidden = false;
-    if (eigen && tonFrei) { fxBauen(); fxStufe(V.revealed ? 99 : st.stufe - 1); }
+    if (tonFrei) { fxBauen(); fxStufe(); }
   } else {
-    [ton, tonFx].forEach(a => { if (a.src) { a.pause(); a.removeAttribute('src'); a.load(); } });
+    [ton, tonFx].forEach(a => { if (a.src) { a.pause(); a.removeAttribute('src'); a.load(); a.playbackRate = 1; a.volume = 1; } });
+    if (fx) fxStufe();
   }
   const n = V.audio ? V.audio.n : 0;
   if (audioN === null) { audioN = n; return; }
@@ -728,10 +861,66 @@ function steuereTon() {
   audioN = n;
   if (!src) return;
   const a = V.audio.a;
-  if (eigen && fx && fx.ctx.state === 'suspended') fx.ctx.resume();
+  if (fx && fx.ctx.state === 'suspended') fx.ctx.resume();
   if (a === 'play') el.play().catch(() => { sperre.hidden = false; });
   else if (a === 'pause') el.pause();
   else if (a === 'restart') { el.currentTime = 0; el.play().catch(() => { sperre.hidden = false; }); }
+}
+
+// ---- Musik und Signaltöne (Einstellungen im Steuermodul unter „Archiv → Klang“)
+const musik = new Audio(); musik.loop = true; musik.preload = 'auto';
+let musikZiel = 0, musikDuck = 1, musikRampe = null;
+function musikLautstaerke() {
+  clearInterval(musikRampe);
+  musikRampe = setInterval(() => {
+    const ziel = musikZiel * musikDuck, d = ziel - musik.volume;
+    if (Math.abs(d) < 0.02) { musik.volume = Math.max(0, Math.min(1, ziel)); clearInterval(musikRampe); if (ziel === 0 && !musik.paused) musik.pause(); return; }
+    musik.volume = Math.max(0, Math.min(1, musik.volume + Math.sign(d) * 0.04));
+  }, 60);
+}
+function klangSteuern() {
+  const k = V.klang || {}, mu = k.musik || {};
+  const anKlang = k.an && (k.signale || mu.an || Object.keys(k.cues || {}).length);
+  if (anKlang && !tonFrei) sperre.hidden = false;
+  let url = '', vol = (mu.vol ?? 35) / 100;
+  if (k.an && mu.an) {
+    const imSpiel = V.screen === 'mission' && V.phase === 'play', st = V.stage;
+    // Beim Abhören und während einer offenen Deppardy-Frage schweigt die Musik
+    if (imSpiel && st && (st.type === 'sound' || (st.type === 'deppardy' && st.cell))) url = '';
+    else if (imSpiel) { url = mu.spiel || mu.url; if (!mu.spiel) vol *= 0.5; }
+    else url = mu.url;
+  }
+  musikZiel = url && tonFrei ? vol : 0;
+  if (url) {
+    const abs = new URL(url, location.href).href;
+    if (musik.src !== abs) { musik.src = abs; musik.volume = 0; }
+    if (tonFrei && musik.paused) musik.play().catch(() => { sperre.hidden = false; });
+  }
+  musikLautstaerke();
+}
+const MELODIE = {
+  einsatz: [[392, 0, .16], [392, .18, .16], [523, .36, .5]], los: [[523, 0, .1], [784, .1, .28]],
+  aufdecken: [[523, 0, .1], [659, .09, .1], [784, .18, .26]], treffer: [[880, 0, .08], [1175, .07, .18]],
+  ende: [[523, 0, .14], [659, .14, .14], [784, .28, .14], [1047, .42, .6]], umlagern: [[330, 0, .16], [262, .16, .34]],
+  verzicht: [[523, 0, .12], [659, .12, .32]], tafel: [[196, 0, .7], [294, .05, .6]],
+  uebergabe: [[392, 0, .2], [523, .2, .2], [659, .4, .2], [784, .6, .8]], gerettet: [[523, 0, .2], [659, .18, .2], [784, .36, .2], [1047, .54, .9]],
+  verloren: [[440, 0, .3], [370, .3, .3], [311, .6, .3], [247, .9, .9]], enttarnt: [[880, 0, .1], [440, .12, .1], [880, .24, .4]],
+  entkommen: [[300, 0, .22], [250, .22, .22], [200, .44, .7]], takt: [[660, 0, .07], [440, .08, .1]] };
+function signal(art) {
+  const k = V && V.klang;
+  if (!k || !k.an || !tonFrei) return;
+  const vol = (k.vol ?? 80) / 100, url = (k.cues || {})[art];
+  if (url) { const a = new Audio(url); a.volume = vol; a.play().catch(() => {}); }
+  else if (k.signale) ton_(MELODIE[art] || [], vol * 1.25);
+  else return;
+  musikDuck = 0.35; musikLautstaerke(); clearTimeout(signal.t); signal.t = setTimeout(() => { musikDuck = 1; musikLautstaerke(); }, 2200);
+}
+let letzterCue = null;
+function cuesSpielen() {
+  const liste = V.cues || [], hoch = liste.reduce((m, c) => Math.max(m, c.n), 0);
+  if (letzterCue === null) { letzterCue = hoch; return; }        // beim Laden nichts nachspielen
+  liste.filter(c => c.n > letzterCue).slice(-2).forEach((c, i) => setTimeout(() => signal(c.art), i * 450));
+  letzterCue = Math.max(letzterCue, hoch);
 }
 document.addEventListener('keydown', e => { if (e.key === 'f') document.documentElement.requestFullscreen && document.documentElement.requestFullscreen(); });
 </script>
