@@ -1,0 +1,12 @@
+# Laufzeitdaten: Passwort, Spielstand mit Geräte-Schlüsseln, Uploads, Sicherungen
+data/
+*.vor-import-*
+*.defekt-*
+
+# Python
+__pycache__/
+*.pyc
+
+# System
+.DS_Store
+Thumbs.db

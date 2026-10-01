@@ -1,0 +1,1056 @@
+{
+ "gerichte": {
+  "name": "Nationalgerichte",
+  "marke": "Woher stammt dieses Gericht?",
+  "eintraege": [
+   {
+    "text": "Bibimbap",
+    "land": "410",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Ceviche",
+    "land": "604",
+    "auchOk": [],
+    "notiz": "Der Streit mit Ecuador um die Urheberschaft ist alt."
+   },
+   {
+    "text": "Feijoada",
+    "land": "76",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Pierogi",
+    "land": "616",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Injera",
+    "land": "231",
+    "auchOk": [
+     "232"
+    ],
+    "notiz": "Das Sauerteigfladenbrot aus Teff, auch in Eritrea Grundnahrungsmittel."
+   },
+   {
+    "text": "Bobotie",
+    "land": "710",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Phở",
+    "land": "704",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Moussaka",
+    "land": "300",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Tajine",
+    "land": "504",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Poutine",
+    "land": "124",
+    "auchOk": [],
+    "notiz": "Aus Québec: Pommes, Bratensauce, Käsebruch."
+   },
+   {
+    "text": "Rendang",
+    "land": "360",
+    "auchOk": [
+     "458"
+    ],
+    "notiz": ""
+   },
+   {
+    "text": "Ramen",
+    "land": "392",
+    "auchOk": [],
+    "notiz": "Chinesischen Ursprungs, aber in Japan zur eigenen Gattung geworden."
+   },
+   {
+    "text": "Haggis",
+    "land": "826",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Paella",
+    "land": "724",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Fondue",
+    "land": "756",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Pastéis de nata",
+    "land": "620",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Ropa vieja",
+    "land": "192",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Chatschapuri",
+    "land": "268",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Plov",
+    "land": "860",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Momos",
+    "land": "524",
+    "auchOk": [
+     "64",
+     "156"
+    ],
+    "notiz": ""
+   },
+   {
+    "text": "Jollof Rice",
+    "land": "566",
+    "auchOk": [
+     "288",
+     "686"
+    ],
+    "notiz": "Nigeria und Ghana streiten seit Jahren öffentlich um die beste Version."
+   },
+   {
+    "text": "Sarmale",
+    "land": "642",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Ćevapi",
+    "land": "70",
+    "auchOk": [
+     "688"
+    ],
+    "notiz": ""
+   },
+   {
+    "text": "Smørrebrød",
+    "land": "208",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Surströmming",
+    "land": "752",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Lahmacun",
+    "land": "792",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Mole poblano",
+    "land": "484",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Borschtsch",
+    "land": "804",
+    "auchOk": [
+     "643"
+    ],
+    "notiz": "2022 als ukrainisches Kulturerbe von der UNESCO gelistet."
+   },
+   {
+    "text": "Pavlova",
+    "land": "554",
+    "auchOk": [
+     "36"
+    ],
+    "notiz": "Neuseeland und Australien beanspruchen die Torte beide."
+   },
+   {
+    "text": "Wiener Schnitzel",
+    "land": "40",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Tom Yam",
+    "land": "764",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Biryani",
+    "land": "356",
+    "auchOk": [
+     "586"
+    ],
+    "notiz": ""
+   },
+   {
+    "text": "Couscous",
+    "land": "788",
+    "auchOk": [
+     "12",
+     "504"
+    ],
+    "notiz": "2020 gemeinsam von Algerien, Marokko, Mauretanien und Tunesien als Kulturerbe angemeldet."
+   },
+   {
+    "text": "Fufu",
+    "land": "288",
+    "auchOk": [
+     "566",
+     "180"
+    ],
+    "notiz": ""
+   },
+   {
+    "text": "Nyama choma",
+    "land": "404",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Sancocho",
+    "land": "170",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Arepa",
+    "land": "862",
+    "auchOk": [
+     "170"
+    ],
+    "notiz": ""
+   },
+   {
+    "text": "Larb",
+    "land": "418",
+    "auchOk": [
+     "764"
+    ],
+    "notiz": ""
+   },
+   {
+    "text": "Amok trey",
+    "land": "116",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Mohinga",
+    "land": "104",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Pelmeni",
+    "land": "643",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Hummus",
+    "land": "422",
+    "auchOk": [
+     "376",
+     "760",
+     "368"
+    ],
+    "notiz": "In der ganzen Levante beheimatet — die Zuordnung ist politisch aufgeladen."
+   }
+  ]
+ },
+ "woerter": {
+  "name": "Wanderwörter",
+  "marke": "Woher kam dieses Wort zu uns?",
+  "eintraege": [
+   {
+    "text": "Sauna",
+    "land": "246",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Anorak",
+    "land": "304",
+    "auchOk": [],
+    "notiz": "Aus dem Grönländischen: annoraaq."
+   },
+   {
+    "text": "Bungalow",
+    "land": "356",
+    "auchOk": [],
+    "notiz": "Von bangla — „auf bengalische Art gebaut“."
+   },
+   {
+    "text": "Ketchup",
+    "land": "156",
+    "auchOk": [],
+    "notiz": "Über das Hokkien kê-tsiap, eine gegorene Fischsauce. Tomaten kamen erst viel später dazu."
+   },
+   {
+    "text": "Amok",
+    "land": "458",
+    "auchOk": [
+     "360"
+    ],
+    "notiz": ""
+   },
+   {
+    "text": "Bumerang",
+    "land": "36",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Schokolade",
+    "land": "484",
+    "auchOk": [],
+    "notiz": "Aus dem Nahuatl xocolātl."
+   },
+   {
+    "text": "Roboter",
+    "land": "203",
+    "auchOk": [],
+    "notiz": "Karel Čapek führte das Wort 1920 im Theaterstück R.U.R. ein."
+   },
+   {
+    "text": "Schach",
+    "land": "364",
+    "auchOk": [],
+    "notiz": "Von persisch šāh, der König."
+   },
+   {
+    "text": "Karaoke",
+    "land": "392",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Gulag",
+    "land": "643",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Paprika",
+    "land": "348",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Vampir",
+    "land": "688",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Ombudsmann",
+    "land": "752",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Slalom",
+    "land": "578",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Hängematte",
+    "land": "332",
+    "auchOk": [],
+    "notiz": "Vom Taíno-Wort hamaca aus der Karibik."
+   },
+   {
+    "text": "Safari",
+    "land": "834",
+    "auchOk": [],
+    "notiz": "Suaheli für Reise."
+   },
+   {
+    "text": "Trekking",
+    "land": "710",
+    "auchOk": [],
+    "notiz": "Aus dem Afrikaans trek, ziehen."
+   },
+   {
+    "text": "Kiosk",
+    "land": "792",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Kaffee",
+    "land": "231",
+    "auchOk": [],
+    "notiz": "Nach der Region Kaffa im Südwesten Äthiopiens."
+   },
+   {
+    "text": "Mokka",
+    "land": "887",
+    "auchOk": [],
+    "notiz": "Nach der Hafenstadt Mokka am Roten Meer."
+   },
+   {
+    "text": "Bank",
+    "land": "380",
+    "auchOk": [],
+    "notiz": "Von banca, dem Tisch des Geldwechslers."
+   },
+   {
+    "text": "Geysir",
+    "land": "352",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Boykott",
+    "land": "372",
+    "auchOk": [],
+    "notiz": "Nach Charles Boycott, einem Gutsverwalter in Mayo, 1880."
+   },
+   {
+    "text": "Krawatte",
+    "land": "191",
+    "auchOk": [],
+    "notiz": "Von „Kroate“ — nach den Halstüchern kroatischer Reiter."
+   },
+   {
+    "text": "Horde",
+    "land": "496",
+    "auchOk": [],
+    "notiz": "Von mongolisch ordu, das Heerlager."
+   },
+   {
+    "text": "Mazurka",
+    "land": "616",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Lego",
+    "land": "208",
+    "auchOk": [],
+    "notiz": "Zusammengezogen aus „leg godt“ — spiel gut."
+   },
+   {
+    "text": "Poncho",
+    "land": "152",
+    "auchOk": [],
+    "notiz": "Aus dem Mapudungun."
+   },
+   {
+    "text": "Puma",
+    "land": "604",
+    "auchOk": [],
+    "notiz": "Aus dem Quechua."
+   },
+   {
+    "text": "Piranha",
+    "land": "76",
+    "auchOk": [],
+    "notiz": "Aus dem Tupi."
+   },
+   {
+    "text": "Ukulele",
+    "land": "840",
+    "auchOk": [],
+    "notiz": "Hawaiianisch: der springende Floh."
+   },
+   {
+    "text": "Kiwi",
+    "land": "554",
+    "auchOk": [],
+    "notiz": "Aus dem Māori — erst der Vogel, dann die Frucht."
+   },
+   {
+    "text": "Sarong",
+    "land": "360",
+    "auchOk": [
+     "458"
+    ],
+    "notiz": ""
+   },
+   {
+    "text": "Taekwondo",
+    "land": "410",
+    "auchOk": [],
+    "notiz": ""
+   }
+  ]
+ },
+ "dichtung": {
+  "name": "Dichtung",
+  "marke": "Aus welchem Land stammt diese Stimme?",
+  "eintraege": [
+   {
+    "text": "Pablo Neruda",
+    "land": "152",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Wisława Szymborska",
+    "land": "616",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Rabindranath Tagore",
+    "land": "356",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Federico García Lorca",
+    "land": "724",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Anna Achmatowa",
+    "land": "643",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Fernando Pessoa",
+    "land": "620",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Matsuo Bashō",
+    "land": "392",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Seamus Heaney",
+    "land": "826",
+    "auchOk": [
+     "372"
+    ],
+    "notiz": "Geboren in Nordirland, später mit irischem Pass — er widersprach der Zuordnung zur britischen Dichtung."
+   },
+   {
+    "text": "Octavio Paz",
+    "land": "484",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Nâzım Hikmet",
+    "land": "792",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Mahmud Darwisch",
+    "land": "275",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Adonis",
+    "land": "760",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Wole Soyinka",
+    "land": "566",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Li Bai",
+    "land": "156",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Jehuda Amichai",
+    "land": "376",
+    "auchOk": [
+     "276"
+    ],
+    "notiz": "1924 in Würzburg geboren, 1935 nach Palästina emigriert."
+   },
+   {
+    "text": "Ingeborg Bachmann",
+    "land": "40",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Tomas Tranströmer",
+    "land": "752",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Henrik Ibsen",
+    "land": "578",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Emily Dickinson",
+    "land": "840",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Rainer Maria Rilke",
+    "land": "203",
+    "auchOk": [
+     "40",
+     "276"
+    ],
+    "notiz": "Geboren in Prag, damals Österreich-Ungarn."
+   },
+   {
+    "text": "Giacomo Leopardi",
+    "land": "380",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Charles Baudelaire",
+    "land": "250",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Chalil Gibran",
+    "land": "422",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Léopold Sédar Senghor",
+    "land": "686",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Attila József",
+    "land": "348",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Rubén Darío",
+    "land": "558",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "César Vallejo",
+    "land": "604",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Jorge Luis Borges",
+    "land": "32",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Carlos Drummond de Andrade",
+    "land": "76",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Ko Un",
+    "land": "410",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Les Murray",
+    "land": "36",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Nichita Stănescu",
+    "land": "642",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Sappho",
+    "land": "300",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Konstantinos Kavafis",
+    "land": "818",
+    "auchOk": [
+     "300"
+    ],
+    "notiz": "Griechischer Dichter, geboren und gestorben in Alexandria."
+   }
+  ]
+ },
+ "vorgarten": {
+  "name": "Hinterland-Inventar",
+  "marke": "Urdeutsch? Woher kommt es wirklich?",
+  "eintraege": [
+   {
+    "text": "Geranie",
+    "land": "710",
+    "auchOk": [],
+    "notiz": "Die Balkonpelargonie stammt aus dem Kapland im Süden Afrikas."
+   },
+   {
+    "text": "Thuja-Hecke",
+    "land": "124",
+    "auchOk": [
+     "840"
+    ],
+    "notiz": "Der Abendländische Lebensbaum wächst wild im Osten Nordamerikas."
+   },
+   {
+    "text": "Hortensie",
+    "land": "392",
+    "auchOk": [],
+    "notiz": "Die Gartenhortensie kam im 18. und 19. Jahrhundert aus Japan nach Europa."
+   },
+   {
+    "text": "Gartenzwerg",
+    "land": "276",
+    "auchOk": [],
+    "notiz": "Tatsächlich urdeutsch: Ab den 1870er Jahren wurden sie in Gräfenroda in Thüringen in Serie gefertigt."
+   },
+   {
+    "text": "Kartoffel",
+    "land": "604",
+    "auchOk": [
+     "68"
+    ],
+    "notiz": "In den Anden seit Jahrtausenden angebaut, in Preußen erst im 18. Jahrhundert heimisch."
+   },
+   {
+    "text": "Tomate",
+    "land": "484",
+    "auchOk": [
+     "604"
+    ],
+    "notiz": "Wild in den Anden zu Hause, zur Kulturpflanze gemacht in Mexiko."
+   },
+   {
+    "text": "Sonnenblume",
+    "land": "840",
+    "auchOk": [
+     "484",
+     "124"
+    ],
+    "notiz": "In Nordamerika domestiziert, lange bevor Europa sie kannte."
+   },
+   {
+    "text": "Wellensittich",
+    "land": "36",
+    "auchOk": [],
+    "notiz": "Wild in den Trockengebieten Australiens unterwegs."
+   },
+   {
+    "text": "Goldfisch",
+    "land": "156",
+    "auchOk": [],
+    "notiz": "Aus der Silberkarausche in China gezüchtet."
+   },
+   {
+    "text": "Meerschweinchen",
+    "land": "604",
+    "auchOk": [
+     "68",
+     "218"
+    ],
+    "notiz": "In den Anden als Nutztier gehalten – „Meer“ steht für „übers Meer gekommen“."
+   },
+   {
+    "text": "Kaffee",
+    "land": "231",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Schwarztee",
+    "land": "156",
+    "auchOk": [
+     "356"
+    ],
+    "notiz": ""
+   },
+   {
+    "text": "Apfel",
+    "land": "398",
+    "auchOk": [],
+    "notiz": "Der Wildapfel Malus sieversii wächst in den Bergwäldern Kasachstans."
+   },
+   {
+    "text": "Gurke",
+    "land": "356",
+    "auchOk": [],
+    "notiz": "Ursprünglich aus den Vorbergen des Himalaya."
+   },
+   {
+    "text": "Spinat",
+    "land": "364",
+    "auchOk": [],
+    "notiz": "Kam aus Persien über die Araber nach Europa."
+   },
+   {
+    "text": "Mais",
+    "land": "484",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Kürbis",
+    "land": "484",
+    "auchOk": [],
+    "notiz": ""
+   },
+   {
+    "text": "Gartenerdbeere",
+    "land": "250",
+    "auchOk": [
+     "152"
+    ],
+    "notiz": "In Frankreich im 18. Jahrhundert aus einer chilenischen und einer nordamerikanischen Art gekreuzt."
+   },
+   {
+    "text": "Tulpe",
+    "land": "792",
+    "auchOk": [
+     "398",
+     "417",
+     "860"
+    ],
+    "notiz": "Aus dem Osmanischen Reich nach Europa gebracht, wild in Zentralasien."
+   },
+   {
+    "text": "Pfeffer",
+    "land": "356",
+    "auchOk": [],
+    "notiz": "Von der Malabarküste im Südwesten Indiens."
+   },
+   {
+    "text": "Zimt",
+    "land": "144",
+    "auchOk": [],
+    "notiz": "Echter Ceylon-Zimt – Ceylon ist der alte Name Sri Lankas."
+   },
+   {
+    "text": "Porzellan",
+    "land": "156",
+    "auchOk": [],
+    "notiz": "Europa lernte es erst 1708 in Sachsen nachzumachen."
+   },
+   {
+    "text": "Currywurst",
+    "land": "276",
+    "auchOk": [],
+    "notiz": "1949 in Berlin – Hamburg erhebt ebenfalls Anspruch."
+   },
+   {
+    "text": "Döner Kebab",
+    "land": "792",
+    "auchOk": [
+     "276"
+    ],
+    "notiz": "Der Drehspieß stammt aus der Türkei, das Döner-Sandwich wurde in Berlin groß."
+   },
+   {
+    "text": "Schrebergarten",
+    "land": "276",
+    "auchOk": [],
+    "notiz": "Der erste Schreberplatz entstand 1865 in Leipzig."
+   },
+   {
+    "text": "Kuckucksuhr",
+    "land": "276",
+    "auchOk": [],
+    "notiz": "Aus dem Schwarzwald, 18. Jahrhundert."
+   }
+  ]
+ },
+ "exil": {
+  "name": "Im Exil",
+  "marke": "Welches Land musste diese Stimme verlassen?",
+  "eintraege": [
+   {
+    "text": "Heinrich Heine",
+    "land": "276",
+    "auchOk": [],
+    "notiz": "Ab 1831 in Paris, seine Werke wurden in Deutschland verboten."
+   },
+   {
+    "text": "Victor Hugo",
+    "land": "250",
+    "auchOk": [],
+    "notiz": "1851 bis 1870 im Exil auf Jersey und Guernsey."
+   },
+   {
+    "text": "Ovid",
+    "land": "380",
+    "auchOk": [],
+    "notiz": "Im Jahr 8 n. Chr. nach Tomis am Schwarzen Meer verbannt – das heutige Constanța in Rumänien."
+   },
+   {
+    "text": "Dante Alighieri",
+    "land": "380",
+    "auchOk": [],
+    "notiz": "1302 aus Florenz verbannt, gestorben 1321 in Ravenna."
+   },
+   {
+    "text": "Adam Mickiewicz",
+    "land": "616",
+    "auchOk": [
+     "112",
+     "440"
+    ],
+    "notiz": "Geboren im heutigen Belarus, lebte im Pariser Exil."
+   },
+   {
+    "text": "Alexander Solschenizyn",
+    "land": "643",
+    "auchOk": [],
+    "notiz": "1974 ausgebürgert, 1994 zurückgekehrt."
+   },
+   {
+    "text": "Joseph Brodsky",
+    "land": "643",
+    "auchOk": [],
+    "notiz": "1972 aus der Sowjetunion ausgewiesen, 1987 Nobelpreis."
+   },
+   {
+    "text": "Marina Zwetajewa",
+    "land": "643",
+    "auchOk": [],
+    "notiz": "1922 emigriert, 1939 zurückgekehrt."
+   },
+   {
+    "text": "Milan Kundera",
+    "land": "203",
+    "auchOk": [],
+    "notiz": "Ab 1975 in Frankreich."
+   },
+   {
+    "text": "Herta Müller",
+    "land": "642",
+    "auchOk": [],
+    "notiz": "Aus dem Banat, 1987 nach Deutschland ausgereist, 2009 Nobelpreis."
+   },
+   {
+    "text": "Mascha Kaléko",
+    "land": "276",
+    "auchOk": [],
+    "notiz": "Geboren in Chrzanów in Galizien, 1938 aus Deutschland nach New York geflohen."
+   },
+   {
+    "text": "Nelly Sachs",
+    "land": "276",
+    "auchOk": [],
+    "notiz": "1940 Flucht nach Schweden, 1966 Nobelpreis."
+   },
+   {
+    "text": "Stefan Zweig",
+    "land": "40",
+    "auchOk": [],
+    "notiz": "Verließ Österreich 1934 Richtung London, später Brasilien."
+   },
+   {
+    "text": "Rafik Schami",
+    "land": "760",
+    "auchOk": [],
+    "notiz": "Aus Damaskus, seit 1971 in Deutschland."
+   },
+   {
+    "text": "Liao Yiwu",
+    "land": "156",
+    "auchOk": [],
+    "notiz": "2011 nach Deutschland geflohen."
+   },
+   {
+    "text": "Ngũgĩ wa Thiong'o",
+    "land": "404",
+    "auchOk": [],
+    "notiz": "1977 inhaftiert, ab 1982 im Exil."
+   },
+   {
+    "text": "Taslima Nasrin",
+    "land": "50",
+    "auchOk": [],
+    "notiz": "Seit 1994 im Exil."
+   },
+   {
+    "text": "Reinaldo Arenas",
+    "land": "192",
+    "auchOk": [],
+    "notiz": "1980 über den Hafen Mariel in die USA."
+   },
+   {
+    "text": "Isabel Allende",
+    "land": "152",
+    "auchOk": [],
+    "notiz": "Geboren in Lima, nach dem Putsch 1973 aus Chile ins Exil nach Venezuela."
+   },
+   {
+    "text": "Juan Gelman",
+    "land": "32",
+    "auchOk": [],
+    "notiz": "Während der Militärdiktatur ab 1976 im Exil, später in Mexiko."
+   },
+   {
+    "text": "Nuruddin Farah",
+    "land": "706",
+    "auchOk": [],
+    "notiz": "Lebt seit den 1970er Jahren außerhalb Somalias."
+   },
+   {
+    "text": "Ismail Kadare",
+    "land": "8",
+    "auchOk": [],
+    "notiz": "1990 Asyl in Frankreich."
+   }
+  ]
+ }
+}

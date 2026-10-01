@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WWH · Steuermodul</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=IBM+Plex+Mono:wght@400;500;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400;1,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/wwh.css">
+<style>
+.nav{display:flex;align-items:stretch;flex-wrap:wrap;border-bottom:1px solid var(--kante);padding:0 clamp(12px,2vw,32px);position:sticky;top:0;background:var(--nacht);z-index:20;}
+.nav .logo{font-family:var(--display);font-size:26px;padding:10px 24px 10px 0;}
+.nav .tab{background:none;border:none;border-bottom:3px solid transparent;color:var(--blass);font-size:13px;letter-spacing:.14em;text-transform:uppercase;padding:14px 12px;cursor:pointer;}
+.nav .tab.an{color:var(--papier);border-bottom-color:var(--signal);}
+.nav .tab.live{color:var(--signal);}
+.nav .rechts{margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:6px 0;}
+.nav .rechts .klein{margin-right:4px;}
+.seg{display:inline-flex;border:1px solid var(--kante-hell);}
+.seg button{background:transparent;border:none;padding:6px 10px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;color:var(--blass);}
+.seg button.an{background:var(--papier);color:var(--nacht);}
+main{padding:clamp(16px,2.4vw,40px);}
+.raster{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr));gap:clamp(20px,2.6vw,48px);align-items:start;}
+.raster.cockpit{grid-template-columns:minmax(0,1.25fr) minmax(320px,1fr);}
+@media (max-width:980px){.raster.cockpit{grid-template-columns:1fr;}}
+.stapel{display:flex;flex-direction:column;gap:18px;}
+.box{border:1px solid var(--kante);background:var(--nacht-2);padding:20px 22px;display:flex;flex-direction:column;gap:14px;}
+.box.hell{background:var(--papier);color:var(--nacht);border-color:var(--papier);}
+.box.hell .klein{color:#5c5446;}
+.box.alarm{border:2px solid var(--signal);}
+h1,h2,h3{margin:0;font-weight:400;}
+h1{font-family:var(--display);font-size:clamp(36px,4.6vw,80px);line-height:.92;text-transform:uppercase;overflow-wrap:anywhere;hyphens:auto;}
+h2{font-family:var(--display);font-size:clamp(26px,2.4vw,40px);line-height:1;text-transform:uppercase;}
+.text{font-family:var(--serif);font-size:18px;line-height:1.45;margin:0;}
+.gross{font-family:var(--serif);font-size:clamp(22px,2vw,32px);line-height:1.3;margin:0;}
+.reihe{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.regeln{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;counter-reset:r;}
+.regeln li{display:grid;grid-template-columns:32px 1fr;font-family:var(--serif);font-size:17px;line-height:1.4;counter-increment:r;}
+.regeln li::before{content:counter(r,decimal-leading-zero);font-family:var(--mono);font-size:12px;color:var(--siegel);padding-top:4px;}
+.tabelle{display:flex;flex-direction:column;}
+.zeile{display:grid;grid-template-columns:minmax(120px,1.2fr) minmax(0,1.6fr) auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--kante);}
+.zeile.nah{background:#2e1a15;}
+.zeile .wer b{font-family:var(--display);font-weight:400;font-size:20px;text-transform:uppercase;display:block;line-height:1.05;}
+.zeile .wer span{font-size:12px;color:var(--blass);}
+.zeile .mitte{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px;min-width:0;}
+.zeile .aktion{display:flex;gap:6px;align-items:center;}
+.zeile .punkte{font-family:var(--display);font-size:22px;min-width:3ch;text-align:right;}
+.zeile .plus{color:var(--signal);font-size:13px;min-width:3ch;}
+.feld.kurz{width:110px;padding:8px 10px;}
+.feld.mittel{width:200px;padding:8px 10px;}
+.pill{display:inline-block;border:1px solid var(--kante-hell);padding:3px 8px;font-size:12px;}
+.pill.gut{border-color:var(--gruen);color:var(--gruen);}
+.pill.schlecht{border-color:var(--signal);color:var(--signal);}
+.pill.an{background:var(--papier);color:var(--nacht);border-color:var(--papier);}
+.loesung{border-left:4px solid var(--signal);padding:6px 0 6px 14px;}
+.loesung .display{font-size:clamp(28px,2.6vw,46px);}
+.funk{display:flex;flex-direction:column;gap:6px;max-height:340px;overflow:auto;}
+.funk div{display:grid;grid-template-columns:70px 130px 1fr auto;gap:10px;align-items:center;border-bottom:1px solid var(--kante);padding:6px 0;font-size:14px;}
+.funk div b{font-family:var(--display);font-weight:400;text-transform:uppercase;font-size:17px;}
+.funk div.r{background:#1f2616;}
+.funk .serif{font-size:17px;}
+.plan{display:flex;flex-direction:column;gap:8px;}
+.plan .p{display:grid;grid-template-columns:40px minmax(0,1fr) auto auto auto auto auto;gap:12px;align-items:center;border:1px solid var(--kante);background:var(--nacht-2);padding:10px 14px;}
+.plan .p.jetzt{border-color:var(--signal);}
+.plan .p b{font-family:var(--display);font-weight:400;font-size:22px;text-transform:uppercase;}
+.katalog{display:flex;gap:8px;flex-wrap:wrap;}
+.eintrag{border:1px solid var(--kante);background:var(--nacht-2);padding:14px 16px;display:grid;grid-template-columns:40px minmax(0,1fr) auto;gap:14px;}
+.eintrag .felder{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;}
+.eintrag label{display:flex;flex-direction:column;gap:4px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--blass);}
+.eintrag label.breit{grid-column:1/-1;}
+.eintrag textarea{min-height:110px;resize:vertical;}
+.eintrag img{max-height:120px;max-width:100%;object-fit:contain;align-self:flex-start;border:1px solid var(--kante);}
+.eintrag audio{width:100%;}
+.untertabs{display:flex;flex-wrap:wrap;border-bottom:1px solid var(--kante);}
+.untertabs button{background:none;border:none;border-bottom:3px solid transparent;color:var(--blass);padding:10px 12px;cursor:pointer;font-size:13px;}
+.untertabs button.an{color:var(--papier);border-bottom-color:var(--signal);}
+.rang div{display:grid;grid-template-columns:34px 1fr auto;gap:12px;padding:9px 0;border-bottom:1px solid var(--kante);align-items:baseline;}
+.rang b{font-family:var(--display);font-weight:400;font-size:22px;text-transform:uppercase;}
+.rang small{color:var(--blass);font-size:12px;margin-left:8px;text-transform:none;font-family:var(--mono);}
+.link{font-size:13px;word-break:break-all;}
+.meldung{position:fixed;right:16px;bottom:16px;background:var(--siegel);color:var(--papier-hell);padding:12px 16px;z-index:99;max-width:420px;}
+.lupe{position:relative;overflow:hidden;border:1px solid var(--kante-hell);height:240px;background:#000;}
+.lupe img{width:100%;height:100%;object-fit:contain;}
+.zellen{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;}
+.zelle{border:1px solid var(--kante-hell);padding:12px 14px;}
+.zelle h3{font-family:var(--display);font-size:22px;text-transform:uppercase;color:var(--signal);}
+.brett{display:grid;gap:6px;}
+.brett .kat{font-family:var(--display);font-size:15px;text-transform:uppercase;line-height:1.05;border-bottom:2px solid var(--signal);padding:0 2px 6px;display:flex;align-items:flex-end;hyphens:auto;min-width:0;overflow:hidden;}
+.brett button{background:var(--nacht-2);border:1px solid var(--kante-hell);padding:14px 4px;font-family:var(--display);font-size:22px;cursor:pointer;position:relative;}
+.brett button:hover{border-color:var(--signal);}
+.brett button.weg{opacity:.25;}
+.brett button.leer{border-style:dashed;opacity:.35;cursor:not-allowed;}
+.brett button .rk{position:absolute;top:3px;right:5px;font-size:11px;color:var(--signal);font-family:var(--mono);}
+.depfeld{border:2px solid var(--signal);padding:18px 20px;display:flex;flex-direction:column;gap:12px;background:var(--nacht-2);}
+.depfeld .html{font-family:var(--serif);font-size:20px;line-height:1.35;}
+.depfeld .html img{max-height:180px;max-width:100%;}
+.depfeld .antwort{background:var(--papier);color:var(--nacht);padding:12px 14px;}
+.uhrtext{font-family:var(--display);font-size:30px;}
+.uhrtext.aus{color:var(--signal);}
+.buzzliste{display:flex;flex-direction:column;gap:6px;}
+.buzzliste div{display:flex;gap:10px;align-items:center;border:1px solid var(--kante);padding:8px 10px;}
+.buzzliste div.dran{border-color:var(--signal);background:#2e1a15;}
+.buzzliste b{font-family:var(--display);font-weight:400;font-size:22px;text-transform:uppercase;flex:1;}
+.kbd{font-size:11px;color:var(--blass);}
+.kbd kbd{border:1px solid var(--kante-hell);padding:0 5px;font-family:var(--mono);}
+details.kat{border:1px solid var(--kante);background:var(--nacht-2);}
+details.kat summary{padding:12px 14px;cursor:pointer;display:flex;gap:12px;align-items:center;}
+details.kat .karten{display:flex;flex-direction:column;gap:10px;padding:0 14px 14px;}
+.dkarte{display:grid;grid-template-columns:60px minmax(0,1fr);gap:12px;border-top:1px solid var(--kante);padding-top:10px;}
+.dkarte .p{font-family:var(--display);font-size:24px;}
+.dkarte .felder{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;}
+.dkarte label{display:flex;flex-direction:column;gap:4px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--blass);}
+.dkarte textarea{min-height:64px;resize:vertical;}
+.aeintrag{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1.5fr) minmax(0,.9fr) auto;gap:8px;align-items:center;border-bottom:1px solid var(--kante);padding:6px 0;}
+.aeintrag .fehl{border-color:var(--signal);}
+@media (max-width:900px){.aeintrag{grid-template-columns:1fr 1fr;}}
+</style>
+</head>
+<body>
+<nav class="nav" id="nav"></nav>
+<main id="app"><p class="blass">Verbinde …</p></main>
+<div class="meldung" id="meldung" hidden></div>
+<script src="/wwh.js"></script>
+<script>
+const { esc, pad, poll, post, render, actions, fmtGain } = WWH;
+const app = document.getElementById('app'), nav = document.getElementById('nav'), meldung = document.getElementById('meldung');
+let S = null, M = null, LAN = '', GEO = {}, NAME2KEY = {};
+fetch('/geo.json').then(r => r.json()).then(g => { GEO = g; Object.entries(g).forEach(([k, v]) => { if (!v.kein) NAME2KEY[v.name.toLowerCase()] = k; }); if (S) zeichnen(); });
+const landName = k => (GEO[k] && GEO[k].name) || k || '';
+const ui = { tab: 'zentrale', archiv: 'schaetzen', autoMission: true, boardId: null, board: null, boardDirty: false, setId: null };
+
+function hinweis(t) { meldung.textContent = t; meldung.hidden = false; clearTimeout(hinweis.t); hinweis.t = setTimeout(() => meldung.hidden = true, 4000); }
+async function cmd(c, args) { try { await post('/leitung/api/cmd', { cmd: c, ...(args || {}) }); } catch (e) { hinweis(e.message); } }
+
+poll(() => '/leitung/api/state', d => {
+  const war = S && S.screen;
+  S = d.state; M = d.meta; LAN = d.lan; if (d.now) zeitDiff = d.now - Date.now() / 1000;
+  if (S.screen === 'mission' && war !== 'mission') ui.tab = 'mission';
+  zeichnen();
+});
+
+// ------------------------------------------------------------------ Helfer
+const G = t => M.games[t];
+const mission = () => S.plan[S.cur];
+const agent = id => S.agents.find(a => a.id === id);
+const code = id => (agent(id) || {}).code || '?';
+const total = id => S.totals[id] || 0;
+const sorted = () => [...S.agents].sort((a, b) => total(b.id) - total(a.id));
+const basis = () => (S.joinUrl || LAN || location.origin + '/').replace(/\/?$/, '/');
+const geraeteLink = a => basis() + '?t=' + encodeURIComponent(a.token);
+const modusLabel = p => p.mode === 'team' ? 'Zelleneinsatz' : 'Einzeleinsatz';
+const regeln = g => `<ol class="regeln">${g.rules.map(r => `<li>${esc(r)}</li>`).join('')}</ol>`;
+const kopieren = text => { (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(text) : Promise.reject()).then(() => hinweis('Kopiert'), () => prompt('Kopieren:', text)); };
+
+// ------------------------------------------------------------------ Rahmen
+function zeichnen() {
+  const m = mission();
+  const tabs = [['mission', S.active ? 'Mission läuft' : 'Mission'], ['zentrale', 'Zentrale'], ['agenten', 'Agenten'], ['plan', 'Einsatzplan'], ['archiv', 'Archiv'], ['system', 'System']];
+  nav.innerHTML = `<span class="logo">WWH</span>${tabs.map(([k, l]) => `<button class="tab ${ui.tab === k ? 'an' : ''} ${k === 'mission' && S.active ? 'live' : ''}" data-tab="${k}">${l}</button>`).join('')}
+    <div class="rechts"><span class="klein">Leinwand</span><span class="seg">
+      <button data-screen="start" class="${S.screen === 'start' ? 'an' : ''}">Start</button>
+      <button data-screen="prolog" class="${S.screen === 'prolog' ? 'an' : ''}">Prolog</button>
+      <button data-screen="hq" class="${S.screen === 'hq' ? 'an' : ''}">Zentrale</button>
+      <button data-screen="mission" class="${S.screen === 'mission' ? 'an' : ''}" ${S.active ? '' : 'disabled'}>Mission</button>
+      <button data-screen="finale" class="${S.screen === 'finale' ? 'an' : ''}">Übergabe</button></span>
+      <a class="btn klein" href="/leinwand" target="wwh_leinwand">Leinwand öffnen</a></div>`;
+  const seiten = { mission: seiteMission, zentrale: seiteZentrale, agenten: seiteAgenten, plan: seitePlan, archiv: seiteArchiv, system: seiteSystem };
+  render(app, seiten[ui.tab]());
+  hostUhr();
+}
+let hTakt = null, zeitDiff = 0;
+function hostUhr() {
+  clearInterval(hTakt);
+  const el = document.getElementById('huhr'), d = S.dep;
+  if (!el || !d) return;
+  const takt = () => { const rest = d.tRun ? Math.max(0, d.tEnd - (Date.now() / 1000 + zeitDiff)) : d.tLeft; el.textContent = rest > 0 ? Math.ceil(rest) + ' s' : 'Zeit!'; el.classList.toggle('aus', rest <= 0); };
+  takt(); if (d.tRun) hTakt = setInterval(takt, 250);
+}
+nav.addEventListener('click', e => {
+  const t = e.target.closest('[data-tab]'); if (t) { ui.tab = t.dataset.tab; zeichnen(); return; }
+  const s = e.target.closest('[data-screen]'); if (s && !s.disabled) { s.dataset.screen === 'mission' ? cmd('mission_start') : cmd('screen', { name: s.dataset.screen }); }
+});
+
+// ------------------------------------------------------------------ Zentrale
+const STUFEN = { uebergabe: 'Übergabe', maulwurf: 'Maulwurf', ziel: 'Ziel der Zelle', hueter: 'Hüter des Archivs', bilanz: 'Bilanz', kartei: 'Beutekartei' };
+function tageUebrig() { const st = S.story || {}, n = Math.max(1, S.plan.length); return S.cur < S.plan.length ? Math.ceil((st.tage || 7) * (n - S.cur) / n) : 0; }
+
+function boxProlog() {
+  const pr = S.extra.prolog || [], i = Math.min(S.prologIdx || 0, pr.length - 1), an = S.screen === 'prolog';
+  if (!pr.length) return '';
+  return `<div class="box ${an ? 'alarm' : ''}"><div class="reihe" style="justify-content:space-between"><span class="klein ${an ? 'signal' : ''}">Prolog · Tafel ${pad(i + 1)} / ${pad(pr.length)}</span>
+      ${an ? '' : '<button class="btn klein" data-do="prologzeigen">Auf die Leinwand</button>'}</div>
+    ${an ? `<p class="gross" style="font-size:22px">${esc(pr[i].titel)}</p><p class="text blass">${esc(pr[i].text)}</p>
+      <div class="reihe"><button class="btn" data-do="prolog" data-d="-1" ${i ? '' : 'disabled'}>‹ Zurück</button><button class="btn rot" data-do="prolog" data-d="1" ${i < pr.length - 1 ? '' : 'disabled'}>Weiter ›</button>
+      ${i === pr.length - 1 ? '<button class="btn hell" data-do="prologende">Zur Zentrale</button>' : ''}</div>` : ''}</div>`;
+}
+
+function boxFinale() {
+  const stufen = S.extra.finaleStufen, i = Math.min(S.finaleStufe || 0, stufen.length - 1), art = stufen[i], mo = S.mole;
+  let h = `<div class="box alarm"><div class="klein signal">Übergabe · ${pad(i + 1)} / ${pad(stufen.length)} · ${STUFEN[art]}</div>`;
+  if (art === 'maulwurf') {
+    const n = Object.keys(S.moleVotes).length;
+    h += mo.result ? `<p class="gross">${esc(code(mo.id))} ist ${mo.result.caught ? 'enttarnt' : 'entkommen'}.</p>`
+      : `<p class="text">${n} von ${S.agents.length} haben abgestimmt.</p><div class="reihe"><button class="btn" data-do="mvote" data-x="${mo.voteOpen ? 0 : 1}">${mo.voteOpen ? 'Abstimmung schließen' : 'Abstimmung öffnen'}</button>
+         <button class="btn rot" data-do="mresolve" ${n ? '' : 'disabled'}>Maulwurf enthüllen</button></div><p class="kbd">Beim Enthüllen wird der Rucksack verteilt oder die Prämie ausgezahlt.</p>`;
+  }
+  h += `<div class="reihe"><button class="btn" data-do="fstufe" data-d="-1" ${i ? '' : 'disabled'}>‹ Zurück</button>
+    <button class="btn rot" data-do="fstufe" data-d="1" ${i < stufen.length - 1 && !(art === 'maulwurf' && !mo.result) ? '' : 'disabled'}>Weiter ›</button></div></div>`;
+  return h;
+}
+
+function boxRegeln() {
+  const z = S.extra.ziel, zahl = (k, v, min, max, breite) => `<input class="feld kurz" style="width:${breite || 70}px" type="number" min="${min}" max="${max}" data-k="r-${k}" value="${v}" data-change="regel" data-f="${k}">`;
+  return `<div class="box"><div class="klein">Regeln der Zelle</div>
+    <div class="reihe"><span class="text">Umlagern:</span>${zahl('stealPct', S.stealPct, 0, 100)}<span class="blass">% vom fremden Rucksack, mindestens</span>${zahl('stealAmount', S.stealAmount, 0, 99)}<span class="blass">Wörter</span></div>
+    <div class="reihe"><span class="text">Unterwegs beschädigt:</span>${zahl('stealVerlust', S.stealVerlust, 0, 100)}<span class="blass">% der umgelagerten Wörter gehen verloren</span></div>
+    <div class="reihe"><span class="text">Verzicht:</span>${zahl('verzichtBonus', S.verzichtBonus, 0, 20)}<span class="blass">Wörter Dank der Zentrale</span></div>
+    <div class="reihe"><span class="text">Ziel der Zelle:</span><span class="seg"><button class="${S.ziel < 0 ? 'an' : ''}" data-do="zielart" data-x="auto">Auto</button><button class="${S.ziel > 0 ? 'an' : ''}" data-do="zielart" data-x="fest">Fest</button><button class="${S.ziel === 0 ? 'an' : ''}" data-do="zielart" data-x="aus">Aus</button></span>
+      ${S.ziel > 0 ? zahl('ziel', S.ziel, 1, 9999, 90) : ''}<span class="blass">${z.wert > 0 ? `${z.wert} Wörter${S.ziel < 0 ? ' (8 pro Person)' : ''} · jetzt ${z.stand}${S.mole.on ? ` · ohne Maulwurf ${z.ohneMaulwurf}` : ''}` : 'kein gemeinsames Ziel'}</span></div>
+    <p class="kbd">Der Rucksack des Maulwurfs zählt bei der Übergabe nicht für das Ziel. Wer umlagert, vernichtet also Wörter der Zelle.</p></div>`;
+}
+
+function boxMaulwurf() {
+  const mo = S.mole;
+  let h = `<div class="box"><div class="reihe" style="justify-content:space-between"><span class="klein">Maulwurf</span>
+    <span class="seg"><button class="${mo.on ? '' : 'an'}" data-do="mtoggle" data-x="0">Aus</button><button class="${mo.on ? 'an' : ''}" data-do="mtoggle" data-x="1">An</button></span></div>`;
+  if (!mo.on) return h + `<p class="text blass">Eingeschaltet bekommt eine zufällige Person heimlich die Rolle Maulwurf. Alle Geräte zeigen eine verdeckte Rollenkarte im gleichen Format.</p></div>`;
+  const t = S.extra.moleTally, n = Object.keys(S.moleVotes).length;
+  h += `<div class="reihe"><span class="text">Maulwurf: <b>${ui.zeigMole ? esc(code(mo.id) + ' · ' + ((agent(mo.id) || {}).name || '')) : '●●●●●●'}</b></span>
+      <button class="btn klein" data-do="mzeig">${ui.zeigMole ? 'Verbergen' : 'Anzeigen'}</button>${mo.result ? '' : '<button class="btn klein" data-do="mpick">Neu bestimmen</button>'}</div>
+    <div class="reihe"><span class="klein">Prämie bei Entkommen</span><input class="feld kurz" type="number" min="0" data-k="mbonus" value="${mo.bonus}" data-change="mbonus"><span class="blass">Wörter</span></div>`;
+  if (!mo.result) h += `<div class="reihe"><button class="btn ${mo.voteOpen ? 'rot' : ''}" data-do="mvote" data-x="${mo.voteOpen ? 0 : 1}">${mo.voteOpen ? 'Abstimmung schließen' : 'Abstimmung öffnen'}</button><span class="klein">${n} Stimmen${ui.zeigMole && n ? ' · ' + Object.entries(t).map(([k, v]) => esc(code(k)) + ' ' + v).join(', ') : ''}</span></div>
+    <p class="kbd">Abstimmen geht jederzeit, die letzte Stimme zählt. Aufgelöst wird bei der Übergabe.</p>`;
+  return h + '</div>';
+}
+
+function seiteZentrale() {
+  const m = mission(), ps = S.pendingSteal, mi = m ? (((S.story || {}).missionen || {})[m.type] || {}) : {};
+  let links = '';
+  if (S.screen === 'finale') links += boxFinale();
+  links += boxProlog();
+  if (ps) {
+    links += `<div class="box alarm"><div class="klein signal">Umlagern</div>`;
+    if (!S.thief) links += `<p class="gross">Gleichstand an der Spitze. Wer darf umlagern?</p><div class="reihe">${ps.winners.filter(agent).map(id => `<button class="btn" data-do="dieb" data-id="${id}">${esc(code(id))}</button>`).join('')}</div>`;
+    else links += `<p class="gross"><span class="display signal">${esc(code(S.thief))}</span> hat den Einsatz am besten erledigt und darf umlagern. Aus wessen Rucksack? <span class="blass">(genommen / angekommen)</span></p>
+      <div class="reihe">${sorted().filter(a => a.id !== S.thief && total(a.id) > 0).map(a => { const v = (S.extra.umlagerVorschau || {})[a.id] || [0, 0];
+        return `<button class="btn" data-do="opfer" data-id="${a.id}" title="nimmt ${v[0]}, davon kommen ${v[1]} an">${esc(a.code)} · ${total(a.id)} <span class="blass">(−${v[0]} / +${v[1]})</span></button>`; }).join('') || '<span class="blass">Alle Rucksäcke sind leer.</span>'}</div>`;
+    links += `<button class="btn link" data-do="verzicht">Verzichtet${S.verzichtBonus ? ' (+' + S.verzichtBonus + ' Wörter)' : ''}</button></div>`;
+  }
+  if (S.lastSteal) links += `<p class="text" style="border-left:3px solid var(--signal);padding-left:12px">${esc(S.lastSteal)}</p>`;
+  if (m) {
+    const g = G(m.type);
+    links += `<div class="box hell"><div class="reihe" style="justify-content:space-between"><span class="klein">Einsatz ${pad(S.cur + 1)} / ${pad(S.plan.length)} · ${esc(g.name)}</span><span class="klein">Noch ${tageUebrig()} Tage · ${modusLabel(m)}</span></div>
+      <h1>${esc(mi.ort || g.name)}</h1>${mi.lage ? `<p class="text" style="font-style:italic">${esc(mi.lage)}</p>` : ''}${regeln(g)}
+      ${S.agents.length ? '' : '<p class="text" style="color:#a42a1a">Noch keine Agenten. Sie treten über die Leinwand bei oder werden unter „Agenten“ angelegt.</p>'}
+      <div class="reihe"><button class="btn" style="background:var(--nacht);color:var(--papier);border-color:var(--nacht)" data-do="missionStart">${S.active ? 'Einsatz fortsetzen' : 'Einsatz starten'}</button>
+      <span class="klein">Die Leinwand wechselt mit.</span></div></div>`;
+  } else if (S.plan.length && S.screen !== 'finale') {
+    links += `<div class="box hell"><div class="klein">Alle Einsätze abgeschlossen</div><h1>Die Übergabe</h1><button class="btn rot" data-do="finale">Übergabe auf der Leinwand beginnen</button></div>`;
+  }
+  links += boxRegeln();
+  links += boxMaulwurf();
+  const fortschritt = S.plan.map((p, i) => `<span class="pill ${i === S.cur ? 'an' : ''}" style="${i < S.cur ? 'opacity:.45' : ''}">${pad(i + 1)} ${esc(((S.story || {}).missionen || {})[p.type]?.ort || G(p.type).name)}</span>`).join(' ');
+  const stat = S.extra.statistik;
+  return `<div class="raster"><div class="stapel">${links}</div>
+    <div class="stapel"><div class="klein">Rucksäcke · ${S.agents.length} Agenten</div>
+    <div class="rang">${sorted().map((a, i) => { const pr = stat.pro[a.id] || {};
+      return `<div><span class="blass">${pad(i + 1)}</span><b>${esc(a.code)}<small>${esc(a.name)}${pr.genommen || pr.verloren ? ' · +' + pr.genommen + ' / −' + pr.verloren + ' umgelagert' : ''}</small></b><span class="display" style="font-size:22px">${total(a.id)}</span></div>`; }).join('') || '<p class="blass">Noch leer.</p>'}</div>
+    <div class="klein">Ablauf</div><div class="reihe">${fortschritt}</div></div></div>`;
+}
+
+// ------------------------------------------------------------------ Agenten
+function seiteAgenten() {
+  const rows = S.agents.map(a => `<div class="zeile">
+      <div class="wer"><b>${esc(a.code)}</b><span>${total(a.id)} Wörter</span></div>
+      <div class="mitte"><input class="feld mittel" data-k="n-${a.id}" value="${esc(a.name)}" data-change="rename" data-id="${a.id}">
+        <button class="btn klein" data-do="link" data-id="${a.id}" title="Persönlicher Link: meldet das Gerät ohne Namenseingabe an">Geräte-Link kopieren</button></div>
+      <div class="aktion"><button class="btn klein" data-do="score" data-id="${a.id}" data-d="-1">−</button><button class="btn klein" data-do="score" data-id="${a.id}" data-d="1">+</button>
+        <button class="btn klein" data-do="reroll" data-id="${a.id}" title="Neuen Decknamen ziehen">↻</button><button class="btn klein" data-do="del" data-id="${a.id}" title="Entfernen">✕</button></div></div>`).join('');
+  return `<div class="raster"><div class="stapel">
+    <h2>Agenten</h2>
+    <p class="text">Mitspielende treten selbst bei: QR-Code auf der Leinwand scannen oder ${esc(basis())} öffnen. Wer kein Gerät hat, wird hier angelegt – die Moderation trägt dann im Cockpit für diese Person ein.</p>
+    <div class="reihe"><input class="feld" style="flex:1" data-k="neu" id="neuName" placeholder="Name" maxlength="40"><button class="btn rot" data-do="add">Anlegen</button></div>
+    <div class="reihe"><button class="btn ${S.joinOpen ? '' : 'rot'}" data-do="join">${S.joinOpen ? 'Beitritt sperren' : 'Beitritt öffnen'}</button>
+      <span class="klein">${S.joinOpen ? 'Beitritt offen' : 'Beitritt gesperrt – nur noch per Geräte-Link'}</span></div>
+    <div class="tabelle">${rows || '<p class="blass">Noch niemand da.</p>'}</div></div>
+    <div class="stapel"><h2>Abend</h2>
+      <p class="text">Neu starten setzt Punkte und Fortschritt zurück, die Agenten bleiben. „Alle entfernen“ leert die Liste für eine neue Runde mit anderen Leuten.</p>
+      <div class="reihe"><button class="btn" data-do="reset">Abend neu starten</button><button class="btn" data-do="clear">Alle Agenten entfernen</button></div></div></div>`;
+}
+
+// ------------------------------------------------------------------ Einsatzplan
+function seitePlan() {
+  const mins = S.plan.reduce((acc, p) => acc + G(p.type).min * (G(p.type).ext || G(p.type).board ? 1 : p.rounds) + 3, 0);
+  const rows = S.plan.map((p, i) => {
+    const g = G(p.type), team = p.mode === 'team';
+    return `<div class="p ${i === S.cur ? 'jetzt' : ''}" style="${i < S.cur ? 'opacity:.5' : ''}">
+      <span class="blass">${pad(i + 1)}</span>
+      <div><b>${esc(g.name)}</b><div class="klein">${i < S.cur ? 'erledigt' : '≈ ' + Math.round(g.min * (g.ext || g.board ? 1 : p.rounds)) + ' Min.'}</div></div>
+      ${p.type === 'deppardy' ? `<select class="feld kurz" style="width:180px" data-change="popt" data-i="${i}" data-k="po-${p.id}">${S.boards.map(b => `<option value="${esc(b.id)}" ${p.opt === b.id ? 'selected' : ''}>${esc(b.name)}</option>`).join('')}</select>`
+        : p.type === 'atlas' ? `<select class="feld kurz" style="width:180px" data-change="popt" data-i="${i}" data-k="po-${p.id}"><option value="">Alle Sets gemischt</option>${Object.entries(S.atlasSets).map(([k, v]) => `<option value="${esc(k)}" ${p.opt === k ? 'selected' : ''}>${esc(v.name)}</option>`).join('')}</select>` : ''}
+      <span class="seg"><button class="${team ? '' : 'an'}" data-do="pmode" data-i="${i}" data-x="solo">Einzeln</button><button class="${team ? 'an' : ''}" data-do="pmode" data-i="${i}" data-x="team">Zellen</button></span>
+      <label class="klein">Runden <input class="feld kurz" style="width:64px" type="number" min="1" data-k="pr-${p.id}" value="${p.rounds}" data-change="prounds" data-i="${i}" ${g.ext || g.board ? 'disabled' : ''}></label>
+      <label class="klein">${g.kurs ? 'Punkte / Wort' : 'Wörter'} <input class="feld kurz" style="width:${g.kurs ? 76 : 64}px" type="number" min="${g.kurs ? 1 : 0}" data-k="pp-${p.id}" value="${p.pts}" data-change="ppts" data-i="${i}" title="${g.kurs ? 'Umrechnungskurs: so viele Punkte ergeben ein Wort' : 'Wörter pro Treffer'}"></label>
+      <span class="reihe"><button class="btn klein" data-do="pmove" data-i="${i}" data-d="-1">↑</button><button class="btn klein" data-do="pmove" data-i="${i}" data-d="1">↓</button><button class="btn klein" data-do="pdel" data-i="${i}">✕</button></span></div>`;
+  }).join('');
+  return `<div class="stapel"><div class="reihe" style="justify-content:space-between"><h2>Einsatzplan</h2><span class="klein">${S.plan.length} Missionen · ≈ ${Math.floor(mins / 60)} h ${pad(Math.round(mins % 60))} min</span></div>
+    <div class="plan">${rows}</div>
+    <div class="klein">Mission anhängen</div><div class="katalog">${Object.keys(M.games).map(k => `<button class="btn klein" data-do="padd" data-x="${k}">+ ${esc(G(k).name)}</button>`).join('')}</div>
+    <div><button class="btn link" data-do="preset">Plan auf Standard zurücksetzen</button></div></div>`;
+}
+function planSenden(plan, cur) { S.plan = plan; if (cur != null) S.cur = cur; cmd('plan_set', { plan, cur: cur ?? S.cur }); }
+
+// ------------------------------------------------------------------ Archiv
+function seiteArchiv() {
+  const t = ui.archiv, list = S.content[t] || [];
+  const tabs = `<button class="${t === 'drehbuch' ? 'an' : ''}" data-do="atab" data-x="drehbuch">Drehbuch</button><button class="${t === 'kartei' ? 'an' : ''}" data-do="atab" data-x="kartei">Beutekartei <span class="blass">${beuteWoerter().filter(x => !(S.kartei || {})[x.wort]).length || ''}</span></button>` + M.internal.concat(M.special).map(k => `<button class="${k === t ? 'an' : ''}" data-do="atab" data-x="${k}">${esc(G(k).name)} <span class="blass">${k === 'deppardy' ? S.boards.length : k === 'atlas' ? Object.keys(S.atlasSets).length : (S.content[k] || []).length}</span></button>`).join('');
+  if (t === 'drehbuch') return archivKopf(tabs) + archivDrehbuch();
+  if (t === 'kartei') return archivKopf(tabs) + archivKartei();
+  if (t === 'deppardy') return archivKopf(tabs) + archivDeppardy();
+  if (t === 'atlas') return archivKopf(tabs) + archivAtlas();
+  const eintraege = list.map((e, i) => `<div class="eintrag"><span class="blass">${pad(i + 1)}</span><div class="felder">${M.fields[t].map(([key, label, kind]) => {
+      const v = e[key] || '', k = `c-${t}-${i}-${key}`;
+      if (kind === 'area') return `<label class="breit">${esc(label)}<textarea class="feld" data-k="${k}" data-change="content" data-i="${i}" data-f="${key}">${esc(v)}</textarea></label>`;
+      if (kind === 'img' || kind === 'audio') return `<label class="breit">${esc(label)}<div class="reihe"><input class="feld" style="flex:1" data-k="${k}" value="${esc(v)}" data-change="content" data-i="${i}" data-f="${key}" placeholder="URL oder Datei hochladen">
+          <input type="file" accept="${kind === 'img' ? 'image/*' : 'audio/*'}" data-upload data-i="${i}" data-f="${key}"></div>
+          ${v && kind === 'img' ? `<img src="${esc(v)}" alt="">` : ''}${v && kind === 'audio' && !/youtu\.?be/.test(v) ? `<audio controls preload="none" src="${esc(v)}"></audio>` : ''}</label>`;
+      return `<label class="${kind === 'wide' ? 'breit' : ''}">${esc(label)}<input class="feld" data-k="${k}" value="${esc(v)}" data-change="content" data-i="${i}" data-f="${key}"></label>`;
+    }).join('')}</div><button class="btn link" data-do="cdel" data-i="${i}">Löschen</button></div>`).join('');
+  return `<div class="stapel"><div class="klein">Beweismittel · Deppardy &amp; Atlas pflegen ihre Inhalte selbst</div><h1>Archiv</h1>
+    <div class="untertabs">${tabs}</div><p class="text blass">${esc(M.hints[t])} Änderungen werden beim Verlassen des Feldes gespeichert.</p>
+    ${(() => { const r = (S.extra.reihenfolge || {})[t]; return r && r.von ? `<div class="reihe"><span class="klein">Als Nächstes kommt Eintrag ${pad(r.naechster)} von ${pad(r.von)}${r.gespielt >= r.von ? ' – alle schon einmal gespielt' : ''}</span>
+      <button class="btn klein" data-do="cursorweg" data-x="${t}" ${r.gespielt ? '' : 'disabled'}>Wieder von vorn</button></div>` : ''; })()}
+    ${eintraege || '<p class="blass">Noch keine Einträge.</p>'}
+    <div class="reihe"><button class="btn rot" data-do="cadd">Eintrag hinzufügen</button><button class="btn" data-do="crestore">Beispiele wiederherstellen</button></div></div>`;
+}
+// Alle Beutewörter, die irgendwo im Archiv stehen – mit Fundstelle
+function beuteWoerter() {
+  const out = [], dazu = (wort, wo) => { wort = String(wort || '').trim(); if (wort && !out.some(x => x.wort === wort)) out.push({ wort, wo }); };
+  Object.entries(S.content || {}).forEach(([t, l]) => (l || []).forEach(e => dazu(e.beute, G(t).name)));
+  (S.boards || []).forEach(b => (b.cats || []).forEach(c => Object.values(c.bw || {}).forEach(w => dazu(w, 'Deppardy · ' + c.name))));
+  Object.values(S.atlasSets || {}).forEach(st => (st.eintraege || []).forEach(e => dazu(e.beute, 'Atlas · ' + st.name)));
+  return out;
+}
+function archivKartei() {
+  const K = S.kartei || {}, alle = beuteWoerter(), such = (ui.ksuche || '').toLowerCase();
+  Object.keys(K).forEach(w => { if (!alle.some(x => x.wort === w)) alle.push({ wort: w, wo: 'nirgends verwendet' }); });
+  const fehlen = alle.filter(x => !K[x.wort]);
+  const liste = alle.filter(x => !such || x.wort.toLowerCase().includes(such) || x.wo.toLowerCase().includes(such))
+    .sort((a, b) => (!!K[a.wort] - !!K[b.wort]) || a.wort.localeCompare(b.wort, 'de'));
+  const w = ui.kartei && alle.some(x => x.wort === ui.kartei) ? ui.kartei : (liste[0] || {}).wort;
+  const k = K[w] || {}, wo = (alle.find(x => x.wort === w) || {}).wo;
+  const opt = Object.entries(WWH.VERMERK);
+  return `<div class="raster" style="margin-top:18px"><div class="stapel">
+      <p class="text blass">Jedes Beutewort bekommt beim Bergen eine Karteikarte auf Leinwand und Handy. Hier stehen die Einträge. ${fehlen.length ? `<span class="signal">${fehlen.length} Wörter haben noch keine Karte.</span>` : 'Alle Wörter haben eine Karte.'}</p>
+      <div class="reihe"><input class="feld" style="flex:1" data-k="ksuche" id="ksuche" placeholder="Suchen …" value="${esc(ui.ksuche || '')}"><button class="btn link" data-do="krestore">Mitgelieferte Karten wiederherstellen</button></div>
+      <div style="max-height:62vh;overflow:auto;border:1px solid var(--kante)">${liste.map(x => `<button data-do="kzeig" data-x="${esc(x.wort)}" style="display:flex;justify-content:space-between;gap:10px;width:100%;text-align:left;background:${x.wort === w ? 'var(--nacht-3)' : 'transparent'};border:none;border-bottom:1px solid var(--kante);padding:8px 12px;cursor:pointer">
+          <span class="serif" style="font-size:17px">${K[x.wort] ? '' : '<span class="signal">● </span>'}${esc(x.wort)}</span><span class="klein">${esc(x.wo)}</span></button>`).join('')}</div></div>
+    <div class="stapel">${w ? `${WWH.karte({ ...k, wort: w, ort: wo })}
+      <label class="klein" style="display:flex;flex-direction:column;gap:4px">Artikel oder Wortart<input class="feld" data-k="k-art" data-kf="art" data-w="${esc(w)}" value="${esc(k.art || '')}" placeholder="der / die / das / Adj. / Verb …"></label>
+      <label class="klein" style="display:flex;flex-direction:column;gap:4px">Bedeutung<textarea class="feld" data-k="k-def" data-kf="def" data-w="${esc(w)}" style="min-height:80px">${esc(k.def || '')}</textarea></label>
+      <label class="klein" style="display:flex;flex-direction:column;gap:4px">Herkunft (optional)<input class="feld" data-k="k-her" data-kf="herkunft" data-w="${esc(w)}" value="${esc(k.herkunft || '')}"></label>
+      <label class="klein" style="display:flex;flex-direction:column;gap:4px">Vermerk des Amtes<select class="feld" data-kf="vermerk" data-w="${esc(w)}"><option value="">—</option>${opt.map(([key, lbl]) => `<option value="${key}" ${k.vermerk === key ? 'selected' : ''}>${lbl}</option>`).join('')}</select></label>
+      ${K[w] ? `<div><button class="btn link" data-do="kdel" data-x="${esc(w)}">Karte löschen</button></div>` : ''}` : '<p class="blass">Noch keine Beutewörter im Archiv.</p>'}</div></div>`;
+}
+
+function archivDrehbuch() {
+  const st = S.story || {}, F = st.finale || {}, MW = st.maulwurf || {}, MS = st.missionen || {};
+  const feld = (label, sf, v, area) => `<label class="klein" style="display:flex;flex-direction:column;gap:4px">${label}${area
+    ? `<textarea class="feld" data-k="d-${sf}" data-df="${sf}" style="min-height:80px">${esc(v || '')}</textarea>` : `<input class="feld" data-k="d-${sf}" data-df="${sf}" value="${esc(v || '')}">`}</label>`;
+  return `<div class="stapel" style="margin-top:18px">
+    <p class="text blass">Alle Texte der Geschichte. Änderungen werden beim Verlassen des Feldes gespeichert. Platzhalter: <code>{bonus}</code> und <code>{anteil}</code> in den Maulwurf-Texten, <code>{ziel}</code> und <code>{stand}</code> in den Ziel-Texten.</p>
+    <div class="raster"><div class="stapel"><h2>Grundlage</h2>
+      <div class="reihe">${feld('Name der Zelle', 'zelle', st.zelle)}${feld('Tage bis zur Säuberung', 'tage', st.tage)}</div>
+      ${feld('Auftrag (steht auf jeder Einsatzkarte)', 'auftrag', st.auftrag)}
+      <h2>Prolog</h2>
+      ${(st.prolog || []).map((p, i) => `<div class="box"><div class="reihe" style="justify-content:space-between"><span class="klein">Tafel ${pad(i + 1)}</span><button class="btn klein" data-do="dpdel" data-i="${i}">✕</button></div>
+        ${feld('Titel', 'prolog:' + i + ':titel', p.titel)}${feld('Text', 'prolog:' + i + ':text', p.text, true)}
+        <div class="reihe"><label class="klein" style="display:flex;gap:8px;align-items:center"><input type="checkbox" data-pm="${i}" ${p.maulwurf ? 'checked' : ''}> nur mit Maulwurf</label>
+          <label class="klein" style="display:flex;gap:8px;align-items:center">Schattenmotiv <select class="feld kurz" style="width:190px" data-df="prolog:${i}:motiv">${[['', 'automatisch'], ['jalousie', 'Licht durch Jalousie'], ['akten', 'Aktenstapel, Verbot'], ['uhr', 'Uhr vor zwölf, Feuer'], ['semikolon', 'Semikolon'], ['rucksack', 'Rucksack'], ['verdacht', 'Gestalt im Türlicht']].map(([k, l]) => `<option value="${k}" ${(p.motiv || '') === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label></div></div>`).join('')}
+      <div><button class="btn" data-do="dpadd">Tafel hinzufügen</button></div></div>
+    <div class="stapel"><h2>Einsatzbefehle</h2>
+      ${Object.keys(M.games).map(k => `<div class="box"><div class="klein">${esc(G(k).name)}</div>${feld('Einsatzort', 'mission:' + k + ':ort', (MS[k] || {}).ort)}${feld('Lage', 'mission:' + k + ':lage', (MS[k] || {}).lage, true)}${feld('Funkspruch danach', 'mission:' + k + ':nach', (MS[k] || {}).nach, true)}</div>`).join('')}
+      <h2>Übergabe</h2>
+      ${feld('Einleitung', 'finale:uebergabe', F.uebergabe, true)}${feld('Titel für Platz 1', 'finale:hueter', F.hueter)}
+      ${feld('Frage der Bilanz', 'finale:frage', F.frage)}${feld('Wenn nie umgelagert wurde', 'finale:keine', F.keine, true)}
+      ${feld('Ziel ansagen ({ziel})', 'finale:ziel', F.ziel, true)}${feld('Ziel erreicht ({stand}, {ziel})', 'finale:zielErreicht', F.zielErreicht, true)}
+      ${feld('Ziel verfehlt ({stand}, {ziel})', 'finale:zielVerfehlt', F.zielVerfehlt, true)}${feld('Hinweis: Maulwurf zählt nicht', 'finale:maulwurfZaehlt', F.maulwurfZaehlt, true)}
+      ${feld('Überschrift der Beutewörter', 'finale:gerettet', F.gerettet)}
+      <h2>Maulwurf</h2>
+      ${feld('Rollenkarte des Maulwurfs', 'maulwurf:rolle', MW.rolle, true)}${feld('Rollenkarte der Zelle', 'maulwurf:zelle', MW.zelle, true)}
+      ${feld('Frage bei der Abstimmung', 'maulwurf:frage', MW.frage)}${feld('Text bei Enttarnung', 'maulwurf:enttarnt', MW.enttarnt, true)}${feld('Text bei Entkommen', 'maulwurf:entkommen', MW.entkommen, true)}</div></div>
+    <div><button class="btn link" data-do="drestore">Drehbuch auf die Vorlage zurücksetzen</button></div></div>`;
+}
+function drehbuchFeld(df, v) {
+  const st = structuredClone(S.story || {}), [a, b, c] = df.split(':');
+  if (a === 'tage') st.tage = parseInt(v) || 7;
+  else if (!b) st[a] = v;
+  else if (a === 'prolog') st.prolog[+b][c] = v;
+  else if (a === 'mission') { st.missionen = st.missionen || {}; st.missionen[b] = { ...(st.missionen[b] || {}), [c]: v }; }
+  else { st[a] = { ...(st[a] || {}), [b]: v }; }
+  drehbuchSenden(st);
+}
+function drehbuchSenden(st) { S.story = st; cmd('story_set', { story: st }); }
+
+function archivKopf(tabs) { return `<div class="stapel"><div class="klein">Beweismittel</div><h1>Archiv</h1><div class="untertabs">${tabs}</div></div>`; }
+
+// ---- Deppardy-Boards
+function archivDeppardy() {
+  if (ui.boardId && !S.boards.some(b => b.id === ui.boardId) && !ui.boardDirty) ui.boardId = null;
+  if (!ui.boardId && S.boards[0]) ui.boardId = S.boards[0].id;
+  const orig = S.boards.find(b => b.id === ui.boardId);
+  if (!ui.boardDirty || !ui.board || ui.board.id !== ui.boardId) ui.board = orig ? structuredClone(orig) : null;
+  const liste = S.boards.map(b => `<button class="btn klein ${b.id === ui.boardId ? 'hell' : ''}" data-do="bwahl" data-id="${esc(b.id)}">${esc(b.name)}</button>`).join('');
+  let h = `<div class="stapel" style="margin-top:18px">
+    <p class="text blass">Boards aus dem eigenständigen Deppardy lassen sich als .json importieren, auch ältere Versionen. Eingebettete Bilder und Töne legt der Server dabei als Dateien ab. Fragen, Tipps und Antworten dürfen HTML enthalten.</p>
+    <div class="reihe">${liste}</div>
+    <div class="reihe"><button class="btn rot" data-do="bneu">Neues Board</button><label class="btn">Importieren (.json)<input type="file" accept="application/json,.json" data-bimport hidden></label>
+      <button class="btn" data-do="bexport" ${ui.board ? '' : 'disabled'}>Exportieren</button><button class="btn" data-do="bdel" ${ui.board ? '' : 'disabled'}>Löschen</button>
+      <button class="btn link" data-do="brestore">Hinterland-Board wiederherstellen</button></div></div>`;
+  const b = ui.board;
+  if (!b) return h + '<p class="blass">Noch kein Board.</p>';
+  h += `<div class="stapel" style="margin-top:18px">
+    <div class="reihe"><input class="feld" style="flex:1;font-size:20px" data-k="bname" data-bf="name" value="${esc(b.name)}">
+      <label class="klein">Punktstufen <input class="feld mittel" data-k="bpts" data-bf="pts" value="${esc(b.pts.join(', '))}"></label>
+      <button class="btn ${ui.boardDirty ? 'rot' : ''}" data-do="bsave">${ui.boardDirty ? 'Änderungen speichern' : 'Gespeichert'}</button></div>
+    ${b.cats.map((c, ci) => `<details class="kat" ${ui.offen === ci ? 'open' : ''} data-ci="${ci}"><summary><span class="blass">${pad(ci + 1)}</span><h2 style="flex:1;font-size:24px">${esc(c.name)}</h2>
+        <span class="klein">${b.pts.filter(p => c.qh[p]).length} / ${b.pts.length} Fragen</span></summary>
+      <div class="karten"><div class="reihe"><label class="klein" style="flex:1">Kategorie <input class="feld" data-k="bc-${ci}" data-bf="cat:${ci}" value="${esc(c.name)}"></label><button class="btn klein" data-do="bcdel" data-i="${ci}">Kategorie entfernen</button></div>${b.pts.map(p => `<div class="dkarte"><div><div class="p">${p}</div>
+          <label class="klein" style="display:flex;gap:6px;align-items:center"><input type="checkbox" data-bf="rk:${ci}:${p}" ${c.rk[p] ? 'checked' : ''}>×2</label></div>
+        <div class="felder"><label>Frage<textarea class="feld" data-k="bq-${ci}-${p}" data-bf="qh:${ci}:${p}">${esc(c.qh[p] || '')}</textarea>
+            <span class="reihe"><input type="file" accept="image/*,audio/*" data-bupload="qh:${ci}:${p}" style="font-size:11px"></span></label>
+          <label>Tipp<textarea class="feld" data-k="bh-${ci}-${p}" data-bf="hh:${ci}:${p}">${esc(c.hh[p] || '')}</textarea></label>
+          <label>Antwort<textarea class="feld" data-k="ba-${ci}-${p}" data-bf="ah:${ci}:${p}">${esc(c.ah[p] || '')}</textarea></label>
+          <label>Beutewort<input class="feld ${(c.bw || {})[p] && !(S.kartei || {})[(c.bw || {})[p]] ? 'fehl' : ''}" data-k="bb-${ci}-${p}" data-bf="bw:${ci}:${p}" value="${esc((c.bw || {})[p] || '')}"></label></div></div>`).join('')}</div></details>`).join('')}
+    <div><button class="btn" data-do="bcadd">Kategorie hinzufügen</button></div></div>`;
+  return h;
+}
+function boardFeld(bf, el) {
+  const b = ui.board, [art, ci, p] = bf.split(':');
+  if (art === 'name') b.name = el.value;
+  else if (art === 'pts') { const neu = [...new Set(el.value.split(/[,; ]+/).map(x => parseInt(x)).filter(x => x > 0))].sort((a, z) => a - z); if (neu.length) b.pts = neu; }
+  else if (art === 'cat') b.cats[+ci].name = el.value;
+  else if (art === 'rk') { if (el.checked) b.cats[+ci].rk[p] = true; else delete b.cats[+ci].rk[p]; }
+  else { b.cats[+ci][art] = b.cats[+ci][art] || {}; if (el.value.trim()) b.cats[+ci][art][p] = el.value; else delete b.cats[+ci][art][p]; }
+  if (!ui.boardDirty) { ui.boardDirty = true; const btn = app.querySelector('[data-do="bsave"]'); if (btn) { btn.textContent = 'Änderungen speichern'; btn.classList.add('rot'); } }
+}
+async function boardSpeichern() { if (!ui.board) return; await cmd('board_save', { board: ui.board }); ui.boardDirty = false; hinweis('Board gespeichert'); }
+
+// ---- Atlas-Sets
+function archivAtlas() {
+  const ids = Object.keys(S.atlasSets);
+  if (!ui.setId || !S.atlasSets[ui.setId]) ui.setId = ids[0] || null;
+  const set = ui.setId ? S.atlasSets[ui.setId] : null;
+  let h = `<datalist id="laender">${Object.entries(GEO).filter(([, v]) => !v.kein).sort((a, b) => a[1].name.localeCompare(b[1].name, 'de')).map(([, v]) => `<option value="${esc(v.name)}">`).join('')}</datalist>
+    <div class="stapel" style="margin-top:18px"><p class="text blass">Jede Atlas-Mission zieht ihre Begriffe aus einem Set – welches, steht im Einsatzplan. Länder per Namen eintragen; „auch richtig“ nimmt mehrere Länder mit Komma.</p>
+    <div class="reihe">${ids.map(k => `<button class="btn klein ${k === ui.setId ? 'hell' : ''}" data-do="swahl" data-id="${esc(k)}">${esc(S.atlasSets[k].name)} · ${S.atlasSets[k].eintraege.length}</button>`).join('')}</div>
+    <div class="reihe"><button class="btn rot" data-do="sneu">Neues Set</button><button class="btn" data-do="sdel" ${set ? '' : 'disabled'}>Set löschen</button><button class="btn link" data-do="srestore">Mitgelieferte Sets wiederherstellen</button></div></div>`;
+  if (!set) return h;
+  h += `<div class="stapel" style="margin-top:18px"><div class="reihe"><input class="feld" style="flex:1;font-size:20px" data-k="sname" data-sf="name" value="${esc(set.name)}">
+      <input class="feld" style="flex:2" data-k="smarke" data-sf="marke" value="${esc(set.marke)}" placeholder="Leitfrage, z. B. Woher stammt dieses Gericht?"></div>
+    <div class="aeintrag klein"><span>Begriff</span><span>Land</span><span>Auch richtig</span><span>Notiz nach der Auflösung</span><span>Beutewort</span><span></span></div>
+    ${set.eintraege.map((e, i) => `<div class="aeintrag">
+      <input class="feld" data-k="se-${i}-t" data-sf="e:${i}:text" value="${esc(e.text)}">
+      <input class="feld ${e.land ? '' : 'fehl'}" list="laender" data-k="se-${i}-l" data-sf="e:${i}:land" value="${esc(landName(e.land))}">
+      <input class="feld" data-k="se-${i}-a" data-sf="e:${i}:auchOk" value="${esc(e.auchOk.map(landName).join(', '))}">
+      <input class="feld" data-k="se-${i}-n" data-sf="e:${i}:notiz" value="${esc(e.notiz)}">
+      <input class="feld ${e.beute && !(S.kartei || {})[e.beute] ? 'fehl' : ''}" data-k="se-${i}-b" data-sf="e:${i}:beute" value="${esc(e.beute || '')}" title="${e.beute && !(S.kartei || {})[e.beute] ? 'Noch keine Karteikarte' : ''}">
+      <button class="btn klein" data-do="sedel" data-i="${i}">✕</button></div>`).join('')}
+    <div><button class="btn" data-do="seadd">Begriff hinzufügen</button></div></div>`;
+  return h;
+}
+function setSenden(set) { S.atlasSets[ui.setId] = set; cmd('atlas_set_save', { id: ui.setId, set }); }
+function setFeld(sf, v) {
+  const set = structuredClone(S.atlasSets[ui.setId]), [art, i, f] = sf.split(':');
+  const key = n => NAME2KEY[String(n).trim().toLowerCase()] || '';
+  if (art === 'name' || art === 'marke') set[art] = v;
+  else if (f === 'land') { set.eintraege[+i].land = key(v); if (v && !key(v)) hinweis('Land „' + v + '“ nicht gefunden – bitte aus der Liste wählen'); }
+  else if (f === 'auchOk') { const teile = v.split(',').map(x => x.trim()).filter(Boolean); set.eintraege[+i].auchOk = teile.map(key).filter(Boolean); const fehlt = teile.filter(x => !key(x)); if (fehlt.length) hinweis('Nicht gefunden: ' + fehlt.join(', ')); }
+  else set.eintraege[+i][f] = v;
+  setSenden(set);
+}
+
+function contentSenden(list) { S.content[ui.archiv] = list; cmd('content_set', { type: ui.archiv, list }); }
+
+// ------------------------------------------------------------------ System
+function seiteSystem() {
+  return `<div class="raster"><div class="stapel"><h2>Adressen</h2>
+    <div class="box"><div class="klein">Agenten-Geräte (steht als QR-Code auf der Leinwand)</div><div class="link">${esc(basis())}</div>
+      <div class="klein">Leinwand</div><div class="link">${esc(basis())}leinwand</div>
+      <div class="klein">Steuermodul</div><div class="link">${esc(basis())}leitung/</div></div>
+    <p class="text">Die Beitritts-Adresse ermittelt der Server selbst (${esc(LAN)}). Läuft der Abend über einen Tunnel oder eine Domain, hier die öffentliche Adresse eintragen.</p>
+    <div class="reihe"><input class="feld" style="flex:1" data-k="joinurl" id="joinUrl" value="${esc(S.joinUrl)}" placeholder="${esc(LAN)}"><button class="btn" data-do="joinurl">Speichern</button></div></div>
+    <div class="stapel"><h2>Spielstand</h2>
+      <p class="text">Der Server speichert nach jeder Aktion in data/state.json. Für einen zweiten Abend oder als Sicherung lässt sich der ganze Stand samt Archiv und Plan exportieren.</p>
+      <div class="reihe"><button class="btn" data-do="export">Exportieren</button><label class="btn">Importieren<input type="file" accept="application/json" id="import" hidden></label></div>
+      <h2>Reihenfolge der Inhalte</h2>
+      <p class="text blass">Jedes Spiel merkt sich, welcher Eintrag als Nächstes kommt – auch über einen Abend hinaus, damit beim zweiten Abend neue Fragen drankommen. Vor einem ganz neuen Abend mit denselben Leuten also nicht zurücksetzen.</p>
+      <div><button class="btn" data-do="cursorallesweg">Alle Spiele wieder von vorn</button></div>
+      <h2>Deppardy und Atlas</h2>
+      <p class="text blass">Beide Spiele sind eingebaut: Boards und Atlas-Sets pflegst du im Archiv, welches Board oder Set eine Mission nutzt, stellst du im Einsatzplan ein.</p></div></div>`;
+}
+
+// ------------------------------------------------------------------ Mission (Cockpit)
+function seiteMission() {
+  const m = mission();
+  if (!S.active || !m) return `<div class="stapel"><h2>Keine Mission aktiv</h2><p class="text">Eine Mission startet in der Zentrale.</p><div><button class="btn rot" data-do="missionStart" ${m && S.agents.length ? '' : 'disabled'}>${m ? 'Mission ' + pad(S.cur + 1) + ' starten: ' + esc(G(m.type).name) : 'Plan ist durch'}</button></div></div>`;
+  const g = G(m.type), step = m.pts || 1;
+  const kopf = `<div class="reihe" style="justify-content:space-between"><span class="klein">Mission ${pad(S.cur + 1)} / ${pad(S.plan.length)} · ${modusLabel(m)}</span>
+    <span class="reihe">${S.phase === 'play' ? `<span class="klein">Runde ${S.round + 1} / ${m.rounds}</span>` : ''}<button class="btn klein" data-do="abbruch">Abbrechen</button><button class="btn klein ${S.revealed && S.round >= m.rounds - 1 ? 'hell' : ''}" data-do="fertig">Mission abschließen</button></span></div>
+    <h1>${esc(g.name)}</h1>`;
+
+  if (S.phase === 'intro') {
+    const zellen = m.mode === 'team' ? `<div class="box"><div class="reihe" style="justify-content:space-between"><span class="klein">Zellen</span>
+      <span class="reihe"><span class="seg">${[2, 3, 4].map(n => `<button class="${S.teamCount === n ? 'an' : ''}" data-do="tcount" data-x="${n}">${n}</button>`).join('')}</span><button class="btn klein" data-do="treroll">Neu würfeln</button></span></div>${zellenKarten()}</div>` : '';
+    return `<div class="raster cockpit"><div class="stapel">${kopf}${regeln(g)}${zellen}
+      <div><button class="btn rot" data-do="beginnen" data-ext="${g.ext || ''}">${g.ext ? g.name + ' öffnen und starten' : 'Einsatz beginnen'}</button></div></div>
+      <div class="stapel"><p class="text blass">Die Leinwand zeigt gerade Regeln${m.mode === 'team' ? ' und Zellen' : ''}. Die Geräte zeigen dasselbe, bei Zellen zusätzlich die eigene.</p></div></div>`;
+  }
+
+  if (m.type === 'deppardy' && S.dep) return `<div class="raster cockpit"><div class="stapel">${kopf}${cockpitDeppardy()}</div><div class="stapel">${punkteWertung()}</div></div>`;
+  // play
+  const it = S.rnd.item;
+  if (m.type === 'atlas' && it) return `<div class="raster cockpit"><div class="stapel">${kopf}${cockpitAtlas(it)}${steuerung(m, it)}</div><div class="stapel">${punkteWertung()}</div></div>`;
+  if (!it) return `<div class="stapel">${kopf}<p class="text">Im Archiv gibt es für ${esc(g.name)} keine Einträge. Dort anlegen oder die Mission abschließen.</p></div>`;
+  return `<div class="raster cockpit"><div class="stapel">${kopf}${bühne(m, it, step)}</div><div class="stapel">${wertung(m, step)}</div></div>`;
+}
+
+function punkteWertung() {
+  const u = (S.extra.units || []);
+  return `<div class="reihe" style="justify-content:space-between"><span class="klein">Punkte dieser Mission</span><span class="klein">${mission() && G(mission().type).kurs ? mission().pts : 100} Punkte = 1 Wort</span></div>
+    <div class="tabelle">${u.map(x => `<div class="zeile"><div class="wer"><b>${esc(x.label)}</b><span>${x.key.startsWith('t') ? x.members.map(code).map(esc).join(' · ') : esc((agent(x.key) || {}).name || '')}</span></div>
+      <div class="mitte"><span class="display" style="font-size:24px">${S.upts[x.key] || 0}</span><span class="blass">= ${fmtGain(S.gains[x.members[0]]) || '0'} Wörter</span></div>
+      <div class="aktion"><button class="btn klein" data-do="uadj" data-k="${x.key}" data-d="-100">−100</button><button class="btn klein" data-do="uadj" data-k="${x.key}" data-d="100">+100</button></div></div>`).join('')}</div>`;
+}
+
+function cockpitDeppardy() {
+  const d = S.dep, b = d.board, c = d.cell, lbl = Object.fromEntries((S.extra.units || []).map(u => [u.key, u.label]));
+  if (!c) {
+    return `<div class="brett" style="grid-template-columns:repeat(${b.cats.length},1fr)">${b.cats.map(k => `<div class="kat">${esc(k.name)}</div>`).join('')}
+      ${b.pts.map(p => b.cats.map((k, i) => { const key = i + '|' + p, weg = d.revealed[key], leer = !k.qh[p];
+        return `<button class="${weg ? 'weg' : ''} ${leer ? 'leer' : ''}" data-do="${weg ? 'dreopen' : 'dopen'}" data-c="${i}" data-p="${p}" ${leer ? 'disabled' : ''} title="${weg ? 'Schon gespielt – Klick öffnet es wieder' : esc((k.qh[p] || '').replace(/<[^>]+>/g, ''))}">${p}${k.rk[p] ? '<span class="rk">×2</span>' : ''}</button>`; }).join('')).join('')}</div>
+      <div class="reihe"><span class="klein">Buzzer</span><span class="seg"><button class="${S.depArm ? 'an' : ''}" data-do="deparm" data-x="1">nach Freigabe</button><button class="${S.depArm ? '' : 'an'}" data-do="deparm" data-x="0">sofort scharf</button></span>
+        <span class="klein">Mit Freigabe startet der Timer erst beim Freigeben.</span></div>
+      <div class="reihe"><span class="klein">Timer je Frage</span><input class="feld kurz" type="number" min="0" max="600" data-k="ddur" value="${d.dur}" data-change="ddur"><span class="blass">Sekunden, 0 = aus</span></div>
+      <p class="kbd">Feld anklicken zum Aufdecken. In der Frage: <kbd>B</kbd> Buzzer freigeben · <kbd>Leertaste</kbd> weiter · <kbd>T</kbd> Timer · <kbd>R</kbd> richtig · <kbd>F</kbd> falsch · <kbd>Esc</kbd> schließen</p>`;
+  }
+  const cat = b.cats[c.c], v = S.extra.depValue, p = c.p;
+  const erster = d.buzz.find(x => !d.wrong.includes(x.key));
+  const naechster = d.stage < 2 ? (d.stage === 0 && (cat.hh[p] || '').trim() ? 'Tipp zeigen' : 'Antwort zeigen') : 'Feld schließen';
+  return `<div class="depfeld"><div class="reihe" style="justify-content:space-between"><span class="klein">${esc(cat.name)} · ${p}${cat.rk[p] ? ' · Risiko ×2' : ''}</span><span class="display signal" style="font-size:34px">${v}</span></div>
+      <div class="html">${cat.qh[p] || ''}</div>
+      ${cat.hh[p] ? `<div class="text blass" style="${d.stage >= 1 ? 'color:var(--papier)' : ''}">Tipp${d.stage >= 1 ? ' (sichtbar)' : ''}: ${cat.hh[p]}</div>` : ''}
+      <div class="antwort html">${cat.ah[p] || '–'}</div>
+      <div class="reihe">${!d.armed && d.stage < 2 ? '<button class="btn hell" data-do="darm">Buzzer freigeben</button>' : ''}<button class="btn ${d.armed || d.stage >= 2 ? 'rot' : ''}" data-do="dstage">${naechster}</button>
+        ${d.dur > 0 && d.stage < 2 ? `<button class="btn" data-do="dtimer">${d.tRun ? 'Timer anhalten' : 'Timer starten'}</button><span class="uhrtext" id="huhr"></span>` : ''}
+        ${d.stage >= 2 ? '' : '<button class="btn link" data-do="dclose">ohne Auflösung schließen</button>'}</div></div>
+    <div class="box"><div class="reihe" style="justify-content:space-between"><span class="klein">Buzzer</span><button class="btn klein" data-do="dbuzzreset">Buzzer neu freigeben</button></div>
+      <div class="buzzliste">${d.buzz.map((x, i) => { const falsch = d.wrong.includes(x.key), dran = erster && erster.key === x.key;
+        return `<div class="${dran ? 'dran' : ''}" style="${falsch ? 'opacity:.4' : ''}"><span class="blass">${i + 1}.</span><b>${esc(lbl[x.key] || '?')}</b>${x.key.startsWith('t') ? `<span class="blass">${esc(code(x.id))}</span>` : ''}
+          ${falsch ? '<span class="pill schlecht">falsch</span>' : `<button class="btn klein" data-do="daward" data-k="${x.key}" data-s="1">✓ +${v}</button><button class="btn klein" data-do="daward" data-k="${x.key}" data-s="-1">✗ −${v}</button>`}</div>`; }).join('') || '<p class="blass">Noch niemand hat gebuzzert.</p>'}</div>
+      <div class="klein">Ohne Buzzer werten</div>
+      <div class="reihe">${(S.extra.units || []).map(u => `<span class="pill">${esc(u.label)} <button class="btn link" data-do="daward" data-k="${u.key}" data-s="1">+</button> <button class="btn link" data-do="daward" data-k="${u.key}" data-s="-1">−</button></span>`).join('')}</div></div>`;
+}
+
+function cockpitAtlas(it) {
+  const prev = S.extra.atlasPreview || {}, res = S.atlasRes || {}, tips = {};
+  (S.extra.units || []).forEach(u => { const a = u.key.startsWith('t') ? S.teamAnswers[u.key.slice(1)] : S.answers[u.key]; if (a) tips[u.key] = a; });
+  return `<div class="klein">${esc(it.setName)} · ${esc(it.marke)}</div><p class="gross">${esc(it.text)}</p>
+    <div class="loesung"><div class="klein">Richtig</div><span class="display">${esc(landName(it.land))}</span>
+      ${it.auchOk && it.auchOk.length ? `<p class="text">Auch richtig: ${it.auchOk.map(landName).map(esc).join(', ')}</p>` : ''}${it.notiz ? `<p class="text blass">${esc(it.notiz)}</p>` : ''}</div>
+    <div class="tabelle">${(S.extra.units || []).map(u => { const t = tips[u.key], r = S.revealed ? res[u.key] : prev[u.key];
+      return `<div class="zeile"><div class="wer"><b>${esc(u.label)}</b><span>${t && t.by && u.key.startsWith('t') ? 'getippt von ' + esc(t.by === 'leitung' ? 'Moderation' : code(t.by)) : ''}</span></div>
+        <div class="mitte">${t ? `<span class="serif" style="font-size:17px">${esc(landName(t.v))}</span>` : '<span class="blass">wartet</span>'}${r ? `<span class="pill ${r.hit ? 'gut' : ''}">${r.pts} P.${r.hit ? '' : ' · ' + r.km.toLocaleString('de-DE') + ' km'}</span>` : ''}${!S.revealed && r ? '<span class="blass">(Vorschau)</span>' : ''}</div><div></div></div>`; }).join('')}</div>`;
+}
+
+function zellenKarten() {
+  return `<div class="zellen">${S.teams.map((t, i) => `<div class="zelle"><h3>Zelle ${'ABCD'[i]}</h3>${t.filter(agent).map(id => `<div>${esc(code(id))} <span class="blass">${esc(agent(id).name)}</span></div>`).join('')}</div>`).join('')}</div>`;
+}
+
+function steuerung(m, it) {
+  const t = m.type, rev = S.revealed, last = S.round >= m.rounds - 1;
+  const b = [];
+  if (t === 'wette' && !S.showQ) b.push(`<button class="btn rot" data-do="showq">Einsätze schließen, Frage zeigen</button>`);
+  else if (!rev) {
+    if (t === 'impostor') b.push(`<button class="btn ${S.open ? '' : 'rot'}" data-do="open" data-x="${S.open ? 0 : 1}">${S.open ? 'Abstimmung schließen' : 'Abstimmung öffnen'}</button>`);
+    else b.push(`<button class="btn" data-do="open" data-x="${S.open ? 0 : 1}">${S.open ? 'Abgabe schließen' : 'Abgabe wieder öffnen'}</button>`);
+    if (t === 'zoom') b.push(`<button class="btn" data-do="zoom" ${S.zoomStep < M.zoom.length - 1 ? '' : 'disabled'}>Herauszoomen (${S.zoomStep + 1}/${M.zoom.length})</button>`);
+    if (t === 'sound') b.push(`<button class="btn" data-do="zoom" ${S.zoomStep < M.zoom.length - 1 ? '' : 'disabled'}>Rauschen reduzieren (${S.zoomStep + 1}/${M.zoom.length})</button>`);
+    if (t === 'woerterbuch' && S.rnd.wbPhase === 'faelschen') b.push(`<button class="btn rot" data-do="wbabstimmen" ${Object.keys(S.answers).length ? '' : 'disabled'}>Fälschen beenden, Abstimmung starten</button>`);
+    else b.push(`<button class="btn rot" data-do="reveal">Aufdecken</button>`);
+  }
+  if (rev && !last) b.push(`<button class="btn hell" data-do="next">Nächste Runde</button>`);
+  if (!rev) b.push(`<button class="btn link" data-do="skip" title="Anderen Eintrag ziehen, Runde bleibt gleich">Eintrag überspringen</button>`);
+  return `<div class="reihe">${b.join('')}</div>`;
+}
+
+function bühne(m, it, step) {
+  const t = m.type, rev = S.revealed, x = S.extra;
+  let h = '';
+  if (t === 'schaetzen') h = `<p class="gross">${esc(it.q)}</p><div class="loesung"><div class="klein">Lösung</div><span class="display">${esc(it.a)} ${esc(it.unit || '')}</span></div>`;
+  if (t === 'ranking') {
+    const ln = it.items.split('\n').map(s => s.trim()).filter(Boolean);
+    h = `<p class="gross">${esc(it.q)}</p><div class="loesung"><div class="klein">Richtige Folge</div><span class="display">${esc(x.rankCode)}</span>
+      <ol class="regeln" style="margin-top:8px">${ln.map(s => `<li>${esc(s)}</li>`).join('')}</ol></div>`;
+  }
+  if (t === 'impostor') h = `<div class="loesung"><div class="klein">Eindringling</div><span class="display">${esc(code(S.rnd.spy))}</span><p class="text">Parole: <b>${esc(it.word)}</b> · Kategorie des Eindringlings: ${esc(it.cat)}</p></div>
+      <p class="text blass">Jedes Gerät zeigt verdeckt sein Losungswort bzw. dem Spitzel die Kategorie. Zwei Wortrunden, dann Abstimmung öffnen.</p>`;
+  if (t === 'zoom') h = `<div class="lupe"><img src="${esc(it.img)}" alt="" style="transform-origin:${S.rnd.ox}% ${S.rnd.oy}%;transform:scale(${M.zoom[S.zoomStep]})"></div><div class="loesung"><div class="klein">Lösung</div><span class="display">${esc(it.a)}</span></div>`;
+  if (t === 'sound') {
+    const yt = /youtu\.?be/.test(it.src || '');
+    h = `<div class="loesung"><div class="klein">Lösung</div><span class="display">${esc(it.a)}</span></div>
+      ${!it.src ? '<p class="text">Keine Quelle eingetragen.</p>' : yt ? `<a class="btn" href="${esc(it.src)}" target="_blank" rel="noopener">YouTube öffnen</a><p class="text blass">In Discord den ganzen Bildschirm mit Ton teilen.</p>`
+      : `<div class="reihe"><span class="klein">Ton auf der Leinwand</span><button class="btn" data-do="audio" data-x="play">Abspielen</button><button class="btn" data-do="audio" data-x="pause">Pause</button><button class="btn" data-do="audio" data-x="restart">Von vorn</button></div>
+         <audio controls preload="none" src="${esc(it.src)}" style="width:100%"></audio><span class="klein">Der Player hier ist nur zum Vorhören auf diesem Gerät.</span>`}`;
+  }
+  if (t === 'hoeher') h = `<div class="loesung"><div class="klein">Das Amt verkündet</div><span class="display">${esc(S.rnd.claim === 'A' ? it.a : it.b)}!</span>
+      <p class="text">Richtig ist: <b>${x.propaganda === 'W' ? 'Wahrheit' : x.propaganda === 'P' ? 'Propaganda' : 'Werte prüfen'}</b></p></div><p class="gross">${esc(it.q)}</p><div class="reihe"><div class="loesung" style="flex:1"><div class="klein">A</div><span class="display">${esc(it.a)}</span><p class="text">${esc(it.av)}</p></div>
+      <div class="loesung" style="flex:1"><div class="klein">B</div><span class="display">${esc(it.b)}</span><p class="text">${esc(it.bv)}</p></div></div><p class="text">Richtig: <b>${esc(x.hoeherCorrect || 'Gleichstand / Werte prüfen')}</b></p>`;
+  if (t === 'emoji') h = `<div style="font-size:72px;line-height:1.1">${esc(it.e)}</div><div class="loesung"><div class="klein">Lösung</div><span class="display">${esc(it.a)}</span></div>`;
+  if (t === 'woerterbuch') {
+    const r = S.rnd, code = id => ((agent(id) || {}).code || '?');
+    h = `<div class="loesung"><div class="klein">Beschlagnahmt</div><span class="display">${esc(it.wort)}</span> <span class="klein">${esc(it.art || '')}</span><p class="text">Echt: <b>${esc(it.def)}</b></p></div>`;
+    if (r.wbPhase === 'faelschen') {
+      h += `<div class="box"><div class="klein">Fälschungen · <span class="signal">●</span> sieht nach der echten Bedeutung aus</div>
+        <div class="funk">${Object.entries(S.answers).map(([id, a]) => { const tr = (r.treffer || []).includes(id), weg = (r.gestrichen || []).includes(id);
+          return `<div class="${tr ? 'r' : ''}" style="grid-template-columns:110px 1fr auto;${weg ? 'opacity:.4' : ''}"><b>${esc(code(id))}</b><span class="serif">${(x.wbMatch || {})[id] ? '<span class="signal">● </span>' : ''}${esc(a.v)}</span>
+            <span class="reihe"><button class="btn klein ${tr ? 'hell' : ''}" data-do="wbtreffer" data-id="${id}" title="Stimmt mit der echten Bedeutung überein: sofort +${step}">${tr ? 'Treffer ✓' : 'Treffer'}</button><button class="btn klein" data-do="wbweg" data-id="${id}" title="Nicht in die Abstimmung nehmen">${weg ? 'wieder rein' : 'streichen'}</button></span></div>`; }).join('') || '<p class="blass">Noch keine Fälschung eingegangen.</p>'}</div></div>`;
+    } else {
+      const stimmen = {}; Object.entries(S.votes).forEach(([v, nr]) => (stimmen[nr] = stimmen[nr] || []).push(v));
+      h += `<div class="box"><div class="klein">${S.revealed ? 'Ergebnis' : 'Abstimmung läuft'} · ${Object.keys(S.votes).length} Stimmen</div><div class="funk">${(r.optionen || []).map((o, i) => `<div style="grid-template-columns:40px 1fr auto;${o.id === 'echt' ? 'background:#1f2616' : ''}"><b>${'ABCDEFGHIJKLMNOP'[i]}</b><span class="serif">${esc(o.text)}</span>
+        <span class="klein">${o.id === 'echt' ? 'echt' : esc(code(o.id))} · ${(stimmen[i] || []).map(code).map(esc).join(', ') || '–'}</span></div>`).join('')}</div></div>`;
+    }
+  }
+  if (t === 'schwaerzung') {
+    const code = id => ((agent(id) || {}).code || '?');
+    h = `<div class="loesung"><div class="klein">${esc(it.quelle || '')}</div><p class="gross" style="white-space:pre-line">${esc(it.text).replace(/\[\[(.+?)\]\]/, '<b class="signal">$1</b>')}</p></div>
+      <div class="box"><div class="reihe" style="justify-content:space-between"><span class="klein">Antworten · <span class="signal">●</span> passt zu „${esc(x.schwarzWort)}“</span>
+        <button class="btn klein ${S.revealed ? 'rot' : ''}" data-do="awardschwarz">Alle ● als richtig werten</button></div>
+      <div class="funk">${Object.entries(S.answers).map(([id, a]) => `<div class="${S.judged[id] === 'r' ? 'r' : ''}" style="grid-template-columns:110px 1fr auto"><b>${esc(code(id))}</b><span class="serif">${(x.schwarzMatch || {})[id] ? '<span class="signal">● </span>' : ''}${esc(a.v)}</span>
+        <span class="reihe"><button class="btn klein" data-do="judge" data-id="${id}" data-x="1">✓ +${step}</button><button class="btn klein" data-do="judge" data-id="${id}" data-x="0">✗</button></span></div>`).join('') || '<p class="blass">Noch keine Antwort.</p>'}</div></div>`;
+  }
+  if (t === 'wette') h = `<div class="loesung"><div class="klein">Kategorie</div><span class="display">${esc(it.cat)}</span><p class="gross">${esc(it.q)}</p><p class="text">Antwort: <b>${esc(it.a)}</b></p></div>`;
+  const bw = (it.beute || '').trim();
+  return h + steuerung(m, it) + (M.games[t] && ['zoom', 'sound', 'emoji'].includes(t) ? funk(m, step) : '')
+    + (bw ? `<div class="klein">${S.revealed ? 'Geborgen – steht jetzt auf Leinwand und Handys' : 'Beutewort dieser Runde, erscheint beim Aufdecken'}</div>${WWH.karte({ ...((S.kartei || {})[bw] || {}), wort: bw }, { klein: true })}` : '');
+}
+
+function funk(m, step) {
+  const feed = S.feed.map((f, i) => ({ ...f, i, passt: (S.extra.feedMatch || [])[i], wert: (S.extra.feedWert || [])[i] })).sort((a, b) => a.t - b.t);
+  if (!feed.length) return `<div class="box"><div class="klein">Funksprüche</div><p class="blass">Noch keine Antwort eingegangen.</p></div>`;
+  const t0 = feed[0].t;
+  return `<div class="box"><div class="klein">Funksprüche, der Reihe nach · ✓ gibt ${m.type === 'zoom' ? 'je nach Zoomstufe' : '+' + step} · <span class="signal">●</span> sieht nach der Lösung aus</div><div class="funk">${feed.map(f => `<div class="${S.judged[f.id] === 'r' ? 'r' : ''}">
+      <span class="blass">+${(f.t - t0).toFixed(1)} s</span><b>${esc(code(f.id))}</b><span class="serif">${f.passt ? '<span class="signal">● </span>' : ''}${esc(f.v)}</span>
+      <span class="reihe">${f.wert ? `<span class="klein">Stufe ${(f.z || 0) + 1}</span>` : ''}<button class="btn klein ${f.passt ? 'rot' : ''}" data-do="judge" data-id="${f.id}" data-i="${f.i}" data-x="1">✓${f.wert ? ' +' + f.wert : ''}</button><button class="btn klein" data-do="judge" data-id="${f.id}" data-x="0">✗</button></span></div>`).join('')}</div></div>`;
+}
+
+function wertung(m, step) {
+  const t = m.type, rev = S.revealed, x = S.extra, team = m.mode === 'team';
+  let h = `<div class="reihe" style="justify-content:space-between"><span class="klein">Wertung dieser Mission</span><span class="klein">${t === 'wette' ? 'Einsatz eintragen' : '+' + step + ' pro Treffer'}</span></div>`;
+
+  if (team && S.teams.length) {
+    if ((t === 'ranking' || t === 'hoeher') && S.phase === 'play') {
+      const n = (x.teamCorrect || []).filter(Boolean).length;
+      h += `<div class="reihe"><button class="btn ${rev && !S.awarded ? 'rot' : ''}" data-do="awardteams" ${S.awarded || !n ? 'disabled' : ''}>${S.awarded ? 'Richtige Zellen belohnt' : `+${step} an ${n} richtige Zelle${n === 1 ? '' : 'n'}`}</button>
+      ${t === 'ranking' ? `<span class="klein">${S.rnd.schnellste != null ? 'Tempo-Bonus +1 an Zelle ' + 'ABCD'[S.rnd.schnellste] : 'Die schnellste richtige Zelle bekommt +1'}</span>` : ''}</div>`;
+    }
+    h += `<div class="tabelle">${S.teams.map((ids, i) => {
+      const ta = S.teamAnswers[i], ok = (x.teamCorrect || [])[i];
+      const eingabe = (t === 'ranking' || t === 'hoeher') && S.phase === 'play'
+        ? `<input class="feld kurz" data-k="ta-${i}" value="${esc(ta ? ta.v : '')}" placeholder="${t === 'hoeher' ? 'W oder P' : 'z. B. CADB'}" data-change="teamanswer" data-i="${i}">${ta ? `<span class="pill ${ok ? 'gut' : 'schlecht'}">${ok ? 'richtig' : 'falsch'}</span>` : '<span class="blass">wartet</span>'}${ta && !ok && t === 'ranking' && x.teamPlaces ? `<span class="klein">${x.teamPlaces[i]} von ${S.rnd.item.items.split('\n').filter(z => z.trim()).length} am richtigen Platz</span>` : ''}` : '';
+      return `<div class="zeile"><div class="wer"><b>Zelle ${'ABCD'[i]}</b><span>${ids.filter(agent).map(code).map(esc).join(' · ')}</span></div>
+        <div class="mitte">${eingabe}</div>
+        <div class="aktion"><span class="plus">${fmtGain(S.gains[ids[0]])}</span><button class="btn klein" data-do="gteam" data-i="${i}" data-d="-${step}">−${step}</button><button class="btn klein" data-do="gteam" data-i="${i}" data-d="${step}">+${step}</button></div></div>`;
+    }).join('')}</div>`;
+    return h;
+  }
+
+  const closest = x.closest || [];
+  if (t === 'schaetzen' && rev && closest.length) h += `<div><button class="btn ${S.awarded ? '' : 'rot'}" data-do="awardclosest" ${S.awarded ? 'disabled' : ''}>${S.awarded ? 'Vergeben' : `+${step} an ${closest.map(code).map(esc).join(' & ')}`}</button></div>`;
+  if (t === 'impostor' && S.mole.on && !S.mole.result) h += `<div class="reihe"><button class="btn ${S.mole.voteOpen ? 'rot' : ''}" data-do="mvote" data-x="${S.mole.voteOpen ? 0 : 1}">${S.mole.voteOpen ? 'Maulwurf-Abstimmung schließen' : 'Zusatzfrage: Wer ist der Maulwurf?'}</button><span class="klein">${Object.keys(S.moleVotes).length} Stimmen</span></div>`;
+  if (t === 'impostor' && rev) h += `<div class="reihe">${S.spyResult ? `<span class="pill an">${S.spyResult === 'caught' ? 'Erkannt – alle anderen +' + step : 'Unerkannt – Eindringling +' + (2 * step)}</span>`
+      : `<button class="btn rot" data-do="spy" data-x="1">Eindringling erkannt</button><button class="btn" data-do="spy" data-x="0">Nicht erkannt</button>`}</div>`;
+
+  const tally = x.tally || {};
+  h += `<div class="tabelle">${sorted().map(a => {
+    const id = a.id, ans = S.answers[id];
+    let mitte = '';
+    if (t === 'schaetzen' && S.phase === 'play') {
+      const diff = rev && ans ? Math.abs(WWH.deNum(ans.v) - WWH.deNum(S.rnd.item.a)) : NaN;
+      mitte = `<input class="feld kurz" data-k="g-${id}" value="${esc(ans ? ans.v : '')}" placeholder="Schätzung" data-change="answer" data-id="${id}" inputmode="decimal">${!isNaN(diff) ? `<span class="${closest.includes(id) ? 'signal' : 'blass'}">± ${diff.toLocaleString('de-DE')}</span>` : ''}`;
+    }
+    if (t === 'wette' && S.phase === 'play') {
+      const bet = S.bets[id], done = S.betDone[id];
+      mitte = `<input class="feld kurz" style="width:80px" data-k="b-${id}" value="${bet ?? ''}" placeholder="max ${(x.betCaps || {})[id]}" data-change="bet" data-id="${id}" ${S.revealed ? 'disabled' : ''}>
+        <span class="serif">${esc(ans ? ans.v : '')}</span>` + (rev ? (done ? `<span class="pill ${done === 'r' ? 'gut' : 'schlecht'}">${done === 'r' ? 'richtig +' : 'falsch −'}${bet || 0}</span>`
+          : (bet ? `<button class="btn klein" data-do="judge" data-id="${id}" data-x="1">Richtig</button><button class="btn klein" data-do="judge" data-id="${id}" data-x="0">Falsch</button>` : '<span class="blass">kein Einsatz</span>')) : '');
+    }
+    if (t === 'impostor' && S.phase === 'play') {
+      mitte = `${id === S.rnd.spy ? '<span class="pill schlecht">Eindringling</span>' : ''}${S.votes[id] ? `<span class="blass">stimmt für ${esc(code(S.votes[id]))}</span>` : ''}${tally[id] ? `<span class="pill">${tally[id]} Stimme${tally[id] === 1 ? '' : 'n'}</span>` : ''}`;
+    }
+    if (['zoom', 'sound', 'emoji'].includes(t) && S.judged[id]) mitte = `<span class="pill ${S.judged[id] === 'r' ? 'gut' : 'schlecht'}">${S.judged[id] === 'r' ? 'Treffer' : 'daneben'}</span>`;
+    return `<div class="zeile ${closest.includes(id) && rev ? 'nah' : ''}"><div class="wer"><b>${esc(a.code)}</b><span>${esc(a.name)} · ${total(id)}</span></div>
+      <div class="mitte">${mitte}</div>
+      <div class="aktion"><span class="plus">${fmtGain(S.gains[id])}</span>${t === 'wette' ? '' : `<button class="btn klein" data-do="gain" data-id="${id}" data-d="-${step}">−${step}</button><button class="btn klein" data-do="gain" data-id="${id}" data-d="${step}">+${step}</button>`}</div></div>`;
+  }).join('')}</div>`;
+  if (t === 'wette' || G(t).ext) h += `<p class="text blass">Feinkorrektur: ± 1 Wort pro Klick</p><div class="reihe">${sorted().map(a => `<span class="pill">${esc(a.code)} <button class="btn link" data-do="gain" data-id="${a.id}" data-d="-1">−</button> ${fmtGain(S.gains[a.id]) || '0'} <button class="btn link" data-do="gain" data-id="${a.id}" data-d="1">+</button></span>`).join('')}</div>`;
+  return h;
+}
+
+// ------------------------------------------------------------------ Aktionen
+actions(app, {
+  missionStart: () => cmd('mission_start'),
+  finale: () => cmd('screen', { name: 'finale' }),
+  dieb: d => cmd('steal_thief', { id: d.id }),
+  opfer: d => cmd('steal_victim', { id: d.id }),
+  verzicht: () => cmd('steal_skip'),
+  add: () => { const e = document.getElementById('neuName'); const n = e.value.trim(); if (n) { cmd('agent_add', { name: n }); e.value = ''; } },
+  del: d => { if (confirm(code(d.id) + ' wirklich entfernen? Das Gerät ist dann abgemeldet.')) cmd('agent_del', { id: d.id }); },
+  reroll: d => cmd('agent_reroll', { id: d.id }),
+  score: d => cmd('score_adj', { id: d.id, d: +d.d }),
+  link: d => kopieren(geraeteLink(agent(d.id))),
+  join: () => cmd('join_toggle'),
+  reset: () => { if (confirm('Abend wirklich neu starten? Punkte und Fortschritt gehen verloren.')) cmd('evening_reset'); },
+  clear: () => { if (confirm('Alle Agenten entfernen? Ihre Geräte sind danach abgemeldet.')) cmd('agents_clear'); },
+  pmode: d => { const p = structuredClone(S.plan); p[+d.i].mode = d.x; planSenden(p); },
+  pmove: d => { const i = +d.i, j = i + +d.d; if (j < 0 || j >= S.plan.length) return; const p = structuredClone(S.plan); [p[i], p[j]] = [p[j], p[i]]; planSenden(p); },
+  pdel: d => { const i = +d.i; planSenden(S.plan.filter((_, j) => j !== i), i < S.cur ? S.cur - 1 : S.cur); },
+  padd: d => { const g = G(d.x); planSenden([...S.plan, { type: d.x, mode: g.mode, pts: g.pts, rounds: g.rounds }]); },
+  preset: () => { if (confirm('Plan auf den Standardablauf zurücksetzen?')) cmd('plan_reset'); },
+  atab: d => { ui.archiv = d.x; zeichnen(); },
+  cadd: () => contentSenden([...(S.content[ui.archiv] || []), {}]),
+  cdel: d => { if (confirm('Eintrag löschen?')) contentSenden((S.content[ui.archiv] || []).filter((_, j) => j !== +d.i)); },
+  crestore: () => { if (confirm('Beispiele dieses Spiels wiederherstellen? Eigene Einträge dieses Spiels werden ersetzt.')) cmd('content_restore', { type: ui.archiv }); },
+  joinurl: async () => { try { await post('/leitung/api/config', { joinUrl: document.getElementById('joinUrl').value }); hinweis('Gespeichert'); } catch (e) { hinweis(e.message); } },
+  abbruch: () => { if (confirm('Mission abbrechen? Punkte dieser Mission verfallen, die Mission bleibt offen.')) cmd('mission_abort'); },
+  fertig: () => { if (S.phase === 'play' && !(S.revealed && S.round >= mission().rounds - 1) && !confirm('Es sind noch Runden offen. Trotzdem abschließen?')) return; cmd('mission_finish'); ui.tab = 'zentrale'; },
+  tcount: d => cmd('teams_count', { n: +d.x }),
+  treroll: () => cmd('teams_reroll'),
+  beginnen: d => { if (d.ext) window.open('/leitung/' + d.ext, 'wwh_ext'); cmd('mission_begin'); },
+  showq: () => cmd('show_q'),
+  open: d => cmd('open', { on: d.x === '1' }),
+  zoom: () => cmd('zoom_out'),
+  reveal: () => cmd('reveal'),
+  next: () => cmd('round_next'),
+  skip: () => cmd('round_skip'),
+  audio: d => cmd('audio', { a: d.x }),
+  judge: d => cmd('judge', { id: d.id, ok: d.x === '1', i: d.i != null ? +d.i : undefined }),
+  gain: d => cmd('gain', { id: d.id, d: +d.d }),
+  gteam: d => cmd('gain_team', { idx: +d.i, d: +d.d }),
+  awardclosest: () => cmd('award_closest'),
+  awardteams: () => cmd('award_teams'),
+  spy: d => cmd('spy_award', { caught: d.x === '1' }),
+  wbabstimmen: () => cmd('wb_abstimmen'),
+  wbtreffer: d => cmd('wb_treffer', { id: d.id }),
+  wbweg: d => cmd('wb_streichen', { id: d.id }),
+  awardschwarz: () => cmd('award_schwarz'),
+  uadj: d => cmd('upts_adj', { key: d.k, d: +d.d }),
+  prologzeigen: () => cmd('screen', { name: 'prolog' }),
+  prolog: d => cmd('prolog_step', { d: +d.d }),
+  prologende: () => cmd('screen', { name: 'hq' }),
+  fstufe: d => cmd('finale_step', { d: +d.d }),
+  mtoggle: d => cmd('mole_toggle', { on: d.x === '1' }),
+  mpick: () => { if (confirm('Einen neuen Maulwurf bestimmen? Die bisherige Person weiß dann nichts mehr davon – ihr Gerät zeigt sofort die Zellen-Karte.')) cmd('mole_pick'); },
+  mzeig: () => { ui.zeigMole = !ui.zeigMole; zeichnen(); },
+  zielart: d => cmd('settings', { ziel: d.x === 'auto' ? -1 : d.x === 'aus' ? 0 : Math.max(1, S.extra.ziel.wert || 8 * S.agents.length) }),
+  mvote: d => cmd('mole_vote', { on: d.x === '1' }),
+  mresolve: () => { if (confirm('Maulwurf jetzt enthüllen? Rucksack oder Prämie werden sofort verrechnet.')) cmd('mole_resolve'); },
+  dpadd: () => { const st = structuredClone(S.story || {}); st.prolog = [...(st.prolog || []), { titel: 'Neue Tafel', text: '' }]; drehbuchSenden(st); },
+  dpdel: d => { if (!confirm('Tafel löschen?')) return; const st = structuredClone(S.story || {}); st.prolog.splice(+d.i, 1); drehbuchSenden(st); },
+  export: async () => {   // per fetch statt Link: kein Seitenwechsel, die Verbindung bleibt stehen
+    try {
+      const r = await fetch('/leitung/api/export', { cache: 'no-store' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const name = ((r.headers.get('Content-Disposition') || '').match(/filename="([^"]+)"/) || [])[1] || 'wwh-spielstand.json';
+      const url = URL.createObjectURL(await r.blob()), a = document.createElement('a');
+      a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      hinweis('Spielstand exportiert: ' + name);
+    } catch (e) { hinweis('Export fehlgeschlagen: ' + e.message); }
+  },
+  cursorweg: d => cmd('cursor_reset', { type: d.x }),
+  cursorallesweg: () => { if (confirm('Bei allen Spielen wieder mit dem ersten Eintrag beginnen?')) cmd('cursor_reset', {}); },
+  kzeig: d => { ui.kartei = d.x; zeichnen(); },
+  kdel: d => { if (confirm('Karteikarte „' + d.x + '“ löschen?')) cmd('kartei_del', { wort: d.x }); },
+  krestore: () => { if (confirm('Mitgelieferte Karteikarten wiederherstellen? Eigene Änderungen an diesen Karten werden überschrieben.')) cmd('kartei_restore'); },
+  drestore: () => { if (confirm('Alle Drehbuch-Texte auf die Vorlage zurücksetzen?')) cmd('story_restore'); },
+  dopen: d => cmd('dep_open', { c: +d.c, p: +d.p }),
+  dreopen: d => { if (confirm('Dieses Feld wieder öffnen?')) cmd('dep_reopen', { c: +d.c, p: +d.p }); },
+  dstage: () => cmd(S.dep.stage >= 2 ? 'dep_close' : 'dep_stage'),
+  dclose: () => cmd('dep_close'),
+  dtimer: () => cmd('dep_timer'),
+  darm: () => cmd('dep_arm'),
+  deparm: d => cmd('settings', { depArm: d.x === '1' }),
+  dbuzzreset: () => cmd('dep_buzz_reset'),
+  daward: d => cmd('dep_award', { key: d.k, sign: +d.s }),
+  bwahl: d => { if (ui.boardDirty && !confirm('Ungespeicherte Änderungen verwerfen?')) return; ui.boardDirty = false; ui.boardId = d.id; ui.offen = null; zeichnen(); },
+  bneu: async () => { if (ui.boardDirty && !confirm('Ungespeicherte Änderungen verwerfen?')) return; const id = 'b' + Date.now().toString(36);
+    await cmd('board_save', { board: { id, name: 'Neues Board', pts: [100, 200, 300, 400, 500], cats: [1, 2, 3].map(n => ({ name: 'Kategorie ' + n })) } }); ui.boardDirty = false; ui.boardId = id; },
+  bsave: () => boardSpeichern(),
+  bdel: () => { if (confirm('Board „' + ui.board.name + '“ löschen?')) { cmd('board_del', { id: ui.boardId }); ui.boardId = null; ui.boardDirty = false; } },
+  brestore: () => cmd('board_restore'),
+  bexport: () => { const b = ui.board, a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(b, null, 2)], { type: 'application/json' })); a.download = (b.name || 'board').replace(/\s+/g, '_') + '.json'; a.click(); },
+  bcadd: () => { ui.board.cats.push({ name: 'Neue Kategorie', qh: {}, hh: {}, ah: {}, rk: {} }); ui.boardDirty = true; ui.offen = ui.board.cats.length - 1; zeichnen(); },
+  bcdel: d => { if (!confirm('Kategorie „' + ui.board.cats[+d.i].name + '“ entfernen?')) return; ui.board.cats.splice(+d.i, 1); ui.boardDirty = true; zeichnen(); },
+  swahl: d => { ui.setId = d.id; zeichnen(); },
+  sneu: () => { ui.setId = 's' + Date.now().toString(36); setSenden({ name: 'Neues Set', marke: 'Woher stammt das?', eintraege: [] }); },
+  sdel: () => { if (confirm('Set „' + S.atlasSets[ui.setId].name + '“ löschen?')) { cmd('atlas_set_del', { id: ui.setId }); ui.setId = null; } },
+  srestore: () => cmd('atlas_restore'),
+  seadd: () => { const set = structuredClone(S.atlasSets[ui.setId]); set.eintraege.push({ text: '', land: '', auchOk: [], notiz: '' }); setSenden(set); },
+  sedel: d => { const set = structuredClone(S.atlasSets[ui.setId]); set.eintraege.splice(+d.i, 1); setSenden(set); },
+});
+
+// Eingabefelder: speichern beim Verlassen (change)
+app.addEventListener('change', async e => {
+  const el = e.target, d = el.dataset;
+  if (el.id === 'import') {
+    const f = el.files[0]; if (!f || !confirm('Den aktuellen Spielstand durch die Datei ersetzen?')) return;
+    try { await post('/leitung/api/import', JSON.parse(await f.text())); hinweis('Importiert'); } catch (err) { hinweis('Import fehlgeschlagen: ' + err.message); }
+    return;
+  }
+  if (el.hasAttribute('data-upload')) {
+    const f = el.files[0]; if (!f) return;
+    hinweis('Lade hoch …');
+    try {
+      const r = await fetch('/leitung/api/upload', { method: 'POST', headers: { 'X-Filename': encodeURIComponent(f.name) }, body: f });
+      const j = await r.json(); if (!j.ok) throw new Error(j.error);
+      const list = structuredClone(S.content[ui.archiv] || []); list[+d.i] = { ...list[+d.i], [d.f]: j.url }; contentSenden(list); hinweis('Hochgeladen');
+    } catch (err) { hinweis('Upload fehlgeschlagen: ' + err.message); }
+    return;
+  }
+  if (el.hasAttribute('data-bimport')) {
+    const f = el.files[0]; if (!f) return;
+    try { const b = JSON.parse(await f.text()); if (!b.cats || !b.pts) throw new Error('kein Deppardy-Board'); await cmd('board_save', { board: b, neu: true }); hinweis('„' + (b.name || 'Board') + '“ importiert'); }
+    catch (err) { hinweis('Import fehlgeschlagen: ' + err.message); }
+    return;
+  }
+  if (el.hasAttribute('data-bupload')) {
+    const f = el.files[0]; if (!f) return;
+    try {
+      const r = await fetch('/leitung/api/upload', { method: 'POST', headers: { 'X-Filename': encodeURIComponent(f.name) }, body: f });
+      const j = await r.json(); if (!j.ok) throw new Error(j.error);
+      const [art, ci, p] = el.dataset.bupload.split(':'), cat = ui.board.cats[+ci];
+      cat[art][p] = (cat[art][p] || '') + (f.type.startsWith('audio') ? `<audio controls src="${j.url}"></audio>` : `<img src="${j.url}" alt="">`);
+      ui.boardDirty = true; zeichnen(); hinweis('Eingefügt – Speichern nicht vergessen');
+    } catch (err) { hinweis('Upload fehlgeschlagen: ' + err.message); }
+    return;
+  }
+  if (d.bf) { boardFeld(d.bf, el); return; }
+  if (d.sf) { setFeld(d.sf, el.value); return; }
+  if (d.df) { drehbuchFeld(d.df, el.value); return; }
+  if (d.pm !== undefined) { const st = structuredClone(S.story || {}); if (el.checked) st.prolog[+d.pm].maulwurf = true; else delete st.prolog[+d.pm].maulwurf; drehbuchSenden(st); return; }
+  if (d.kf) { const alt = (S.kartei || {})[d.w] || {}, neu = { ...alt, [d.kf]: el.value }; S.kartei = { ...(S.kartei || {}), [d.w]: neu }; cmd('kartei_set', { wort: d.w, ...neu }); return; }
+  const v = el.value;
+  switch (d.change) {
+    case 'popt': { const p = structuredClone(S.plan); p[+d.i].opt = v; return planSenden(p); }
+    case 'ddur': return cmd('dep_dur', { s: parseInt(v) || 0 });
+    case 'mbonus': return cmd('mole_bonus', { n: parseInt(v) || 0 });
+    case 'regel': return cmd('settings', { [d.f]: parseInt(v) || 0 });
+    case 'stealAmount': return cmd('settings', { stealAmount: +v || 0 });
+    case 'rename': return cmd('agent_rename', { id: d.id, name: v });
+    case 'prounds': { const p = structuredClone(S.plan); p[+d.i].rounds = Math.max(1, parseInt(v) || 1); return planSenden(p); }
+    case 'ppts': { const p = structuredClone(S.plan); p[+d.i].pts = Math.max(0, parseInt(v) || 0); return planSenden(p); }
+    case 'content': { const list = structuredClone(S.content[ui.archiv] || []); list[+d.i] = { ...list[+d.i], [d.f]: v }; return contentSenden(list); }
+    case 'answer': return cmd('set_answer', { id: d.id, v });
+    case 'bet': return cmd('set_bet', { id: d.id, v: parseInt(v) || 0 });
+    case 'teamanswer': return cmd('set_team_answer', { idx: +d.i, v });
+  }
+});
+app.addEventListener('input', e => { if (e.target.id === 'ksuche') { ui.ksuche = e.target.value; clearTimeout(ui.kt); ui.kt = setTimeout(zeichnen, 250); return; } const d = e.target.dataset; if (d.bf && e.target.type !== 'checkbox') boardFeld(d.bf, e.target); });
+app.addEventListener('toggle', e => { if (e.target.matches('details.kat')) { if (e.target.open) ui.offen = +e.target.dataset.ci; else if (ui.offen === +e.target.dataset.ci) ui.offen = null; } }, true);
+// Deppardy-Tastatur im Cockpit
+document.addEventListener('keydown', e => {
+  if (ui.tab !== 'mission' || !S || !S.dep || S.phase !== 'play' || !S.dep.cell) return;
+  const tag = e.target.tagName; if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+  const d = S.dep, erster = d.buzz.find(x => !d.wrong.includes(x.key));
+  if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); cmd(d.stage >= 2 ? 'dep_close' : 'dep_stage'); }
+  else if (e.key === 'Escape') cmd('dep_close');
+  else if (e.key === 't' || e.key === 'T') cmd('dep_timer');
+  else if (e.key === 'b' || e.key === 'B') cmd('dep_arm');
+  else if ((e.key === 'r' || e.key === 'R') && erster) cmd('dep_award', { key: erster.key, sign: 1 });
+  else if ((e.key === 'f' || e.key === 'F') && erster) cmd('dep_award', { key: erster.key, sign: -1 });
+});
+app.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target.id === 'neuName') { e.preventDefault(); app.querySelector('[data-do="add"]').click(); }
+  else if (e.key === 'Enter' && e.target.tagName === 'INPUT' && e.target.dataset.change) e.target.blur();
+});
+</script>
+</body>
+</html>

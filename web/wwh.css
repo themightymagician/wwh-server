@@ -1,0 +1,90 @@
+/* WWH — gemeinsames Stylesheet für Gerät, Leinwand und Steuermodul.
+   Farben und Schriften aus Widerstand.dc.html übernommen. */
+:root{
+  --nacht:#15130f; --nacht-2:#1d1a15; --nacht-3:#26221b; --nacht-4:#353025;
+  --kante:#3a352b; --kante-hell:#5a5347;
+  --papier:#ece3cf; --papier-hell:#f4ecda; --papier-matt:#cfc6b1;
+  --blass:#a89f8b; --stumm:#6f675a;
+  --signal:#e8604c; --siegel:#c23522; --siegel-hell:#d8412f; --gruen:#a3b86c;
+  --display:Anton, Impact, "Arial Narrow Bold", sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --serif:"IBM Plex Serif", Georgia, "Times New Roman", serif;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;background:var(--nacht);color:var(--papier);font-family:var(--mono);}
+body{min-height:100vh;-webkit-font-smoothing:antialiased;}
+a{color:var(--signal);} a:hover{color:var(--papier);}
+input,textarea,button,select{font:inherit;color:inherit;}
+::selection{background:var(--siegel);color:var(--papier-hell);}
+input::placeholder,textarea::placeholder{color:var(--stumm);}
+:focus-visible{outline:2px solid var(--signal);outline-offset:2px;}
+[hidden]{display:none!important;}
+
+.display{font-family:var(--display);text-transform:uppercase;line-height:.92;letter-spacing:.005em;font-weight:400;}
+.serif{font-family:var(--serif);}
+.klein{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--blass);}
+.blass{color:var(--blass);}
+.signal{color:var(--signal);}
+
+.btn{background:transparent;border:1px solid var(--kante-hell);color:var(--papier);font-size:13px;letter-spacing:.12em;text-transform:uppercase;padding:12px 18px;cursor:pointer;border-radius:0;}
+.btn:hover{background:var(--nacht-3);}
+.btn:disabled{opacity:.35;cursor:not-allowed;}
+.btn.rot{background:var(--siegel);border-color:var(--siegel);color:var(--papier-hell);font-weight:700;}
+.btn.rot:hover{background:var(--siegel-hell);}
+.btn.hell{background:var(--papier);border-color:var(--papier);color:var(--nacht);font-weight:700;}
+.btn.hell:hover{background:var(--papier-hell);}
+.btn.klein{padding:6px 10px;font-size:11px;}
+.btn.link{border:none;padding:0;text-decoration:underline;color:var(--blass);}
+
+.feld{background:var(--nacht-2);border:1px solid var(--kante);padding:12px 14px;color:var(--papier);width:100%;border-radius:0;}
+.feld:focus{outline:2px solid var(--signal);outline-offset:-1px;}
+
+.stempel{display:inline-block;border:5px solid var(--signal);color:var(--signal);font-family:var(--display);text-transform:uppercase;letter-spacing:.08em;padding:4px 18px;transform:rotate(-5deg);}
+
+.verbindung{position:fixed;left:50%;top:10px;transform:translateX(-50%);background:var(--siegel);color:var(--papier-hell);font-size:12px;letter-spacing:.12em;text-transform:uppercase;padding:6px 12px;z-index:900;}
+
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
+
+/* Weltkarte (Atlas) */
+.weltkarte{position:relative;background:#1a1813;border:1px solid var(--kante);overflow:hidden;touch-action:none;}
+.karte-svg{display:block;width:100%;height:100%;}
+.k-gitter{fill:none;stroke:#2c2820;}
+.k-land{fill:#5a5347;stroke:#1a1813;cursor:pointer;}
+.k-land:hover{fill:#6f675a;}
+.k-land.gewaehlt{fill:var(--signal);}
+.k-land.ziel{fill:var(--gruen);}
+.k-land.tipp{fill:#8f3a2a;}
+.k-land.ziel.tipp{fill:var(--gruen);}
+.k-peilung{fill:none;stroke:var(--signal);}
+.k-pin circle{fill:var(--papier);stroke:var(--nacht);stroke-width:2px;}
+.k-pin.treffer circle{fill:var(--gruen);}
+.k-pin text{fill:var(--papier);font-family:var(--display);font-size:14px;text-transform:uppercase;paint-order:stroke;stroke:var(--nacht);stroke-width:3px;}
+
+/* Karteikarte für Beutewörter */
+.karteikarte{position:relative;width:min(560px,100%);background:#f4edd8;color:#2b251b;font-family:var(--mono);
+  box-shadow:0 1px 0 #d8ceb4,0 14px 30px rgba(0,0,0,.35);padding:14px 20px 46px 20px;display:flex;flex-direction:column;gap:0;
+  background-image:repeating-linear-gradient(to bottom,transparent 0,transparent 25px,#b8c6d8 25px,#b8c6d8 26px);background-position:0 70px;
+  transform:rotate(-.6deg);}
+.karteikarte::before{content:"";position:absolute;left:0;right:0;top:62px;height:2px;background:#c8463a;}
+.karteikarte .kk-kopf{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;gap:4px 12px;min-height:48px;}
+.karteikarte .kk-wort{font-family:var(--serif);font-weight:600;font-size:clamp(24px,3.2vw,34px);line-height:1.05;letter-spacing:-.01em;}
+.karteikarte .kk-wort small{font-family:var(--mono);font-weight:400;font-size:13px;color:#6b614f;margin-left:8px;}
+.karteikarte .kk-az{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#6b614f;text-align:right;white-space:nowrap;line-height:1.5;padding-top:2px;margin-left:auto;}
+.karteikarte dl{margin:14px 0 0;display:grid;grid-template-columns:auto 1fr;column-gap:12px;font-size:14px;line-height:26px;}
+.karteikarte dt{color:#6b614f;text-transform:uppercase;font-size:11px;letter-spacing:.1em;line-height:26px;}
+.karteikarte dd{margin:0;}
+.karteikarte .kk-stempel{position:absolute;right:16px;bottom:14px;border:3px solid #c23522;color:#c23522;font-family:var(--display);
+  font-size:18px;letter-spacing:.1em;padding:1px 10px;transform:rotate(-7deg);opacity:.88;background:rgba(244,237,216,.6);}
+.karteikarte .kk-geborgen{position:absolute;left:18px;bottom:16px;font-family:var(--display);font-size:13px;letter-spacing:.14em;color:#3f6b3a;
+  border:2px solid #3f6b3a;padding:0 7px;transform:rotate(4deg);opacity:.85;}
+.karteikarte.kompakt{padding:10px 14px 34px;transform:none;box-shadow:0 1px 0 #d8ceb4,0 6px 14px rgba(0,0,0,.3);background-position:0 54px;}
+.karteikarte.kompakt::before{top:48px;}
+.karteikarte.kompakt .kk-kopf{min-height:36px;}
+.karteikarte.kompakt .kk-wort{font-size:20px;}
+.karteikarte.kompakt dl{font-size:12px;line-height:22px;margin-top:10px;}
+.karteikarte.kompakt dt{line-height:22px;}
+.karteikarte.kompakt .kk-stempel{font-size:13px;border-width:2px;bottom:10px;right:10px;}
+.karteikarte.kompakt .kk-geborgen{display:none;}
+.kartei{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px;align-items:start;}
+@keyframes einlegen{from{opacity:0;transform:translateY(24px) rotate(-3deg);}to{opacity:1;transform:rotate(-.6deg);}}
+.karteikarte.neu{animation:einlegen .7s cubic-bezier(.2,1.1,.4,1) both;}

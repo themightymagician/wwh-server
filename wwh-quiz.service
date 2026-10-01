@@ -1,0 +1,16 @@
+[Unit]
+Description=WWH-Spieleabend-Server (Wortgewandter Widerstand)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=wwh
+WorkingDirectory=/opt/wwh
+ExecStart=/usr/bin/python3 /opt/wwh/server.py --port 8080
+Restart=on-failure
+RestartSec=3
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

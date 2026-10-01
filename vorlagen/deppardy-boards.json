@@ -1,0 +1,177 @@
+[
+ {
+  "id": "hinterland",
+  "name": "Deppardy im Hinterland",
+  "pts": [
+   100,
+   200,
+   300,
+   400,
+   500
+  ],
+  "cats": [
+   {
+    "name": "Amtsdeutsch",
+    "qh": {
+     "100": "Übersetze ins Deutsche: <b>Postwertzeichen</b>",
+     "200": "Übersetze ins Deutsche: <b>Beförderungserschleichung</b>",
+     "300": "Übersetze ins Deutsche: <b>Spontanvegetation</b>",
+     "400": "Übersetze ins Deutsche: <b>raumübergreifendes Großgrün</b>",
+     "500": "Übersetze ins Deutsche: <b>Personenvereinzelungsanlage</b>"
+    },
+    "hh": {
+     "100": "Klebt oben rechts auf dem Umschlag.",
+     "200": "Passiert im Bus ohne Ticket.",
+     "300": "Wächst ungefragt zwischen den Gehwegplatten.",
+     "400": "Hat Wurzeln, Stamm und Krone.",
+     "500": "Steht am Eingang von Stadion oder Schwimmbad."
+    },
+    "ah": {
+     "100": "Briefmarke",
+     "200": "Schwarzfahren",
+     "300": "Unkraut",
+     "400": "Baum",
+     "500": "Drehkreuz"
+    },
+    "rk": {
+     "500": true
+    }
+   },
+   {
+    "name": "Omas Wortschatz",
+    "qh": {
+     "100": "Wohin ging man, wenn man ins <b>Lichtspielhaus</b> ging?",
+     "200": "Was machte man in der <b>Sommerfrische</b>?",
+     "300": "Wer war ein <b>Backfisch</b> – wenn nicht der zum Essen?",
+     "400": "Wer ist ein <b>Hagestolz</b>?",
+     "500": "„Mach keine <b>Fisimatenten</b>!“ – Was soll man lassen?"
+    },
+    "hh": {
+     "100": "Popcorn gab es damals noch nicht.",
+     "200": "Die Städter fuhren raus.",
+     "300": "Nicht mehr Kind, noch nicht Frau.",
+     "400": "Männlich, allein, nicht mehr jung.",
+     "500": "Gemeint sind Ausreden und Umstände."
+    },
+    "ah": {
+     "100": "Ins Kino",
+     "200": "Erholungsurlaub auf dem Land oder in den Bergen",
+     "300": "Ein junges Mädchen im Teenageralter",
+     "400": "Ein älterer, eingefleischter Junggeselle",
+     "500": "Ausflüchte, Umstände, Unfug. Die Herkunft ist ungeklärt – die Deutung aus „visitez ma tente“ gilt als Volksetymologie."
+    },
+    "rk": {
+     "500": true
+    }
+   },
+   {
+    "name": "Spießerkunde",
+    "qh": {
+     "100": "Für welche Treppenhauspflicht ist Baden-Württemberg berühmt?",
+     "200": "Nach wem ist der Schrebergarten benannt?",
+     "300": "In welchem Thüringer Ort begann ab den 1870er Jahren die Serienfertigung von Gartenzwergen?",
+     "400": "Welcher Anteil eines Kleingartens soll nach der Rechtsprechung zum Bundeskleingartengesetz dem Anbau von Obst und Gemüse dienen?",
+     "500": "Was ist ein <b>Vertiko</b>?"
+    },
+    "hh": {
+     "100": "Besen, Wischmopp, Wochenplan.",
+     "200": "Ein Leipziger Arzt.",
+     "300": "Ilm-Kreis, endet auf -roda.",
+     "400": "Die Regel ist nach einem Bruch benannt.",
+     "500": "Ein Möbelstück aus der Gründerzeit."
+    },
+    "ah": {
+     "100": "Die Kehrwoche",
+     "200": "Nach Moritz Schreber (1808–1861). Der Schulleiter Ernst Hauschild benannte den ersten Schreberplatz 1865 nach ihm.",
+     "300": "Gräfenroda",
+     "400": "Etwa ein Drittel – die „Drittelregel“ des Bundesgerichtshofs (2004)",
+     "500": "Ein halbhoher Zierschrank mit Aufsatz. Der Name soll auf einen Berliner Tischler Vertikow zurückgehen – vermutlich eine Legende."
+    },
+    "rk": {
+     "500": true
+    }
+   },
+   {
+    "name": "Scheinanglizismen",
+    "qh": {
+     "100": "Wie sagen die Briten zum <b>Handy</b>?",
+     "200": "Wie heißt der <b>Beamer</b> auf Englisch?",
+     "300": "Wie heißt ein <b>Oldtimer</b> auf Englisch?",
+     "400": "Wie heißt <b>Public Viewing</b> auf Englisch – und was ist es dort?",
+     "500": "Warum stutzen Briten beim <b>Homeoffice</b>?"
+    },
+    "hh": {
+     "100": "In den USA sagt man „cell phone“.",
+     "200": "„Beamer“ ist dort Slang für ein Auto einer Münchner Marke.",
+     "300": "Ein „old-timer“ ist dort ein Mensch.",
+     "400": "In England riecht das nach Bestattungsinstitut.",
+     "500": "Klingt nach einem Ministerium."
+    },
+    "ah": {
+     "100": "Mobile (phone)",
+     "200": "Projector",
+     "300": "Vintage car oder classic car",
+     "400": "Public screening. „Public viewing“ bedeutet im Englischen die öffentliche Aufbahrung.",
+     "500": "Das Home Office ist das britische Innenministerium. Gemeint ist „working from home“."
+    },
+    "rk": {
+     "500": true
+    }
+   },
+   {
+    "name": "Schmuggelware",
+    "qh": {
+     "100": "Aus welcher Sprache kam die <b>Matratze</b> zu uns?",
+     "200": "Aus welcher Sprache stammt der <b>Kiosk</b>?",
+     "300": "Aus welcher Sprache stammt die <b>Tomate</b>?",
+     "400": "Woher stammt das Wort <b>Zucker</b> ursprünglich?",
+     "500": "Aus welcher Sprache kam das <b>Schlamassel</b>?"
+    },
+    "hh": {
+     "100": "Sie reiste über Italien.",
+     "200": "Ein Gartenpavillon im Osmanischen Reich.",
+     "300": "Die Azteken kannten sie zuerst.",
+     "400": "Die Spur führt über das Arabische weiter nach Osten.",
+     "500": "Auch Tacheles und Mischpoke kamen von dort."
+    },
+    "ah": {
+     "100": "Aus dem Arabischen: maṭraḥ, das Bodenkissen",
+     "200": "Aus dem Türkischen (köşk), ursprünglich persisch",
+     "300": "Aus dem Nahuatl (tomatl), über das Spanische",
+     "400": "Aus dem Sanskrit (śarkarā), über Persisch, Arabisch und Italienisch",
+     "500": "Aus dem Jiddischen: deutsch „schlimm“ und hebräisch „mazal“, Glück"
+    },
+    "rk": {
+     "500": true
+    }
+   },
+   {
+    "name": "Stilmittel des Widerstands",
+    "qh": {
+     "100": "„Milch macht müde Männer munter.“ Welches Stilmittel?",
+     "200": "„Bittersüß“, „alter Knabe“, „beredtes Schweigen“ – wie heißt die Figur?",
+     "300": "Nenne ein deutsches Wort mit mindestens sechs Buchstaben, das rückwärts gleich bleibt.",
+     "400": "Was ist ein <b>Anakoluth</b>?",
+     "500": "Seit wann steht das große <b>ẞ</b> im amtlichen Regelwerk der deutschen Rechtschreibung?"
+    },
+    "hh": {
+     "100": "Hör auf den Anfang der Wörter.",
+     "200": "Zwei Dinge, die sich ausschließen.",
+     "300": "Wer nicht mehr arbeitet …",
+     "400": "Der Satz endet anders, als er anfing.",
+     "500": "Im Zeichensatz Unicode gab es das Zeichen schon ab 2008."
+    },
+    "ah": {
+     "100": "Alliteration",
+     "200": "Oxymoron",
+     "300": "Zum Beispiel Rentner, Reittier, Lagerregal oder Reliefpfeiler – ein Palindrom",
+     "400": "Ein Satzbruch: Der Satz verlässt mitten im Satz die begonnene Konstruktion.",
+     "500": "Seit 2017, beschlossen vom Rat für deutsche Rechtschreibung"
+    },
+    "rk": {
+     "500": true
+    }
+   }
+  ]
+ }
+]

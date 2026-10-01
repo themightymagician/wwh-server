@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#15130f">
+<title>WWH · Agentengerät</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=IBM+Plex+Mono:wght@400;500;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/wwh.css">
+<style>
+body{padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);}
+.kopf{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;padding:16px 18px 12px;border-bottom:1px solid var(--kante);position:sticky;top:0;background:var(--nacht);z-index:5;}
+.kopf .code{font-family:var(--display);font-size:clamp(19px,6.2vw,30px);text-transform:uppercase;line-height:1;hyphens:auto;}
+.kopf>div:first-child{min-width:0;}
+.kopf .wort{text-align:right;}
+.kopf .wort b{font-family:var(--display);font-size:30px;font-weight:400;display:block;line-height:1;}
+.kopf .wort b.plus{color:var(--signal);}
+main{padding:22px 18px 60px;max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:22px;}
+h1{margin:0;font-family:var(--display);font-weight:400;font-size:clamp(34px,10vw,60px);line-height:.92;text-transform:uppercase;overflow-wrap:anywhere;hyphens:auto;}
+h2{margin:0;font-family:var(--display);font-weight:400;font-size:clamp(24px,7.5vw,30px);line-height:1;text-transform:uppercase;overflow-wrap:anywhere;hyphens:auto;}
+.text{font-family:var(--serif);font-size:19px;line-height:1.45;margin:0;}
+.regeln{display:flex;flex-direction:column;gap:10px;margin:0;padding:0;list-style:none;counter-reset:r;}
+.regeln li{display:grid;grid-template-columns:28px 1fr;font-family:var(--serif);font-size:17px;line-height:1.4;counter-increment:r;}
+.regeln li::before{content:counter(r,decimal-leading-zero);font-family:var(--mono);font-size:12px;color:var(--signal);padding-top:4px;}
+.karte{background:var(--nacht-2);border:1px solid var(--kante);padding:18px;display:flex;flex-direction:column;gap:14px;}
+.karte.hell{background:var(--papier);color:var(--nacht);border-color:var(--papier);}
+.reihe{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+.gross{font-size:22px;padding:16px 14px;}
+.btn.voll{width:100%;padding:18px;font-size:15px;}
+.ok{color:var(--gruen);font-size:13px;letter-spacing:.1em;text-transform:uppercase;}
+.wahl{display:grid;gap:10px;}
+.wahl button{display:grid;grid-template-columns:44px 1fr;gap:12px;align-items:center;text-align:left;background:var(--nacht-2);border:1px solid var(--kante);padding:14px;cursor:pointer;font-family:var(--serif);font-size:18px;}
+.wahl button .bu{font-family:var(--display);font-size:28px;color:var(--signal);text-align:center;}
+.wahl button.an{border-color:var(--signal);background:#2e1a15;}
+.wahl button:disabled{opacity:.35;}
+.ab{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.ab button{background:var(--nacht-2);border:1px solid var(--kante);padding:22px 12px;cursor:pointer;display:flex;flex-direction:column;gap:8px;align-items:center;}
+.ab button b{font-family:var(--display);font-size:44px;font-weight:400;color:var(--signal);line-height:1;}
+.ab button span{font-family:var(--serif);font-size:18px;}
+.ab button.an{border:2px solid var(--signal);background:#2e1a15;}
+.folge{font-family:var(--display);font-size:44px;letter-spacing:.12em;min-height:52px;color:var(--papier);}
+.geheim{background:var(--papier);color:var(--nacht);padding:26px 20px;min-height:180px;display:flex;flex-direction:column;justify-content:center;gap:10px;cursor:pointer;user-select:none;-webkit-user-select:none;position:relative;}
+.geheim .display{font-size:clamp(30px,10vw,56px);overflow-wrap:anywhere;hyphens:auto;}
+.geheim.zu{background:repeating-linear-gradient(-45deg,var(--nacht-3) 0 14px,var(--nacht-2) 14px 28px);color:var(--papier);border:1px solid var(--kante);}
+.stimmen{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;}
+.stimmen button{background:var(--nacht-2);border:1px solid var(--kante);padding:12px;cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:2px;}
+.stimmen button b{font-family:var(--display);font-weight:400;font-size:20px;text-transform:uppercase;}
+.stimmen button span{font-size:12px;color:var(--blass);}
+.stimmen button.an{border-color:var(--signal);background:#2e1a15;}
+.versuche{display:flex;flex-direction:column;gap:6px;margin:0;padding:0;list-style:none;}
+.versuche li{font-family:var(--serif);font-size:16px;color:var(--papier-matt);border-left:3px solid var(--kante-hell);padding:2px 10px;}
+.meldung{position:fixed;left:12px;right:12px;bottom:calc(14px + env(safe-area-inset-bottom));background:var(--siegel);color:var(--papier-hell);padding:14px 16px;font-size:14px;z-index:50;}
+.rang{display:flex;flex-direction:column;}
+.rang div{display:grid;grid-template-columns:34px 1fr auto;gap:10px;padding:8px 0;border-bottom:1px solid var(--kante);align-items:baseline;}
+.rang div.ich{color:var(--signal);}
+.rang b{font-family:var(--display);font-weight:400;font-size:20px;text-transform:uppercase;}
+.pause{border-left:3px solid var(--signal);padding:4px 0 4px 14px;font-family:var(--serif);font-size:17px;color:var(--papier-matt);}
+.sortierliste{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;touch-action:none;}
+.sortierliste li{display:grid;grid-template-columns:28px 1fr auto;gap:10px;align-items:center;background:#f4edd8;color:#2b251b;border-left:4px solid #c8463a;padding:12px 10px 12px 12px;font-family:var(--serif);font-size:18px;user-select:none;-webkit-user-select:none;box-shadow:0 2px 0 #d8ceb4;cursor:grab;position:relative;}
+.sortierliste li .nr{font-family:var(--mono);font-size:12px;color:#6b614f;}
+.sortierliste li .pfeile{display:flex;gap:4px;}
+.sortierliste li .pfeile button{background:transparent;border:1px solid #b9ad92;color:#2b251b;width:34px;height:34px;font-size:16px;cursor:pointer;}
+.sortierliste li.zieht{box-shadow:0 12px 24px rgba(0,0,0,.45);z-index:5;cursor:grabbing;transition:none;}
+.plakat{background:#c23522;color:#f4ecda;padding:22px 20px;display:flex;flex-direction:column;gap:10px;transform:rotate(-1deg);box-shadow:0 10px 24px rgba(0,0,0,.4);}
+.plakat .display{font-size:clamp(28px,9vw,44px);line-height:.95;}
+.schwarz{background:#15130f;color:transparent;border-radius:2px;padding:0 .2em;}
+.textblock{font-family:var(--serif);font-size:21px;line-height:1.5;white-space:pre-line;background:#f4edd8;color:#2b251b;padding:18px;}
+.optionen{display:flex;flex-direction:column;gap:8px;}
+.optionen button{text-align:left;background:var(--nacht-2);border:1px solid var(--kante);padding:12px 14px;font-family:var(--serif);font-size:17px;cursor:pointer;display:grid;grid-template-columns:28px 1fr;gap:10px;}
+.optionen button .bu{font-family:var(--display);color:var(--signal);font-size:22px;}
+.optionen button.an{border-color:var(--signal);background:#2e1a15;}
+.optionen button:disabled{opacity:.4;}
+.buzzer{width:min(72vw,300px);aspect-ratio:1;border-radius:50%;align-self:center;border:10px solid #7a1d12;background:radial-gradient(circle at 35% 30%,#f07a64,var(--siegel) 55%,#8f2215);color:var(--papier-hell);font-family:var(--display);font-size:clamp(34px,11vw,52px);text-transform:uppercase;cursor:pointer;box-shadow:0 10px 0 #5c150c;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+.buzzer:active{transform:translateY(8px);box-shadow:0 2px 0 #5c150c;}
+.feldwert{display:flex;justify-content:space-between;align-items:baseline;gap:10px;}
+.feldwert b{font-family:var(--display);font-weight:400;font-size:40px;color:var(--signal);}
+.risiko{display:inline-block;border:3px solid var(--signal);color:var(--signal);font-family:var(--display);font-size:18px;padding:2px 10px;transform:rotate(-4deg);}
+#atlasbox{max-width:560px;margin:-40px auto 0;padding:0 18px 90px;display:flex;flex-direction:column;gap:12px;}
+#atlaskarte{height:min(52vh,440px);}
+.atlasfuss{position:sticky;bottom:0;background:var(--nacht);padding:10px 0 calc(10px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--kante);}
+.atlasfuss .wahl-name{font-family:var(--display);font-size:26px;text-transform:uppercase;min-height:30px;}
+</style>
+</head>
+<body>
+<header class="kopf" id="kopf" hidden></header>
+<main id="app"><p class="blass">Verbinde …</p></main>
+<section id="atlasbox" hidden>
+  <div class="weltkarte" id="atlaskarte"></div>
+  <div class="atlasfuss"><div class="klein" id="atlashinweis">Land antippen, mit zwei Fingern zoomen</div><div class="wahl-name" id="atlaswahl"></div>
+    <button class="btn rot voll" id="atlassenden" disabled>Tipp abschicken</button></div>
+</section>
+<div class="meldung" id="meldung" hidden></div>
+<script src="/vendor/d3.v7.min.js"></script>
+<script src="/vendor/topojson.v3.min.js"></script>
+<script src="/karte.js"></script>
+<script src="/wwh.js"></script>
+<script>
+const { esc, pad, poll, post, render, actions, fmtGain } = WWH;
+const app = document.getElementById('app'), kopf = document.getElementById('kopf'), meldung = document.getElementById('meldung');
+
+// Token aus dem Geräte-Link übernehmen und aus der Adresszeile entfernen
+let token = null;
+try { token = localStorage.getItem('wwh_token'); } catch (e) {}
+const qp = new URLSearchParams(location.search);
+if (qp.get('t')) { token = qp.get('t'); try { localStorage.setItem('wwh_token', token); } catch (e) {} history.replaceState(null, '', '/'); }
+
+let V = null, ME = null;
+const lokal = { key: '', folge: '', offen: false };   // Zustand, der nur auf diesem Gerät lebt
+
+function hinweis(t) { meldung.textContent = t; meldung.hidden = false; clearTimeout(hinweis.t); hinweis.t = setTimeout(() => meldung.hidden = true, 3500); }
+async function senden(body) { try { await post('/api/act', { t: token, ...body }); } catch (e) { hinweis(e.message); } }
+
+poll(() => '/api/view?t=' + encodeURIComponent(token || ''), d => {
+  V = d.view; ME = d.me;
+  if (token && d.me === null) { token = null; try { localStorage.removeItem('wwh_token'); } catch (e) {} }
+  zeichnen();
+});
+
+function zeichnen() {
+  if (!token || !ME) { kopf.hidden = true; return render(app, beitritt()); }
+  kopf.hidden = false;
+  kopf.innerHTML = `<div><div class="klein">Deckname</div><div class="code">${esc(ME.code)}</div></div>
+    <div class="wort"><div class="klein">Im Rucksack</div><b class="${ME.gain ? 'plus' : ''}">${ME.total}${ME.gain ? ' <small>' + fmtGain(ME.gain) + '</small>' : ''}</b></div>`;
+  const m = V.mission;
+  const key = [V.screen, V.cur, V.round, V.phase, m && m.type, V.finaleStufe].join('|');
+  if (key !== lokal.key) { lokal.key = key; lokal.folge = ''; lokal.offen = false; lokal.wahl = null; lokal.rolleOffen = false; lokal.reihe = null; }
+  if (lokal.ziehen) { lokal.nachher = true; return; }       // nicht neu zeichnen, solange eine Karte gezogen wird
+  let html;
+  if (V.screen === 'finale') html = finale();
+  else if (V.screen === 'prolog') html = prolog();
+  else if (V.screen !== 'mission' || !m) html = warten();
+  else if (V.phase === 'intro') html = einweisung();
+  else if (V.noItem || !V.stage) html = `<p class="pause">Die Moderation bereitet die nächste Runde vor.</p>`;
+  else html = spiel();
+  if (V.mole && V.mole.voteOpen && V.screen !== 'finale') html = maulwurfWahl() + html;
+  render(app, html);
+  atlas();
+}
+
+function beitritt() {
+  if (V && !V.joinOpen) return `<h1>Zelle geschlossen</h1><p class="text">Der Beitritt ist gerade gesperrt. Frag die Moderation nach deinem persönlichen Geräte-Link.</p>`;
+  return `<span class="stempel" style="align-self:flex-start;font-size:22px;">Streng geheim</span>
+    <h1>Wortgewandter Widerstand</h1>
+    <p class="text">Trag deinen Namen ein. Deinen Decknamen bekommst du von der Zentrale.</p>
+    <input class="feld gross" data-k="name" id="name" maxlength="40" autocomplete="nickname" placeholder="Dein Name" enterkeyhint="go">
+    <button class="btn rot voll" data-do="beitreten">Der Zelle beitreten</button>`;
+}
+
+function rules(m) { return `<ol class="regeln">${m.rules.map(r => `<li>${esc(r)}</li>`).join('')}</ol>`; }
+
+function meineZelle() {
+  if (ME.team == null || !V.teams || !V.teams[ME.team]) return '';
+  const mit = V.teams[ME.team].filter(x => x.id !== ME.id).map(x => esc(x.code)).join(', ');
+  return `<div class="karte"><div class="klein">Deine Zelle</div><h2>Zelle ${'ABCD'[ME.team]}</h2><p class="text">${mit ? 'Mit ' + mit : 'Du bist allein in dieser Zelle.'}</p></div>`;
+}
+
+const SY = () => V.story || {};
+const fuelle = (t, w) => String(t || '').replace(/\{(\w+)\}/g, (x, k) => w[k] ?? x);
+function frist() { const h = SY().stunden || 0, t = Math.floor(h / 24), r = h % 24;
+  return h <= 0 ? 'Die Säuberung beginnt' : 'Noch ' + (t ? t + ' Tag' + (t === 1 ? '' : 'e') + (r ? ', ' : '') : '') + (r ? r + ' Stunde' + (r === 1 ? '' : 'n') : '') + ' bis zur Großen Säuberung'; }
+function tage() { return `<div class="klein signal">${frist()}</div>`; }
+
+// Rolle: für alle im gleichen Format, verdeckt bis zum Antippen
+function rolle() {
+  if (!ME.rolle) return '';
+  const r = ME.rolle;
+  return `<div class="geheim ${lokal.rolleOffen ? '' : 'zu'}" data-do="rolle" style="min-height:140px">${lokal.rolleOffen
+    ? `<div class="klein" style="color:${r.maulwurf ? '#c23522' : '#5c5446'}">Deine Rolle</div><div class="display" style="font-size:clamp(28px,9vw,44px)">${r.maulwurf ? 'Maulwurf' : 'Zelle ' + esc(SY().zelle || '')}</div><div class="serif" style="font-size:16px;line-height:1.4">${esc(r.text)}</div>`
+    : `<div class="display" style="font-size:28px">Deine Rolle</div><div class="serif">Antippen zum Aufdecken. Niemand soll mitlesen.</div>`}</div>`;
+}
+
+function maulwurfWahl() {
+  const mo = V.mole;
+  return `<div class="karte" style="border-color:var(--signal)"><div class="klein signal">Abstimmung</div><h2>${esc(mo.frage)}</h2>
+    <div class="stimmen">${V.agents.filter(a => a.id !== ME.id).map(a => `<button data-do="mstimme" data-x="${a.id}" class="${ME.moleVote === a.id ? 'an' : ''}"><b>${esc(a.code)}</b><span>${esc(a.name)}</span></button>`).join('')}</div>
+    ${ME.moleVote ? gesendet('Stimme abgegeben – ändern geht bis zum Schluss') : ''}</div>`;
+}
+
+function einsatzkarte() {
+  return `<div class="karte"><div class="klein">Einsatzkarte</div><h2>${esc(ME.code)}</h2>
+    <p class="text">Zelle ${esc(SY().zelle || '')}${SY().auftrag ? '<br><span class="blass">' + esc(SY().auftrag) + '</span>' : ''}</p></div>`;
+}
+
+function prolog() {
+  const t = SY().tafel;
+  return `<div class="klein">Lagebericht${t ? ' ' + pad(t.nr) + ' / ' + pad(SY().prologLen) : ''}</div>
+    ${t ? `<h1>${esc(t.titel)}</h1><p class="text">${esc(t.text)}</p>` : ''}${einsatzkarte()}${rolle()}`;
+}
+
+function warten() {
+  const m = V.mission, pos = V.ranking.findIndex(r => r.id === ME.id), mi = SY().mission || {};
+  let h = `<p class="pause">${V.screen === 'start' ? 'Du bist drin. Gleich geht es los.' : 'Warte auf den nächsten Einsatz.'}</p>`;
+  if (V.screen !== 'start') h += tage();
+  if (V.funk && V.funk.text) h += `<div class="karte"><div class="klein">Funkspruch der Zentrale</div><p class="text">${esc(V.funk.text)}</p></div>`;
+  if (V.lastSteal) h += `<p class="pause">${esc(V.lastSteal)}</p>`;
+  if (V.pendingSteal && V.thief) h += `<p class="pause">${esc(V.thief)} darf jetzt umlagern …</p>`;
+  if (V.screen !== 'start' && V.zielLive && V.zielLive.ziel > 0) h += `<div class="klein">Die Zelle hat ${V.zielLive.stand} von ${V.zielLive.ziel} Wörtern beisammen</div>`;
+  if (m) h += `<div class="karte hell"><div class="klein" style="color:#5c5446">Einsatz ${pad(V.cur + 1)} / ${pad(V.planLen)} · ${esc(m.name)}</div>
+    <h1 style="font-size:clamp(28px,8.5vw,44px)">${esc(mi.ort || m.name)}</h1>${mi.lage ? `<p class="text" style="font-style:italic">${esc(mi.lage)}</p>` : ''}${rules(m)}</div>`;
+  if (V.screen !== 'start' && pos >= 0) h += `<div class="klein">Dein Rucksack liegt auf Platz ${pos + 1} von ${V.ranking.length}</div>`;
+  return h + rolle();
+}
+
+function einweisung() {
+  const m = V.mission, mi = SY().mission || {};
+  return `<div class="klein">Einsatz ${pad(V.cur + 1)} / ${pad(V.planLen)} · ${esc(m.name)}</div><h1>${esc(mi.ort || m.name)}</h1>
+    ${mi.lage ? `<p class="pause">${esc(mi.lage)}</p>` : ''}${rules(m)}${m.mode === 'team' ? meineZelle() : ''}`;
+}
+
+function finale() {
+  const pos = V.ranking.findIndex(r => r.id === ME.id), art = V.finaleArt, F = SY().finale || {}, st = V.statistik || {};
+  if (art === 'uebergabe') return `<span class="stempel" style="align-self:flex-start;font-size:22px;">Übergabe</span><h1>Die Übergabe</h1><p class="text">${esc(F.uebergabe || '')}</p><div class="klein">In deinem Rucksack: ${ME.total} Wörter</div>`;
+  if (art === 'maulwurf') {
+    const mw = V.maulwurf;
+    if (!mw) return (V.mole.voteOpen ? maulwurfWahl() : `<h1>${esc(V.mole.frage)}</h1><p class="pause">Die Zentrale wertet die Stimmen aus …</p>`) + rolle();
+    return `<span class="stempel" style="align-self:flex-start;font-size:22px;">${mw.caught ? 'Enttarnt' : 'Entkommen'}</span>
+      <h1>${mw.code === ME.code ? 'Das warst du.' : esc(mw.code)}</h1><p class="text">${mw.code === ME.code ? '' : 'alias ' + esc(mw.name) + '. '}${esc(mw.text)}</p>`;
+  }
+  if (art === 'ziel') {
+    const z = V.zielErgebnis || {};
+    return `<span class="stempel" style="align-self:flex-start;font-size:22px;">${z.erreicht ? 'Gerettet' : 'Verloren'}</span>
+      <h1>${z.stand} / ${z.ziel}</h1><p class="text">${esc(fuelle(z.erreicht ? F.zielErreicht : F.zielVerfehlt, z))}</p>
+      ${z.maulwurfRaus && z.maulwurfBekannt ? `<p class="pause">${esc(F.maulwurfZaehlt || '')}</p>` : ''}`;
+  }
+  if (art === 'hueter' && V.zielErgebnis && !V.zielErgebnis.erreicht)
+    return `<h1>Kein Hüter</h1><p class="text">Das Archiv ist verloren. Übrig bleiben die Rucksäcke.</p>
+      <div class="rang">${V.ranking.map((r, i) => `<div class="${r.id === ME.id ? 'ich' : ''}"><span>${pad(i + 1)}</span><b>${esc(r.code)}</b><span>${r.total}</span></div>`).join('')}</div>`;
+  if (art === 'kartei') return `<h1>${esc(F.gerettet || 'Das habt ihr gerettet')}</h1><div class="klein">${V.beute.length} Karteikarten</div>
+    <div class="kartei" style="grid-template-columns:1fr">${V.beute.map(k => WWH.karte(k, { klein: true })).join('')}</div>`;
+  if (art === 'bilanz') return (V.beute && V.beute.length ? `<div class="karte"><div class="klein">${esc(F.gerettet || 'Das habt ihr gerettet')}</div><p class="text">${V.beute.map(b => esc(b.wort)).join(' · ')}</p></div>` : '') + `<h1>${esc(F.frage || '')}</h1>${st.umgelagert ? `<p class="text">${st.umgelagert} Wörter haben unterwegs den Rucksack gewechselt – ${st.anteil} % der gesamten Beute.</p>` : `<p class="text">${esc(F.keine || '')}</p>`}
+    <div class="klein">Dein Rucksack: ${ME.total} Wörter · Platz ${pos + 1}</div>`;
+  return `<span class="stempel" style="align-self:flex-start;font-size:22px;">${pos === 0 ? 'Hüter' : 'Übergeben'}</span>
+    <h1>${pos === 0 ? esc(F.hueter || 'Du führst den Widerstand an') : 'Platz ' + (pos + 1)}</h1>
+    <div class="rang">${V.ranking.map((r, i) => `<div class="${r.id === ME.id ? 'ich' : ''}"><span>${pad(i + 1)}</span><b>${esc(r.code)}</b><span>${r.total}</span></div>`).join('')}</div>`;
+}
+
+function gesendet(txt) { return `<div class="ok">✓ ${esc(txt)}</div>`; }
+function zu() { return `<p class="pause">Abgabe geschlossen.</p>`; }
+
+function einheitPunkte() {
+  const u = V.stage.scores || [];
+  return `<div class="klein">${u.map(x => esc(x.label) + ' ' + x.pts).join(' · ')}</div>`;
+}
+
+function deppardy(st) {
+  let h = `<div class="klein">Deppardy · ${esc(st.name)}</div>`;
+  const c = st.cell;
+  if (!c) return h + `<p class="pause">Die Moderation wählt das nächste Feld.</p>` + einheitPunkte();
+  h += `<div class="feldwert"><h2>${esc(c.cat)}</h2><b>${c.value}</b></div>${c.risk ? '<div><span class="risiko">Risiko ×2</span></div>' : ''}
+    <p class="text">${esc(c.q)}</p>`;
+  if (c.hint) h += `<p class="pause">Tipp: ${esc(c.hint)}</p>`;
+  if (st.stage < 2) {
+    if (ME.wrong) h += `<p class="pause">Für diese Frage gesperrt.</p>`;
+    else if (ME.buzzPos) h += `<div class="karte hell"><h2>${ME.buzzPos === 1 ? 'Du bist dran!' : 'Platz ' + ME.buzzPos + ' in der Reihe'}</h2></div>`;
+    else if (ME.sperre && ME.sperre > V.now) h += `<button class="buzzer" disabled style="opacity:.4">Gesperrt</button><p class="pause">Zu früh gedrückt – gleich wieder frei.</p>`;
+    else h += `<button class="buzzer" data-do="buzz" style="${st.armed ? '' : 'filter:grayscale(.7);opacity:.75'}">Buzzer</button>
+      ${st.armed ? '<div class="klein signal" style="text-align:center">Frei – drücken!</div>' : '<div class="klein" style="text-align:center">Warte, bis die Moderation freigibt. Wer zu früh drückt, ist 2 Sekunden gesperrt.</div>'}`;
+  } else h += `<div class="karte hell"><div class="klein" style="color:#5c5446">Antwort</div><p class="text">${esc(c.a)}</p></div>` + (c.karte ? WWH.karte(c.karte, { neu: true }) : '');
+  return h + einheitPunkte();
+}
+
+function atlasText(st) {
+  let h = `<div class="klein">${esc(st.set)} · Runde ${V.round + 1} / ${V.mission.rounds}</div><p class="pause" style="margin:0">${esc(st.marke)}</p><h1>${esc(st.text)}</h1>`;
+  if (V.mission.mode === 'team') h += meineZelle();
+  if (V.revealed) {
+    const r = ME.res;
+    h += `<div class="karte hell"><div class="klein" style="color:#5c5446">Richtig</div><h2>${esc(st.zielName)}</h2>
+      ${r ? `<p class="text">${r.hit ? 'Volltreffer' : r.nb ? 'Nachbarland' : Math.round(r.km).toLocaleString('de-DE') + ' km daneben'} · <b>${r.pts} Punkte</b></p>` : '<p class="text">Kein Tipp abgegeben.</p>'}
+      ${st.notiz ? `<p class="text" style="font-size:16px">${esc(st.notiz)}</p>` : ''}</div>` + (st.karte ? WWH.karte(st.karte, { neu: true }) : '');
+  } else if (ME.tip) h += gesendet('Tipp: ' + (atlasKarte ? atlasKarte.name(ME.tip) : ME.tip) + (V.mission.mode === 'team' ? ' (für die Zelle)' : ''));
+  if (!V.open && !V.revealed) h += zu();
+  return h;
+}
+
+// ---- Atlas: Karte bleibt stehen, nur Markierungen ändern sich
+const atlasBox = document.getElementById('atlasbox'), atlasWahl = document.getElementById('atlaswahl'), atlasSenden = document.getElementById('atlassenden');
+let atlasKarte = null, atlasLaedt = false;
+async function atlas() {
+  const aktiv = ME && V && V.screen === 'mission' && V.phase === 'play' && V.stage && V.stage.type === 'atlas';
+  atlasBox.hidden = !aktiv;
+  if (!aktiv) return;
+  if (!atlasKarte) {
+    if (atlasLaedt) return; atlasLaedt = true;
+    atlasKarte = await Karte.erstellen(document.getElementById('atlaskarte'), { onPick: k => {
+      if (!V.open || V.revealed || (atlasKarte.geo[k] && atlasKarte.geo[k].kein)) return;
+      lokal.wahl = k; atlasMalen();
+    } });
+    render(app, spiel());
+  }
+  atlasMalen();
+}
+function atlasMalen() {
+  if (!atlasKarte) return;
+  const st = V.stage, kl = {};
+  if (ME.tip) kl[ME.tip] = 'tipp';
+  if (lokal.wahl) kl[lokal.wahl] = 'gewaehlt';
+  if (V.revealed) (st.ziele || []).forEach(z => kl[z] = (kl[z] ? kl[z] + ' ' : '') + 'ziel');
+  atlasKarte.klassen(kl);
+  atlasKarte.notizen(V.revealed && ME.res && !ME.res.hit ? { pins: [{ key: ME.res.tip, label: ME.res.pts + ' P.' }], linien: [{ von: ME.res.tip, nach: ME.res.ziel }] } : { pins: [], linien: [] });
+  const offen = V.open && !V.revealed;
+  atlasWahl.textContent = lokal.wahl ? atlasKarte.name(lokal.wahl) : (ME.tip ? atlasKarte.name(ME.tip) : '');
+  atlasSenden.disabled = !offen || !lokal.wahl || lokal.wahl === ME.tip;
+  atlasSenden.textContent = ME.tip && offen ? 'Tipp ändern' : 'Tipp abschicken';
+  atlasSenden.hidden = V.revealed;
+  document.getElementById('atlashinweis').textContent = V.revealed ? 'Aufgelöst' : offen ? 'Land antippen, mit zwei Fingern zoomen' : 'Abgabe geschlossen';
+}
+atlasSenden.onclick = async () => { const k = lokal.wahl; if (!k) return; await senden({ v: k }); lokal.wahl = null; };
+
+function spiel() {
+  const st = V.stage, m = V.mission, t = st.type, offen = V.open && !V.revealed;
+  if (t === 'deppardy') return deppardy(st);
+  if (t === 'atlas') return atlasText(st);
+  return spielInnen(st, m, t, offen) + (st.karte ? WWH.karte(st.karte, { neu: true }) : '');
+}
+
+function spielInnen(st, m, t, offen) {
+  let h = `<div class="klein">${esc(m.name)} · Runde ${V.round + 1} / ${m.rounds}</div>`;
+
+  if (t === 'schaetzen') {
+    h += `<p class="text">${esc(st.q)}</p>`;
+    if (offen) h += `<div class="reihe"><input class="feld gross" data-k="schaetz" id="eingabe" inputmode="decimal" placeholder="Zahl" style="flex:1"></div>${st.unit ? `<div class="klein">in ${esc(st.unit)}</div>` : ''}
+      <button class="btn rot voll" data-do="antwort">${ME.answer ? 'Schätzung ändern' : 'Schätzung abschicken'}</button>`;
+    if (ME.answer) h += gesendet('Abgegeben: ' + ME.answer + (st.unit ? ' ' + st.unit : ''));
+    if (!offen && !V.revealed) h += zu();
+    if (V.revealed) h += `<div class="karte hell"><div class="klein" style="color:#5c5446">Lösung</div><h2>${esc(Number.isNaN(WWH.deNum(st.a)) ? st.a : WWH.deNum(st.a).toLocaleString('de-DE'))} ${esc(st.unit || '')}</h2>${(st.closest || []).includes(ME.id) ? '<b style="color:#c23522">Du warst am nächsten dran.</b>' : ''}</div>`;
+  }
+
+  else if (t === 'ranking') {
+    h += `<p class="text">${esc(st.q)}</p>` + meineZelle();
+    const text = Object.fromEntries(st.items.map(it => [it.letter, it.text]));
+    if (!lokal.reihe || lokal.reihe.length !== st.items.length) lokal.reihe = (ME.teamAnswer ? ME.teamAnswer.v.split('') : st.items.map(it => it.letter));
+    if (offen) {
+      h += `<div class="klein">Karten ziehen oder mit den Pfeilen verschieben – oben zuerst</div>
+        <ol class="sortierliste" id="sortier">${lokal.reihe.map((l, i) => `<li data-l="${l}"><span class="nr">${pad(i + 1)}</span><span>${esc(text[l])}</span>
+          <span class="pfeile"><button data-do="hoch" data-i="${i}" ${i ? '' : 'disabled'} aria-label="nach oben">↑</button><button data-do="runter" data-i="${i}" ${i < lokal.reihe.length - 1 ? '' : 'disabled'} aria-label="nach unten">↓</button></span></li>`).join('')}</ol>
+        <button class="btn rot voll" data-do="folge">${ME.teamAnswer ? 'Neue Reihenfolge abschicken' : 'Für die Zelle abschicken'}</button>`;
+    } else if (!V.revealed) h += zu();
+    if (ME.teamAnswer) h += gesendet(`Zelle hat „${ME.teamAnswer.v}“ abgegeben (${ME.teamAnswer.by})`);
+    if (V.revealed) h += `<div class="karte hell"><div class="klein" style="color:#5c5446">Lösung</div><h2>${esc(st.code)}</h2><ol class="regeln" style="color:#15130f">${st.solution.map(s => `<li>${esc(s)}</li>`).join('')}</ol></div>`;
+  }
+
+  else if (t === 'hoeher') {
+    const cur = ME.teamAnswer && ME.teamAnswer.v, anders = st.claim === 'A' ? st.b : st.a;
+    h += `<div class="plakat"><div class="klein" style="color:#f4ecda">Das Amt verkündet</div><div class="display">${esc(st.claimName)}!</div>
+      <div class="serif" style="font-size:17px">${esc(st.q)} – ${esc(st.claimName)}, nicht ${esc(anders)}.</div></div>` + meineZelle();
+    h += `<div class="ab">${[['W', 'Wahrheit'], ['P', 'Propaganda']].map(([x, l]) => `<button data-do="ab" data-x="${x}" class="${cur === x ? 'an' : ''}" ${offen ? '' : 'disabled'}><b style="font-size:26px">${l}</b></button>`).join('')}</div>`;
+    if (ME.teamAnswer) h += gesendet(`Zelle sagt ${ME.teamAnswer.v === 'W' ? 'Wahrheit' : 'Propaganda'} (${ME.teamAnswer.by})`);
+    if (!offen && !V.revealed) h += zu();
+    if (V.revealed) h += `<div class="karte hell"><div class="klein" style="color:#5c5446">${st.wahr === 'W' ? 'Es stimmt' : 'Propaganda'}</div>
+      <p class="text">${esc(st.a)}: ${esc(st.av)} · ${esc(st.b)}: ${esc(st.bv)}</p>${cur ? `<b style="color:#c23522">${cur === st.wahr ? 'Eure Zelle hat es durchschaut.' : 'Reingefallen.'}</b>` : ''}</div>`;
+  }
+
+  else if (t === 'woerterbuch') {
+    h += `<div class="karte"><div class="klein">Beschlagnahmt</div><h1>${esc(st.wort)}</h1>${st.art ? `<div class="klein">${esc(st.art)}</div>` : ''}</div>`;
+    if (st.phase === 'faelschen') {
+      if (ME.treffer) h += `<div class="karte hell"><h2>Treffer!</h2><p class="text">Du kanntest die echte Bedeutung. Deine Wörter sind sicher.</p></div>`;
+      else if (offen) h += `<div class="klein">Erfinde eine Bedeutung, die echt klingt</div>
+        <textarea class="feld gross" data-k="faelschung" id="eingabe" rows="3" maxlength="160" placeholder="z. B. Ein alter Brauch, bei dem …">${esc(ME.answer || '')}</textarea>
+        <button class="btn rot voll" data-do="faelschen">${ME.answer ? 'Fälschung ändern' : 'Fälschung abgeben'}</button>`;
+      if (ME.answer && !ME.treffer) h += gesendet('Abgegeben');
+    } else {
+      const opt = st.optionen || [];
+      if (!V.revealed) {
+        h += `<div class="klein">Welche Bedeutung ist die echte?</div><div class="optionen">${opt.map(o => `<button data-do="wbwahl" data-x="${o.nr}" class="${ME.vote === o.nr ? 'an' : ''}" ${o.nr === ME.eigeneNr || !offen ? 'disabled' : ''}><span class="bu">${'ABCDEFGHIJKLMNOP'[o.nr]}</span>${esc(o.text)}${o.nr === ME.eigeneNr ? ' <span class="klein">(deine)</span>' : ''}</button>`).join('')}</div>`;
+        if (ME.vote != null) h += gesendet('Stimme abgegeben');
+      } else {
+        const code = id => ((V.agents.find(a => a.id === id) || {}).code || '?');
+        h += `<div class="optionen">${opt.map(o => `<button disabled style="opacity:1;${o.echt ? 'border-color:var(--gruen);background:#1f2616' : ''}"><span class="bu">${'ABCDEFGHIJKLMNOP'[o.nr]}</span><span>${esc(o.text)}<br><span class="klein">${o.echt ? 'Die echte Bedeutung' : 'Fälschung von ' + esc(code(o.von))} · ${o.stimmen.length} Stimme${o.stimmen.length === 1 ? '' : 'n'}</span></span></button>`).join('')}</div>`;
+      }
+    }
+  }
+
+  else if (t === 'schwaerzung') {
+    const balken = '█'.repeat(Math.max(3, st.laenge || 5));
+    h += `<div class="textblock">${esc(st.vor)}${V.revealed ? `<b style="color:#c23522">${esc(st.wort)}</b>` : `<span class="schwarz">${balken}</span>`}${esc(st.nach)}</div>
+      ${st.quelle ? `<div class="klein">${esc(st.quelle)}</div>` : ''}`;
+    if (offen) h += `<input class="feld gross" data-k="schwarz" id="eingabe" placeholder="Was stand unter dem Balken?" autocomplete="off" enterkeyhint="send">
+      <button class="btn rot voll" data-do="antwort">${ME.answer ? 'Antwort ändern' : 'Antwort abgeben'}</button>`;
+    if (ME.answer) h += gesendet('Abgegeben: ' + ME.answer);
+    if (!offen && !V.revealed) h += zu();
+    if (V.revealed && ME.judged === 'r') h += `<div class="karte hell"><h2>Richtig!</h2></div>`;
+  }
+
+  else if (t === 'impostor') {
+    const s = ME.secret || {};
+    h += `<div class="geheim ${lokal.offen ? '' : 'zu'}" data-do="geheim">${lokal.offen
+      ? (s.spy ? `<div class="klein" style="color:#c23522">Du bist der Eindringling</div><div class="display">${esc(s.cat)}</div><div class="serif">Das ist nur die Kategorie. Tarne dich.</div>`
+               : `<div class="klein" style="color:#5c5446">Die Parole</div><div class="display">${esc(s.word)}</div><div class="serif">Nicht weitersagen.</div>`)
+      : `<div class="display" style="font-size:32px">Geheimsache</div><div class="serif">Antippen zum Aufdecken, nochmal antippen zum Verdecken. Niemand soll mitlesen.</div>`}</div>`;
+    if (offen) {
+      h += `<div class="klein">Wer ist der Eindringling?</div><div class="stimmen">${V.agents.filter(a => a.id !== ME.id).map(a => `<button data-do="stimme" data-x="${a.id}" class="${ME.vote === a.id ? 'an' : ''}"><b>${esc(a.code)}</b><span>${esc(a.name)}</span></button>`).join('')}</div>`;
+      if (ME.vote) h += gesendet('Stimme abgegeben');
+    } else if (!V.revealed) h += `<p class="pause">Reihum ein Wort zur Parole nennen. Die Abstimmung öffnet die Moderation.</p>`;
+    if (V.revealed) h += `<div class="karte hell"><div class="klein" style="color:#5c5446">Der Eindringling war</div><h2>${esc(st.spy)}</h2><p class="text">Parole: ${esc(st.word)} · Kategorie: ${esc(st.cat)}</p></div>`;
+  }
+
+  else if (t === 'zoom' || t === 'sound' || t === 'emoji') {
+    if (t === 'emoji') h += `<div style="font-size:64px;line-height:1.1;text-align:center">${esc(st.e)}</div>${st.cat ? `<div class="klein" style="text-align:center">Kategorie: ${esc(st.cat)}</div>` : ''}`;
+    else h += `<p class="pause">${t === 'zoom' ? 'Das Beweisfoto ist auf der Leinwand.' : 'Das Band läuft über die Leinwand' + (st.stufe && !V.revealed ? ` – Rauschen Stufe ${st.stufe} von ${st.stufen}` : '') + '.'}</p>`;
+    if (offen && ME.triesLeft > 0 && ME.judged !== 'r') h += `<input class="feld gross" data-k="buzz" id="eingabe" placeholder="Antwort" autocomplete="off" enterkeyhint="send">
+      <button class="btn rot voll" data-do="funk">Antwort funken</button><div class="klein">Noch ${ME.triesLeft} Versuche</div>`;
+    if (ME.judged === 'r') h += `<div class="karte hell"><h2>Treffer!</h2></div>`;
+    if (ME.tries && ME.tries.length) h += `<ul class="versuche">${ME.tries.map(x => `<li>${esc(x)}</li>`).join('')}</ul>`;
+    if (!offen && !V.revealed) h += zu();
+    if (V.revealed) h += `<div class="karte hell"><div class="klein" style="color:#5c5446">Lösung</div><h2>${esc(st.a)}</h2></div>`;
+  }
+
+  else if (t === 'wette') {
+    h += `<div class="karte"><div class="klein">Kategorie</div><h2>${esc(st.cat)}</h2></div>`;
+    if (!st.q) {
+      h += `<div class="klein">Dein Einsatz – höchstens ${ME.betCap} Wörter</div>
+        <div class="reihe"><input class="feld gross" data-k="einsatz" id="eingabe" inputmode="numeric" placeholder="0–${ME.betCap}" style="flex:1"></div>
+        <button class="btn rot voll" data-do="einsatz">${ME.bet != null ? 'Einsatz ändern' : 'Einsatz setzen'}</button>`;
+      if (ME.bet != null) h += gesendet('Einsatz: ' + ME.bet + ' Wörter');
+    } else {
+      h += `<p class="text">${esc(st.q)}</p>${ME.bet != null ? `<div class="klein">Dein Einsatz: ${ME.bet}</div>` : '<div class="klein">Kein Einsatz gesetzt</div>'}`;
+      if (offen) h += `<input class="feld gross" data-k="wantwort" id="eingabe" placeholder="Antwort" autocomplete="off"><button class="btn rot voll" data-do="antwort">${ME.answer ? 'Antwort ändern' : 'Antwort abschicken'}</button>`;
+      if (ME.answer) h += gesendet('Abgegeben: ' + ME.answer);
+      if (!offen && !V.revealed) h += zu();
+      if (V.revealed) h += `<div class="karte hell"><div class="klein" style="color:#5c5446">Lösung</div><h2>${esc(st.a)}</h2>${ME.betDone ? `<b style="color:#c23522">${ME.betDone === 'r' ? 'Einsatz gewonnen' : 'Einsatz verloren'}</b>` : ''}</div>`;
+    }
+  }
+  return h;
+}
+
+function wert() { const e = document.getElementById('eingabe'); return e ? e.value.trim() : ''; }
+function leeren() { const e = document.getElementById('eingabe'); if (e) e.value = ''; }
+
+actions(app, {
+  beitreten: async () => {
+    const n = document.getElementById('name').value.trim();
+    if (!n) return hinweis('Bitte einen Namen eingeben');
+    try { const d = await post('/api/join', { name: n }); token = d.token; try { localStorage.setItem('wwh_token', token); } catch (e) {} location.reload(); }
+    catch (e) { hinweis(e.message); }
+  },
+  antwort: () => { const v = wert(); if (!v) return hinweis('Erst etwas eintippen'); senden({ v }); leeren(); },
+  funk: () => { const v = wert(); if (!v) return; senden({ v }); leeren(); },
+  einsatz: () => { senden({ kind: 'bet', v: parseInt(wert()) || 0 }); leeren(); },
+  tippen: d => { lokal.folge += d.l; zeichnen(); },
+  folgeweg: () => { lokal.folge = ''; zeichnen(); },
+  folgezurueck: () => { lokal.folge = lokal.folge.slice(0, -1); zeichnen(); },
+  folge: () => { senden({ v: lokal.reihe.join('') }); },
+  hoch: d => { const i = +d.i, r = lokal.reihe; [r[i - 1], r[i]] = [r[i], r[i - 1]]; zeichnen(); },
+  runter: d => { const i = +d.i, r = lokal.reihe; [r[i + 1], r[i]] = [r[i], r[i + 1]]; zeichnen(); },
+  ab: d => senden({ v: d.x }),
+  stimme: d => senden({ v: d.x }),
+  geheim: () => { lokal.offen = !lokal.offen; zeichnen(); },
+  rolle: () => { lokal.rolleOffen = !lokal.rolleOffen; zeichnen(); },
+  mstimme: d => senden({ kind: 'mole_vote', v: d.x }),
+  faelschen: () => { const v = wert(); if (!v) return hinweis('Erst etwas eintippen'); senden({ v }); },
+  wbwahl: d => senden({ v: +d.x }),
+  buzz: () => { if (navigator.vibrate) navigator.vibrate(60); senden({ kind: 'buzz' }); },
+});
+// Karteikarten ziehen (Registratur)
+app.addEventListener('pointerdown', e => {
+  const li = e.target.closest('#sortier li');
+  if (!li || e.target.closest('button')) return;
+  const liste = li.parentElement, hoehe = li.getBoundingClientRect().height + 8;
+  let start = e.clientY;
+  lokal.ziehen = true; li.classList.add('zieht'); li.setPointerCapture(e.pointerId);
+  const bewegen = ev => {
+    let dy = ev.clientY - start;
+    const vor = li.previousElementSibling, nach = li.nextElementSibling;
+    if (dy < -hoehe / 2 && vor) { liste.insertBefore(li, vor); start -= hoehe; dy += hoehe; }
+    else if (dy > hoehe / 2 && nach) { liste.insertBefore(nach, li); start += hoehe; dy -= hoehe; }
+    li.style.transform = `translateY(${dy}px)`;
+  };
+  const los = () => {
+    li.removeEventListener('pointermove', bewegen); li.removeEventListener('pointerup', los); li.removeEventListener('pointercancel', los);
+    li.classList.remove('zieht'); li.style.transform = '';
+    lokal.reihe = [...liste.children].map(x => x.dataset.l);
+    lokal.ziehen = false; lokal.nachher = false; zeichnen();
+  };
+  li.addEventListener('pointermove', bewegen); li.addEventListener('pointerup', los); li.addEventListener('pointercancel', los);
+});
+
+app.addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  const k = e.target.dataset && e.target.dataset.k;
+  const map = { name: 'beitreten', schaetz: 'antwort', buzz: 'funk', einsatz: 'einsatz', wantwort: 'antwort', schwarz: 'antwort' };
+  if (map[k]) { e.preventDefault(); const b = app.querySelector(`[data-do="${map[k]}"]`); if (b) b.click(); }
+});
+</script>
+</body>
+</html>

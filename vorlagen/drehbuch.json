@@ -1,0 +1,112 @@
+{
+ "zelle": "Semikolon",
+ "tage": 7,
+ "prolog": [
+  {
+   "titel": "Lagebericht",
+   "text": "Das Hinterland ist gefallen. Seit dem Frühjahr regiert die Ordnungsfront – und mit ihr das Amt für Reinsprache."
+  },
+  {
+   "titel": "Das Amt",
+   "text": "Verboten ist alles Fremde, alles Alte, alles Doppeldeutige. Bücher, Tonbänder, Fotos und Karten werden eingezogen. Was übrig bleibt, klingt wie ein Formular."
+  },
+  {
+   "titel": "Die Frist",
+   "text": "In sieben Tagen beginnt die Große Säuberung. Dann brennt das Zentralarchiv – und mit ihm jedes Wort, das nicht amtlich ist."
+  },
+  {
+   "titel": "Die Zelle",
+   "text": "Ihr seid die Zelle Semikolon. Ihr kennt euch nur unter Decknamen. Euer Auftrag: So viele Wörter bergen wie möglich und sie über die Grenze bringen."
+  },
+  {
+   "titel": "Die Regel",
+   "text": "Jede Person trägt ihre Beute im eigenen Rucksack. Wer einen Einsatz am besten erledigt, darf umlagern: Wörter aus einem fremden Rucksack in den eigenen. Doch was umgelagert wird, nimmt Schaden – ein Teil geht unterwegs verloren. Und am Ende braucht die Zelle genug Wörter, um das Archiv neu aufzubauen."
+  },
+  {
+   "titel": "Ein Verdacht",
+   "text": "Die Zentrale hat Grund zur Annahme, dass das Amt jemanden in eure Zelle eingeschleust hat. Was der Maulwurf sammelt, kommt nie im Archiv an. Beobachtet, wer umlagert – bei der Übergabe wird abgestimmt.",
+   "maulwurf": true
+  }
+ ],
+ "auftrag": "Wörter bergen. Über die Grenze bringen. Niemandem ganz trauen.",
+ "missionen": {
+  "schaetzen": {
+   "ort": "Statistisches Landesamt",
+   "lage": "Die Front fälscht jede Zahl, die ihr nicht passt. Wer den echten Wert kennt, sichert die Originalakte.",
+   "nach": "Das Statistische Landesamt brennt. Die Originalakten sind in Sicherheit."
+  },
+  "ranking": {
+   "ort": "Die Registratur",
+   "lage": "Der Karteikasten ist umgekippt, und die Razzia kommt gleich. Bringt die Karten wieder in Ordnung – schnell.",
+   "nach": "Die Kartei ist wieder geordnet. Das Amt sucht jetzt nach der Lücke im Schrank."
+  },
+  "emoji": {
+   "ort": "Verschlüsselter Funk",
+   "lage": "Die Leitungen werden abgehört. Die Zelle funkt nur noch in Zeichen. Wer entschlüsselt zuerst?",
+   "nach": "Der Funkverkehr ist entschlüsselt. Die Front wechselt ihre Frequenzen."
+  },
+  "deppardy": {
+   "ort": "Das Verhörzimmer",
+   "lage": "Ein Tribunal des Amtes. Wer die Fragen besser beantwortet als der Verhörleiter, geht mit seinen Akten hinaus.",
+   "nach": "Der Verhörleiter ist ins Stottern geraten. Seine Akten fehlen seit heute Nacht."
+  },
+  "impostor": {
+   "ort": "Die Übung",
+   "lage": "Die Zentrale testet, ob ihr einen Eindringling erkennt. Heute ist es nur eine Übung. Bei der Übergabe nicht mehr.",
+   "nach": "Übung beendet. Die Zentrale hat sich notiert, wer wem misstraut hat."
+  },
+  "hoeher": {
+   "ort": "Die Waage der Wahrheit",
+   "lage": "Das Amt verkündet Zahlen. Manche stimmen sogar. Entscheidet: Wahrheit oder Propaganda?",
+   "nach": "Die Propagandaabteilung druckt ihre Plakate neu. Diesmal mit Fußnoten."
+  },
+  "zoom": {
+   "ort": "Das Bildarchiv",
+   "lage": "Beschlagnahmte Fotos, sichtbar nur durch ein Schlüsselloch. Erkennt, was darauf ist, bevor die Wache zurückkommt.",
+   "nach": "Das Bildarchiv ist geräumt. Die Wache hat nur leere Rahmen gefunden."
+  },
+  "atlas": {
+   "ort": "Die Grenzkarte",
+   "lage": "Die Front hat die Herkunft aller Dinge umgeschrieben. Alles soll urdeutsch sein. Zeigt auf der Karte, woher es wirklich kommt.",
+   "nach": "Die Grenzkarte ist korrigiert. Das Amt behauptet weiter, die Kartoffel sei deutsch."
+  },
+  "sound": {
+   "ort": "Das Rundfunkarchiv",
+   "lage": "Die Tonbänder werden morgen gelöscht, und sie sind schon halb zerstört. Hört durch das Rauschen hindurch.",
+   "nach": "Die Bänder sind gerettet, bevor sie gelöscht wurden. Irgendwo läuft jetzt wieder Musik."
+  },
+  "wette": {
+   "ort": "Die Grenze",
+   "lage": "Die letzte Nacht. Die Grenzwache lässt nur durch, wer zahlt. Setzt einen Teil eurer Beute – wer falsch antwortet, lässt ihn zurück.",
+   "nach": "Die Grenze liegt hinter euch. Nicht alles hat es hinübergeschafft."
+  },
+  "woerterbuch": {
+   "ort": "Die Wörterbuchredaktion",
+   "lage": "Das Amt schreibt das Wörterbuch neu. Alte Bedeutungen werden gelöscht und durch glaubhafte Fälschungen ersetzt. Findet die echte, bevor sie verschwindet.",
+   "nach": "Die Redaktion ist verwüstet, die alten Karteikästen sind fort. Wohin, weiß nur die Zelle."
+  },
+  "schwaerzung": {
+   "ort": "Die Zensurbehörde",
+   "lage": "In der Zensurbehörde liegen die geschwärzten Originale. Wer weiß, was unter dem Balken stand, holt es zurück.",
+   "nach": "Die Zensoren finden ihre Balken abgekratzt. Unter jedem stand wieder ein Wort."
+  }
+ },
+ "finale": {
+  "uebergabe": "Ihr habt es über die Grenze geschafft. Die Zentrale nimmt eure Rucksäcke entgegen und zählt.",
+  "frage": "Zur Sicherheit – oder für euch selbst?",
+  "keine": "Kein einziges Wort hat unterwegs den Rucksack gewechselt. Die Zentrale ist beeindruckt. Und ein wenig misstrauisch.",
+  "hueter": "Hüterin oder Hüter des Archivs",
+  "ziel": "Die Zentrale braucht {ziel} Wörter, um das Archiv neu aufzubauen.",
+  "zielErreicht": "Geschafft. {stand} Wörter sind in Sicherheit – das Archiv lebt weiter.",
+  "zielVerfehlt": "Zu wenig. Nur {stand} von {ziel} Wörtern sind angekommen. Die Säuberung hat gesiegt – es gibt keinen Hüter des Archivs.",
+  "maulwurfZaehlt": "Der Rucksack des Maulwurfs zählt nicht mit – er hat für das Amt gesammelt.",
+  "gerettet": "Das habt ihr gerettet"
+ },
+ "maulwurf": {
+  "rolle": "Du bist der Maulwurf. Das Amt für Reinsprache hat dich in die Zelle eingeschleust. Dein Rucksack zählt bei der Übergabe nicht für die Zelle – je mehr du umlagerst, desto eher verfehlt sie ihr Ziel. Bleib bis zur Übergabe unentdeckt, dann zahlt dir das Amt {bonus} Wörter Prämie.",
+  "zelle": "Du gehörst zur Zelle. Aber die Zentrale ist sicher: Einer von euch arbeitet für das Amt, und was er sammelt, geht der Zelle verloren. Beobachte, wer umlagert – bei der Übergabe wird abgestimmt.",
+  "frage": "Wer ist der Maulwurf?",
+  "enttarnt": "Enttarnt. Die Zelle beschlagnahmt den Rucksack des Maulwurfs – jede andere Person erhält {anteil} Wörter daraus.",
+  "entkommen": "Entkommen. Der Maulwurf verschwindet mit seinem Rucksack über die Grenze. Das Amt zahlt {bonus} Wörter Prämie."
+ }
+}

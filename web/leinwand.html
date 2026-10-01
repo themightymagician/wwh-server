@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WWH · Leinwand</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=IBM+Plex+Mono:wght@400;500;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400;1,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/wwh.css">
+<style>
+html,body{height:100%;overflow:hidden;}
+#bühne{height:100vh;display:grid;grid-template-rows:auto 1fr auto;outline:1px solid var(--kante);outline-offset:-14px;padding:clamp(28px,3.4vw,64px);gap:clamp(18px,2.4vw,40px);}
+.leiste{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:clamp(12px,.9vw,16px);letter-spacing:.2em;text-transform:uppercase;color:var(--blass);}
+.mitte{min-height:0;overflow:auto;display:flex;flex-direction:column;justify-content:safe center;gap:clamp(16px,2vw,36px);}
+.titel{font-family:var(--display);text-transform:uppercase;line-height:.9;font-size:clamp(56px,8vw,170px);hyphens:auto;}
+.titel.start{font-size:clamp(48px,5.8vw,140px);}
+.zweispaltig>*{min-width:0;}
+.titel2{font-family:var(--display);text-transform:uppercase;line-height:.92;font-size:clamp(48px,6.5vw,130px);hyphens:auto;}
+.karte .titel2{font-size:clamp(38px,4.6vw,100px);}
+.zweispaltig .titel{font-size:clamp(48px,6.2vw,140px);overflow-wrap:anywhere;}
+.lesetext{max-width:min(1100px,100%)!important;}
+.frage{font-family:var(--serif);font-size:clamp(30px,3.4vw,68px);line-height:1.2;max-width:26ch;text-wrap:balance;}
+.unter{font-family:var(--serif);font-style:italic;font-size:clamp(24px,2.6vw,50px);line-height:1.15;color:var(--papier-matt);}
+.regeln{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:14px;counter-reset:r;max-width:62ch;}
+.regeln li{display:grid;grid-template-columns:48px 1fr;font-family:var(--serif);font-size:clamp(20px,1.7vw,32px);line-height:1.35;counter-increment:r;}
+.regeln li::before{content:counter(r,decimal-leading-zero);font-family:var(--mono);font-size:.55em;color:var(--signal);padding-top:.5em;}
+.zweispaltig{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:clamp(24px,4vw,80px);align-items:center;}
+.qr{background:var(--papier);padding:14px;width:min(30vh,340px);aspect-ratio:1;}
+.qr svg{width:100%;height:100%;display:block;}
+.url{font-size:clamp(16px,1.4vw,26px);letter-spacing:.04em;word-break:break-all;}
+.chips{display:flex;flex-wrap:wrap;gap:8px;}
+.chip{border:1px solid var(--kante-hell);padding:6px 12px;font-family:var(--display);text-transform:uppercase;font-size:clamp(16px,1.3vw,24px);color:var(--stumm);}
+.chip.an{border-color:var(--signal);color:var(--papier);background:#2e1a15;}
+.rang{display:flex;flex-direction:column;}
+.rang div{display:grid;grid-template-columns:3ch 1fr auto;gap:18px;padding:10px 0;border-bottom:1px solid var(--kante);align-items:baseline;}
+.rang .nr{color:var(--blass);font-size:clamp(14px,1vw,18px);}
+.rang b{font-family:var(--display);font-weight:400;text-transform:uppercase;font-size:clamp(24px,2.2vw,42px);}
+.rang small{font-family:var(--serif);font-style:italic;color:var(--blass);font-size:.55em;text-transform:none;margin-left:10px;}
+.rang .pk{font-family:var(--display);font-size:clamp(24px,2.2vw,42px);}
+.rang:not(.rest) div:first-child b,.rang:not(.rest) div:first-child .pk{color:var(--signal);}
+.karte{background:var(--papier);color:var(--nacht);padding:clamp(24px,3vw,48px);display:flex;flex-direction:column;gap:18px;}
+.karte .klein{color:#5c5446;}
+.karte .regeln li::before{color:var(--siegel);}
+.zellen{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px;}
+.zelle{border:1px solid var(--kante-hell);padding:18px 20px;display:flex;flex-direction:column;gap:8px;}
+.zelle h3{margin:0;font-family:var(--display);font-weight:400;font-size:clamp(28px,2.4vw,44px);text-transform:uppercase;color:var(--signal);}
+.zelle div{font-family:var(--serif);font-size:clamp(18px,1.4vw,26px);}
+.items{display:grid;gap:12px;}
+.item{display:grid;grid-template-columns:64px 1fr auto;gap:18px;align-items:center;border:1px solid var(--kante);background:var(--nacht-2);padding:14px 20px;font-family:var(--serif);font-size:clamp(22px,2vw,38px);}
+.item .bu{font-family:var(--display);font-size:1.4em;color:var(--signal);}
+.ab{display:grid;grid-template-columns:1fr auto 1fr;gap:clamp(18px,2vw,40px);align-items:stretch;}
+.ab .seite{border:3px solid var(--kante);padding:clamp(20px,2.4vw,44px);display:flex;flex-direction:column;gap:12px;background:var(--nacht-2);}
+.ab .seite.sieg{border-color:var(--signal);background:#2e1a15;}
+.ab .bu{font-family:var(--display);font-size:clamp(56px,6vw,120px);line-height:.9;color:var(--signal);}
+.ab .name{font-family:var(--serif);font-size:clamp(28px,2.8vw,56px);line-height:1.15;}
+.ab .wert{font-family:var(--display);font-size:clamp(34px,3.4vw,68px);}
+.ab .oder{align-self:center;font-family:var(--serif);font-style:italic;font-size:clamp(24px,2vw,40px);color:var(--blass);}
+.lupe{position:relative;overflow:hidden;border:1px solid var(--kante-hell);height:min(60vh,720px);aspect-ratio:4/3;max-width:100%;margin:0 auto;background:#000;}
+.lupe img{width:100%;height:100%;object-fit:contain;transition:transform 1.4s cubic-bezier(.2,.7,.2,1);}
+.emoji{font-size:clamp(100px,14vw,280px);line-height:1.05;text-align:center;}
+.loesung{align-self:flex-start;}
+.loesung .stempel{font-size:clamp(28px,3vw,60px);}
+.zahl{font-family:var(--display);font-size:clamp(80px,11vw,220px);line-height:.9;color:var(--signal);}
+.tipps{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;}
+.tipp{border:1px solid var(--kante);padding:10px 14px;display:flex;justify-content:space-between;gap:10px;align-items:baseline;}
+.tipp b{font-family:var(--display);font-weight:400;text-transform:uppercase;font-size:20px;}
+.tipp.nah{border-color:var(--signal);background:#2e1a15;}
+.fuss{display:flex;gap:clamp(12px,1.6vw,28px);flex-wrap:wrap;align-items:baseline;border-top:1px solid var(--kante);padding-top:14px;}
+.fuss span{font-size:clamp(13px,1vw,18px);}
+.fuss b{font-family:var(--display);font-weight:400;font-size:clamp(18px,1.5vw,28px);text-transform:uppercase;margin-right:6px;}
+.fuss i{font-style:normal;color:var(--signal);margin-left:4px;}
+.status{color:var(--signal);}
+.ton{position:fixed;right:24px;bottom:24px;z-index:100;}
+.stapel{display:flex;flex-direction:column;gap:clamp(12px,1.4vw,24px);}
+/* Deppardy */
+.brett{display:grid;gap:8px;height:100%;min-height:0;}
+.brett .kat{font-family:var(--display);text-transform:uppercase;font-size:clamp(14px,1.35vw,26px);line-height:1.05;text-align:center;display:flex;align-items:flex-end;justify-content:center;padding:0 6px 8px;border-bottom:3px solid var(--signal);hyphens:auto;}
+.brett .kachel{background:var(--nacht-2);border:1px solid var(--kante-hell);display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:clamp(28px,3.2vw,64px);color:var(--papier);}
+.brett .kachel.weg{background:transparent;border-color:var(--kante);color:transparent;}
+.brett .kachel.leer{background:transparent;border-style:dashed;color:transparent;}
+.depkarte{display:grid;grid-template-rows:auto 1fr auto;gap:clamp(12px,1.6vw,26px);height:100%;min-height:0;}
+.depkopf{display:flex;justify-content:space-between;align-items:baseline;gap:20px;}
+.depkopf .wert{font-family:var(--display);font-size:clamp(48px,5vw,100px);color:var(--signal);line-height:.9;}
+.depfrage{font-family:var(--serif);font-size:clamp(30px,3.3vw,66px);line-height:1.22;max-width:32ch;overflow:auto;}
+.depfrage img{max-height:42vh;max-width:100%;display:block;margin:10px 0;}
+.depfrage audio{display:none;}
+.deptipp{font-family:var(--serif);font-style:italic;font-size:clamp(22px,2vw,38px);color:var(--papier-matt);border-left:4px solid var(--signal);padding-left:18px;}
+.depantwort{background:var(--papier);color:var(--nacht);padding:clamp(16px,2vw,32px);font-family:var(--serif);font-size:clamp(26px,2.6vw,52px);line-height:1.2;}
+.depantwort img{max-height:30vh;max-width:100%;}
+.uhr{height:10px;background:var(--nacht-3);position:relative;overflow:hidden;}
+.uhr i{position:absolute;inset:0 auto 0 0;background:var(--signal);transition:width .25s linear;}
+.uhrtext{font-family:var(--display);font-size:clamp(28px,2.6vw,52px);}
+.uhrtext.aus{color:var(--signal);}
+.reihe{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+/* Atlas */
+#leinwandkarte{position:fixed;z-index:5;}
+#kartenplatz{flex:1;min-height:40vh;}
+.atlaskopf{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap;}
+.plakat{background:#c23522;color:#f4ecda;padding:clamp(24px,3vw,56px);display:flex;flex-direction:column;gap:clamp(8px,1vw,18px);transform:rotate(-1.2deg);box-shadow:0 20px 50px rgba(0,0,0,.5);max-width:1100px;}
+.plakat .titel{color:#f4ecda;}
+.plakat .klein{color:#f4ecda;opacity:.85;}
+.urteil{align-self:flex-start;border:6px solid;font-family:var(--display);text-transform:uppercase;font-size:clamp(34px,4vw,80px);padding:4px 24px;transform:rotate(-6deg);}
+.karten-haufen{display:flex;flex-wrap:wrap;gap:clamp(12px,1.4vw,24px);}
+.karten-haufen .kk{background:#f4edd8;color:#2b251b;border-left:6px solid #c8463a;padding:14px 20px;font-family:var(--serif);font-size:clamp(20px,1.9vw,36px);box-shadow:0 8px 18px rgba(0,0,0,.4);display:flex;gap:14px;align-items:baseline;}
+.karten-haufen .kk b{font-family:var(--display);font-weight:400;color:#c23522;}
+.textblock{font-family:var(--serif);font-size:clamp(30px,3.4vw,68px);line-height:1.35;white-space:pre-line;background:#f4edd8;color:#2b251b;padding:clamp(24px,3vw,56px);max-width:1200px;box-shadow:0 20px 50px rgba(0,0,0,.45);}
+.textblock .schwarz{background:#15130f;color:transparent;border-radius:3px;padding:0 .15em;}
+.textblock .enthuellt-wort{color:#c23522;font-weight:600;}
+.optionen{display:grid;gap:clamp(10px,1vw,16px);}
+.option{display:grid;grid-template-columns:64px 1fr auto;gap:18px;align-items:center;border:1px solid var(--kante-hell);background:var(--nacht-2);padding:clamp(12px,1.2vw,20px) 22px;font-family:var(--serif);font-size:clamp(20px,1.8vw,34px);line-height:1.25;}
+.option .bu{font-family:var(--display);font-size:1.4em;color:var(--signal);}
+.option.echt{border:3px solid var(--gruen);background:#1f2616;}
+.option .von{font-family:var(--mono);font-size:clamp(12px,.9vw,16px);color:var(--blass);text-align:right;}
+/* Szenen hinter den Prolog-Tafeln */
+#szene{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
+#bühne{position:relative;z-index:1;}
+.sz{position:absolute;inset:0;animation:szeneEin 1.2s ease both;}
+.sz svg{position:absolute;inset:0;width:100%;height:100%;}
+@keyframes szeneEin{from{opacity:0;}to{opacity:1;}}
+.sz-vignette{position:absolute;inset:0;background:radial-gradient(ellipse 80% 75% at 50% 45%,transparent 45%,rgba(0,0,0,.55) 100%);}
+.sz-jalousie .licht{position:absolute;inset:-25%;background:repeating-linear-gradient(-24deg,rgba(244,236,218,.085) 0 46px,transparent 46px 106px);
+  -webkit-mask-image:radial-gradient(ellipse 50% 55% at 74% 38%,#000 25%,transparent 72%);mask-image:radial-gradient(ellipse 50% 55% at 74% 38%,#000 25%,transparent 72%);}
+.sz-jalousie .rot{position:absolute;inset:0;background:radial-gradient(ellipse 40% 50% at 92% 8%,rgba(194,53,34,.16),transparent 70%);}
+.sz-feuer{position:absolute;left:0;right:0;bottom:0;height:55%;background:radial-gradient(ellipse 70% 100% at 70% 100%,rgba(232,96,76,.34),rgba(194,53,34,.12) 45%,transparent 75%);animation:flackern 3.2s ease-in-out infinite alternate;}
+@keyframes flackern{0%{opacity:.75;transform:scaleY(1);}40%{opacity:1;transform:scaleY(1.04);}70%{opacity:.85;transform:scaleY(.98);}100%{opacity:1;transform:scaleY(1.06);}}
+.sz-glyph{position:absolute;right:12vw;top:50%;transform:translateY(-50%);font-family:var(--display);font-size:min(78vh,52vw);line-height:.8;color:#1f1b15;}
+.sz-kegel{position:absolute;inset:0;background:conic-gradient(from 200deg at 78% -10%,transparent 0deg,rgba(244,236,218,.07) 10deg,rgba(244,236,218,.07) 26deg,transparent 36deg);animation:schwenk 14s ease-in-out infinite alternate;transform-origin:78% -10%;}
+@keyframes schwenk{from{transform:rotate(-7deg);}to{transform:rotate(7deg);}}
+.tafeltitel{font-family:var(--display);text-transform:uppercase;line-height:.9;font-size:clamp(64px,8vw,170px);color:var(--papier);}
+.tafeltext{font-family:var(--serif);font-size:clamp(28px,2.9vw,58px);line-height:1.3;max-width:30ch;text-wrap:pretty;}
+.tafel{display:flex;flex-direction:column;gap:clamp(18px,2.2vw,40px);max-width:min(1050px,62vw);}
+.tafel .marke{align-self:flex-start;font-size:clamp(16px,1.4vw,26px);}
+
+/* Einsatzbefehl als Akte */
+.zentrale{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,min(980px,56vw)) minmax(0,1fr);gap:clamp(20px,2.4vw,48px);align-items:center;min-height:0;}
+.zentrale>.links{display:flex;flex-direction:column;gap:22px;align-items:flex-end;}
+.zentrale>.rechts{display:flex;flex-direction:column;gap:22px;align-items:flex-start;}
+.akte{position:relative;background:linear-gradient(178deg,#efe6d1 0%,#e7dcc3 100%);color:#1d1a14;padding:clamp(22px,min(3vw,4.6vh),54px) clamp(30px,3.4vw,60px) clamp(20px,min(2.6vw,4vh),44px);
+  transform:rotate(-.7deg);box-shadow:0 2px 0 #cfc3a6,0 34px 70px rgba(0,0,0,.6),clamp(14px,1.4vw,26px) clamp(14px,1.4vw,26px) 0 rgba(194,53,34,.22);margin-top:26px;}
+.akte .reiter{position:absolute;left:clamp(26px,3vw,56px);top:-30px;height:32px;padding:0 22px;display:flex;align-items:center;background:#d9cdb0;color:#4d4536;
+  font-size:clamp(11px,.85vw,15px);letter-spacing:.18em;text-transform:uppercase;border-radius:6px 6px 0 0;}
+.akte .klammer{position:absolute;right:clamp(90px,9vw,170px);top:-22px;width:22px;height:70px;border:4px solid #8a8577;border-radius:12px;border-bottom-color:transparent;transform:rotate(6deg);}
+.akte .akte-stempel{position:absolute;right:clamp(20px,2vw,40px);top:clamp(20px,2vw,36px);font-size:clamp(18px,1.5vw,30px);border-width:4px;color:var(--siegel);border-color:var(--siegel);opacity:.85;transform:rotate(7deg);}
+.akte .art{font-size:clamp(11px,.85vw,15px);letter-spacing:.18em;text-transform:uppercase;color:#6b614f;}
+.akte .akte-titel{font-family:var(--display);text-transform:uppercase;line-height:.92;font-size:clamp(40px,min(5vw,9vh),104px);margin:8px 0 0;max-width:calc(100% - 130px);hyphens:auto;}
+.akte .akte-lage{font-family:var(--serif);font-style:italic;font-size:clamp(17px,min(1.7vw,3.1vh),32px);line-height:1.35;color:#4a4235;margin:clamp(14px,1.4vw,24px) 0;padding-bottom:clamp(14px,1.4vw,24px);border-bottom:2px dashed #b9ad92;}
+.akte-regeln{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:clamp(10px,1vw,16px);counter-reset:r;}
+.akte-regeln li{display:grid;grid-template-columns:clamp(34px,2.8vw,48px) 1fr;gap:16px;align-items:start;font-family:var(--serif);font-size:clamp(16px,min(1.55vw,2.9vh),30px);line-height:1.35;counter-increment:r;}
+.akte-regeln li::before{content:counter(r);display:flex;align-items:center;justify-content:center;width:clamp(30px,2.4vw,42px);height:clamp(30px,2.4vw,42px);border-radius:50%;
+  background:var(--siegel);color:#f4ecda;font-family:var(--display);font-size:clamp(16px,1.3vw,24px);margin-top:2px;}
+.akte .akte-fuss{display:flex;justify-content:space-between;gap:20px;margin-top:clamp(18px,1.8vw,30px);font-size:clamp(11px,.85vw,15px);letter-spacing:.16em;text-transform:uppercase;color:#6b614f;}
+.zettel{background:#f4edd8;color:#2b251b;padding:18px 22px;max-width:min(380px,100%);box-shadow:0 14px 30px rgba(0,0,0,.5),8px 8px 0 rgba(194,53,34,.18);position:relative;transform:rotate(1.6deg);}
+.zettel::before{content:"";position:absolute;left:50%;top:-10px;width:70px;height:22px;margin-left:-35px;background:rgba(236,227,207,.55);transform:rotate(-3deg);}
+.zettel .klein{color:#6b614f;}
+.zettel .inhalt{font-family:var(--serif);font-size:clamp(18px,1.4vw,26px);line-height:1.35;margin-top:6px;}
+.zettel.alarm{background:#c23522;color:#f4ecda;transform:rotate(-1.4deg);}
+.zettel.alarm .klein{color:#f4ecda;opacity:.85;}
+.zielsaeule{display:flex;flex-direction:column;gap:10px;align-items:flex-start;}
+.zielsaeule .zahl{font-family:var(--display);font-size:clamp(40px,3.8vw,80px);line-height:.9;}
+.zielsaeule .saeule{width:clamp(18px,1.4vw,26px);height:clamp(160px,26vh,300px);background:var(--nacht-3);position:relative;}
+.zielsaeule .saeule i{position:absolute;left:0;right:0;bottom:0;background:var(--signal);transition:height .8s ease;}
+.rucksaecke{display:flex;flex-wrap:wrap;gap:clamp(8px,.8vw,14px);justify-content:center;border-top:1px solid var(--kante);padding-top:clamp(12px,1.2vw,20px);}
+.rucksaecke .rs{display:flex;align-items:baseline;gap:10px;background:var(--nacht-2);border:1px solid var(--kante-hell);padding:8px 14px 8px 12px;position:relative;}
+.rucksaecke .rs::before{content:"";position:absolute;left:50%;top:-7px;width:14px;height:7px;margin-left:-7px;border:2px solid var(--kante-hell);border-bottom:none;border-radius:8px 8px 0 0;}
+.rucksaecke .rs .nr{font-size:clamp(11px,.8vw,14px);color:var(--blass);}
+.rucksaecke .rs b{font-family:var(--display);font-weight:400;text-transform:uppercase;font-size:clamp(17px,1.4vw,26px);}
+.rucksaecke .rs .zahl{font-family:var(--display);font-size:clamp(17px,1.4vw,26px);color:var(--papier-matt);}
+.rucksaecke .rs .plus{color:var(--signal);font-size:clamp(12px,.9vw,16px);}
+.rucksaecke .rs.erster{border-color:var(--signal);background:#2e1a15;}
+.zellenleiste{display:flex;flex-wrap:wrap;gap:clamp(10px,1vw,18px);justify-content:center;border-top:1px solid var(--kante);padding-top:clamp(10px,1vw,16px);}
+.zellenleiste .zl{display:flex;align-items:baseline;gap:12px;border:1px solid var(--kante-hell);background:var(--nacht-2);padding:8px 16px;}
+.zellenleiste .zl b{font-family:var(--display);font-weight:400;font-size:clamp(18px,1.5vw,28px);color:var(--signal);text-transform:uppercase;}
+.zellenleiste .zl span{font-size:clamp(13px,1vw,18px);color:var(--papier-matt);}
+.rucksaecke .rs.erster b,.rucksaecke .rs.erster .zahl{color:var(--signal);}
+@media (max-width:1100px){.zentrale{grid-template-columns:1fr;}.zentrale>.links,.zentrale>.rechts{align-items:center;}.zielsaeule .saeule{display:none;}}
+@keyframes auftritt{from{opacity:0;transform:translateY(18px) scale(.98);}to{opacity:1;transform:none;}}
+.enthuellt{animation:auftritt .6s cubic-bezier(.2,1.2,.4,1) both;}
+</style>
+</head>
+<body>
+<div id="szene"></div>
+<div id="bühne"><div></div><div class="mitte"><p class="blass">Verbinde mit der Zentrale …</p></div><div></div></div>
+<audio id="ton" preload="auto"></audio>
+<div class="weltkarte" id="leinwandkarte" hidden></div>
+<div id="lwkarte" style="position:fixed;right:3.5vw;bottom:12vh;width:min(470px,30vw);z-index:20" hidden></div>
+<div class="ton" id="tonsperre" hidden><button class="btn rot" id="tonan">Ton freigeben</button></div>
+<script src="/qrcode.js"></script>
+<script src="/vendor/d3.v7.min.js"></script>
+<script src="/vendor/topojson.v3.min.js"></script>
+<script src="/karte.js"></script>
+<script src="/wwh.js"></script>
+<script>
+const { esc, pad, poll, render, fmtGain } = WWH;
+const bühne = document.getElementById('bühne'), ton = document.getElementById('ton'), sperre = document.getElementById('tonsperre');
+let V = null, audioN = null, tonFrei = false, letzteLupe = null;
+
+document.getElementById('tonan').onclick = () => { tonFrei = true; sperre.hidden = true; ton.play().then(() => ton.pause()).catch(() => {}); try { fxBauen().ctx.resume(); } catch (e) {} if (V) steuereTon(); };
+
+let zeitDiff = 0, alt = null;
+poll(() => '/api/view?full=1', d => { V = d.view; zeitDiff = V.now - Date.now() / 1000; klang(); zeichnen(); steuereTon(); alt = V; });
+
+const byId = () => Object.fromEntries(V.agents.map(a => [a.id, a]));
+const regeln = m => `<ol class="regeln">${m.rules.map(r => `<li>${esc(r)}</li>`).join('')}</ol>`;
+
+function zeichnen() {
+  const m = V.mission;
+  let oben = '', mitte = '', unten = '';
+  const missionsLabel = m ? `Mission ${pad(V.cur + 1)} / ${pad(V.planLen)}` : 'Einsatz beendet';
+
+  if (V.screen === 'start') {
+    const url = V.joinUrl || (location.origin + '/');
+    oben = `<span>Akte Nº 07 — Verschlusssache</span><span>Nur für Mitglieder der Zelle</span>`;
+    mitte = `<div class="zweispaltig"><div class="stapel">
+        <span class="stempel" style="align-self:flex-start;font-size:clamp(22px,2.4vw,44px)">Streng geheim</span>
+        <div class="titel start">Wortgewandter<br>Widerstand</div>
+        <div class="unter">im <span class="signal">ewiggestrigen</span> Hinterland</div>${SY().zelle ? `<div class="klein" style="margin-top:12px">Zelle ${esc(SY().zelle)} · Einsatzbesprechung</div>` : ''}</div>
+      <div class="stapel" style="align-items:flex-start">
+        ${V.joinOpen ? `<div class="qr">${WWH.qr(url, 8)}</div><div class="url">${esc(url.replace(/^https?:\/\//, ''))}</div>` : `<div class="unter">Beitritt geschlossen</div>`}
+        <div class="klein">${V.agents.length} Agent${V.agents.length === 1 ? '' : 'en'} eingetroffen</div>
+        <div class="chips">${V.agents.map(a => `<span class="chip an">${esc(a.code)}</span>`).join('')}</div>
+      </div></div>`;
+  }
+
+  else if (V.screen === 'prolog') {
+    const t = SY().tafel;
+    oben = `<span>Lagebericht${t ? ' ' + pad(t.nr) + ' / ' + pad(SY().prologLen) : ''}</span><span>Zelle ${esc(SY().zelle || '')}</span>`;
+    mitte = t ? `<div class="tafel enthuellt"><span class="stempel marke">Lagebericht ${pad(t.nr)}</span><div class="tafeltitel" style="text-shadow:${langerSchatten(28)}">${esc(t.titel)}</div><div class="tafeltext" style="${tafelGroesse(t.text)}">${esc(t.text)}</div></div>` : '';
+    unten = t && t.nr === SY().prologLen && SY().auftrag ? `<div class="fuss"><span class="signal" style="font-size:clamp(16px,1.4vw,26px)">${esc(SY().auftrag)}</span></div>` : '';
+  }
+
+  else if (V.screen === 'finale') {
+    oben = `<span>Die Übergabe</span><span>${pad(V.finaleStufe + 1)} / ${pad(V.finaleStufen)}</span>`;
+    mitte = uebergabe();
+  }
+
+  else if (V.screen !== 'mission' || !m) {   // Zentrale
+    oben = `<span>Zentrale · Zelle ${esc(SY().zelle || '')}</span><span>${m ? tageText() : 'Einsatz beendet'}</span>`;
+    let notizen = '';
+    if (V.pendingSteal) notizen += `<div class="zettel alarm"><div class="klein">Umlagern</div><div class="inhalt">${V.thief ? `<b>${esc(V.thief)}</b> darf umlagern: ${umlagerRegel()} Zur Sicherheit.${V.umlagern && V.umlagern.bonus ? ` Wer verzichtet, erhält ${V.umlagern.bonus} Wörter von der Zentrale.` : ''}` : 'Gleichstand an der Spitze. Die Zentrale entscheidet.'}</div></div>`;
+    if (V.funk && V.funk.text) notizen += `<div class="zettel"><div class="klein">Funkspruch${V.funk.ort ? ' · ' + esc(V.funk.ort) : ''}</div><div class="inhalt">${esc(V.funk.text)}</div></div>`;
+    if (V.lastSteal) notizen += `<div class="zettel" style="transform:rotate(-1deg)"><div class="klein">Vermerk</div><div class="inhalt">${esc(V.lastSteal)}</div></div>`;
+    mitte = `<div class="zentrale"><div class="links">${notizen}</div>${m ? akte(m) : akteEnde()}<div class="rechts">${zielSaeule()}</div></div>`;
+    unten = rucksaecke();
+  }
+
+  else if (V.phase === 'intro') {
+    const mi = SY().mission || {};
+    oben = `<span>Einsatz ${pad(V.cur + 1)} / ${pad(V.planLen)} · ${esc(m.name)}</span><span>${tageText()}</span>`;
+    mitte = `<div class="zentrale"><div class="links"></div>${akte(m)}<div class="rechts"></div></div>`;
+    unten = m.mode === 'team' && V.teams && V.teams.length ? zellenleiste() : rucksaecke();
+  }
+
+
+  else if (V.stage && V.stage.type === 'deppardy') {
+    oben = `<span>${missionsLabel} · Deppardy · ${esc(V.stage.name)}</span><span>${V.stage.cell ? (V.stage.stage >= 2 ? 'aufgelöst' : V.stage.armed ? '<span class="status">Buzzer frei</span>' : 'Die Moderation liest vor') : 'Feld wählen'}</span>`;
+    mitte = deppardyBild(V.stage);
+    unten = `<div class="fuss">${V.stage.scores.map(u => `<span><b>${esc(u.label)}</b>${u.pts}</span>`).join('')}</div>`;
+  }
+
+  else {
+    oben = `<span>${missionsLabel} · ${esc(m.name)}</span><span>Runde ${V.round + 1} / ${m.rounds}${V.stage ? ' · <span class="status">' + status() + '</span>' : ''}</span>`;
+    mitte = V.stage ? bühnenbild(V.stage, m) : `<div class="unter">Die Moderation bereitet die Runde vor.</div>`;
+    unten = fuss();
+  }
+  if (!unten && V.screen === 'mission') unten = fuss();
+  if (V.mole && V.mole.voteOpen && V.screen !== 'finale') oben = oben.replace(/<\/span>$/, ` · <span class="status">${esc(V.mole.frage)} ${V.mole.voted.length}/${V.agents.length}</span></span>`);
+  render(bühne, `<div class="leiste">${oben}</div><div class="mitte">${mitte}</div><div>${unten}</div>`);
+  lupe();
+  uhr();
+  atlasKarte();
+  beuteKarte();
+  szene();
+}
+
+const SY = () => V.story || {};
+function tageText() { const h = SY().stunden || 0, t = Math.floor(h / 24), r = h % 24;
+  return h <= 0 ? 'Tag der Säuberung' : 'Noch ' + (t ? t + ' Tag' + (t === 1 ? '' : 'e') + (r ? ', ' : '') : '') + (r ? r + ' Std.' : '') + ' bis zur Säuberung'; }
+const fuelle = (t, w) => String(t || '').replace(/\{(\w+)\}/g, (x, k) => w[k] ?? x);
+// Langer, fallender Schatten in Siegelrot – für Tafeltitel
+// Lange Tafeltexte kleiner setzen, damit nichts unten aus dem Bild läuft
+function tafelGroesse(text) {
+  const n = (text || '').length;
+  if (n > 330) return 'font-size:clamp(20px,2.05vw,40px);max-width:40ch';
+  if (n > 240) return 'font-size:clamp(22px,2.3vw,46px);max-width:36ch';
+  if (n > 160) return 'font-size:clamp(24px,2.6vw,52px);max-width:33ch';
+  return '';
+}
+function langerSchatten(n) {
+  const out = [];
+  for (let i = 1; i <= n; i++) out.push(`${i}px ${i}px 0 rgba(${Math.round(120 - i * 2)},${Math.round(32 - i * .6)},${Math.round(22 - i * .4)},${(0.9 * (1 - i / (n + 4))).toFixed(2)})`);
+  return out.join(',');
+}
+
+function akte(m) {
+  const mi = SY().mission || {};
+  return `<div class="akte enthuellt"><div class="reiter">Einsatzbefehl Nº ${pad(V.cur + 1)} / ${pad(V.planLen)}</div><span class="klammer"></span>
+    <span class="stempel akte-stempel">Streng geheim</span>
+    <div class="art">${esc(m.name)} · ${modus(m)}</div>
+    <div class="akte-titel">${esc(mi.ort || m.name)}</div>
+    ${mi.lage ? `<div class="akte-lage">${esc(mi.lage)}</div>` : '<div style="height:20px"></div>'}
+    <ol class="akte-regeln">${m.rules.map(r => `<li>${esc(r)}</li>`).join('')}</ol>
+    <div class="akte-fuss"><span>Zelle ${esc(SY().zelle || '')}</span><span>${tageText()}</span></div></div>`;
+}
+function akteEnde() {
+  return `<div class="akte enthuellt"><div class="reiter">Abschlussvermerk</div><span class="stempel akte-stempel">Erledigt</span>
+    <div class="art">Alle Einsätze abgeschlossen</div><div class="akte-titel">Die Übergabe folgt</div>
+    <div class="akte-lage" style="border:none;margin-bottom:0">Packt eure Rucksäcke. Die Zentrale wartet an der Grenze.</div></div>`;
+}
+function zellenleiste() {
+  return `<div class="zellenleiste">${V.teams.map((t, i) => `<div class="zl"><b>Zelle ${'ABCD'[i]}</b><span>${t.map(a => esc(a.code)).join(' · ')}</span></div>`).join('')}</div>`;
+}
+function rucksaecke() {
+  if (!V.ranking || !V.ranking.length) return '';
+  return `<div class="rucksaecke">${V.ranking.map((r, i) => `<div class="rs ${i === 0 && r.total > 0 ? 'erster' : ''}"><span class="nr">${pad(i + 1)}</span><b>${esc(r.code)}</b><span class="zahl">${r.total}</span>${r.gain ? `<span class="plus">${fmtGain(r.gain)}</span>` : ''}</div>`).join('')}</div>`;
+}
+function zielSaeule() {
+  const z = V.zielLive; if (!z || !(z.ziel > 0)) return '';
+  const p = Math.min(100, Math.round(100 * z.stand / z.ziel));
+  return `<div class="zielsaeule"><div class="klein">Für das Archiv</div><div class="saeule"><i style="height:${p}%"></i></div><div class="zahl">${z.stand}<span class="blass" style="font-size:.5em"> / ${z.ziel}</span></div><div class="klein">${p} % geborgen</div></div>`;
+}
+
+// ---- Szenen: thematische Schatten hinter den Prolog-Tafeln
+const SZENEN = {
+  jalousie: () => `<div class="sz sz-jalousie"><i class="licht"></i><i class="rot"></i><div class="sz-vignette"></div></div>`,
+  akten: () => `<div class="sz"><div class="sz-kegel"></div><svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+      <defs><linearGradient id="szA" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#000" stop-opacity=".55"/><stop offset="1" stop-color="#000" stop-opacity="0"/></linearGradient></defs>
+      <polygon points="1010,820 1600,820 1600,900 820,900" fill="url(#szA)"/>
+      <g fill="#0f0d0a" stroke="#2a251d" stroke-width="3">
+        <rect x="1060" y="690" width="420" height="70" rx="6" transform="rotate(-3 1270 725)"/>
+        <rect x="1040" y="625" width="440" height="72" rx="6" transform="rotate(2 1260 660)"/>
+        <rect x="1080" y="560" width="400" height="70" rx="6" transform="rotate(-5 1280 595)"/>
+        <rect x="1050" y="500" width="430" height="66" rx="6" transform="rotate(3 1265 533)"/>
+        <rect x="1110" y="470" width="120" height="34" rx="5" transform="rotate(3 1170 487)"/></g>
+      <g transform="rotate(-14 1230 300)" fill="none" stroke="#c23522" stroke-opacity=".32"><circle cx="1230" cy="300" r="170" stroke-width="10"/><circle cx="1230" cy="300" r="140" stroke-width="4"/>
+        <text x="1230" y="322" text-anchor="middle" font-family="Anton, Impact, sans-serif" font-size="74" fill="#c23522" fill-opacity=".32" stroke="none" letter-spacing="6">VERBOTEN</text></g>
+    </svg><div class="sz-vignette"></div></div>`,
+  uhr: () => `<div class="sz"><div class="sz-feuer"></div><svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+      <g transform="translate(1210 400)"><circle r="300" fill="#100e0b" stroke="#2c271f" stroke-width="22"/>
+        ${Array.from({ length: 12 }, (_, i) => `<rect x="-7" y="-280" width="14" height="${i % 3 ? 34 : 60}" fill="#3a342a" transform="rotate(${i * 30})"/>`).join('')}
+        <rect x="-11" y="-170" width="22" height="190" rx="8" fill="#4a4336" transform="rotate(-6)"/>
+        <rect x="-8" y="-255" width="16" height="275" rx="6" fill="#5a5347" transform="rotate(-30)"/>
+        <rect x="-3" y="-265" width="6" height="300" fill="#e8604c" transform="rotate(-48)"/><circle r="18" fill="#e8604c"/></g>
+    </svg><div class="sz-vignette"></div></div>`,
+  semikolon: () => `<div class="sz"><div class="sz-glyph" style="text-shadow:${glyphSchatten()}">;</div><div class="sz-vignette"></div></div>`,
+  rucksack: () => `<div class="sz"><svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+      <defs><linearGradient id="szR" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#000" stop-opacity=".6"/><stop offset="1" stop-color="#000" stop-opacity="0"/></linearGradient></defs>
+      <polygon points="1060,800 1380,800 1640,900 1180,900" fill="url(#szR)"/>
+      <g fill="#0f0d0a" stroke="#2c271f" stroke-width="5">
+        <path d="M1130 300 q0 -80 90 -80 h40 q90 0 90 80 v470 q0 30 -30 30 h-160 q-30 0 -30 -30 z"/>
+        <path d="M1150 330 q90 60 180 0 v90 q-90 40 -180 0 z"/>
+        <rect x="1165" y="560" width="150" height="140" rx="18"/>
+        <path d="M1200 220 q40 -70 80 0" fill="none" stroke-width="16"/></g>
+      <g transform="translate(1330 560) rotate(12)"><line x1="0" y1="0" x2="0" y2="60" stroke="#8a3a2c" stroke-width="3"/>
+        <rect x="-38" y="60" width="76" height="46" fill="#c23522" fill-opacity=".7"/>
+        <text x="0" y="92" text-anchor="middle" font-family="Anton, Impact, sans-serif" font-size="26" fill="#f4ecda" fill-opacity=".85">WWH</text></g>
+    </svg><div class="sz-vignette"></div></div>`,
+  verdacht: () => `<div class="sz"><svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+      <defs><linearGradient id="szT" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4ecda" stop-opacity=".16"/><stop offset="1" stop-color="#e8604c" stop-opacity=".12"/></linearGradient>
+        <linearGradient id="szS" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#000" stop-opacity=".75"/><stop offset="1" stop-color="#000" stop-opacity="0"/></linearGradient></defs>
+      <rect x="1120" y="150" width="270" height="640" fill="url(#szT)"/>
+      <polygon points="1120,790 1390,790 1050,900 600,900" fill="#f4ecda" fill-opacity=".05"/>
+      <polygon points="1210,790 1300,790 1010,900 780,900" fill="url(#szS)"/>
+      <path fill="#0b0a08" d="M1255 330 c-30 0 -46 -18 -46 -40 l-38 0 l0 -14 l40 -6 c4 -32 22 -46 44 -46 c22 0 40 14 44 46 l40 6 l0 14 l-38 0 c0 22 -16 40 -46 40 z
+        M1200 350 q55 -18 110 0 l30 250 l-20 190 l-40 0 l-14 -170 l-12 170 l-40 0 l-20 -190 z"/>
+    </svg><div class="sz-vignette"></div></div>`,
+};
+function glyphSchatten() { const o = []; for (let i = 1; i <= 60; i += 2) o.push(`${i}px ${i}px 0 rgba(${110 - i},${28 - i * .3},${20 - i * .2},${(0.7 * (1 - i / 64)).toFixed(2)})`); return o.join(','); }
+function motivFuer(t) {
+  if (t.motiv && SZENEN[t.motiv]) return t.motiv;
+  const x = (t.titel || '').toLowerCase();
+  if (/lage|bericht/.test(x)) return 'jalousie';
+  if (/amt|verbot|zensur/.test(x)) return 'akten';
+  if (/frist|säuber|tag|uhr/.test(x)) return 'uhr';
+  if (/zelle|semikolon/.test(x)) return 'semikolon';
+  if (/regel|rucksack|beute/.test(x)) return 'rucksack';
+  if (/maulwurf|verdacht|verrat/.test(x)) return 'verdacht';
+  return ['jalousie', 'akten', 'uhr', 'semikolon', 'rucksack', 'verdacht'][((t.nr || 1) - 1) % 6];
+}
+let letzteSzene = '';
+function szene() {
+  const el = document.getElementById('szene');
+  const t = V.screen === 'prolog' && SY().tafel;
+  const name = t ? motivFuer(t) + '#' + t.nr : '';
+  if (name === letzteSzene) return;
+  letzteSzene = name;
+  el.innerHTML = t ? SZENEN[motivFuer(t)]() : '';
+}
+
+function zielBalken() {
+  const z = V.zielLive; if (!z || !(z.ziel > 0)) return '';
+  const p = Math.min(100, Math.round(100 * z.stand / z.ziel));
+  return `<div class="stapel" style="gap:8px"><div class="klein">Für das Archiv gebraucht</div><div class="reihe" style="justify-content:space-between"><span class="titel2" style="font-size:clamp(28px,2.6vw,52px)">${z.stand} / ${z.ziel}</span><span class="klein">${p} %</span></div>
+    <div class="uhr"><i style="width:${p}%"></i></div></div>`;
+}
+function umlagerRegel() { const u = V.umlagern || {};
+  return (u.pct ? u.pct + ' % eines fremden Rucksacks, mindestens ' + u.min + ' Wörter' : u.min + ' Wörter aus einem fremden Rucksack')
+    + (u.verlust ? ` – ${u.verlust === 50 ? 'die Hälfte' : u.verlust + ' %'} nimmt unterwegs Schaden` : '') + '.'; }
+
+function uebergabe() {
+  const art = V.finaleArt, F = SY().finale || {}, st = V.statistik || {};
+  if (art === 'uebergabe') return `<div class="stapel enthuellt lesetext"><span class="stempel" style="align-self:flex-start;font-size:clamp(22px,2.2vw,42px)">Streng geheim</span>
+    <div class="titel">Die Übergabe</div><div class="frage" style="max-width:none">${esc(F.uebergabe || '')}</div></div>`;
+  if (art === 'maulwurf') {
+    const mw = V.maulwurf, mo = V.mole;
+    if (!mw) return `<div class="titel2">${esc(mo.frage)}</div><div class="unter">${mo.voteOpen ? 'Abstimmung läuft – auf euren Geräten.' : 'Die Zentrale zählt die Stimmen.'}</div>
+      <div class="chips">${V.agents.map(a => `<span class="chip ${mo.voted.includes(a.id) ? 'an' : ''}">${esc(a.code)}</span>`).join('')}</div>`;
+    const tally = Object.entries(mw.tally).sort((a, b) => b[1] - a[1]);
+    return `<div class="zweispaltig"><div class="stapel enthuellt"><div class="klein">Der Maulwurf war</div><div class="titel">${esc(mw.code)}</div><div class="unter">alias ${esc(mw.name)}</div>
+        <span class="stempel" style="align-self:flex-start;font-size:clamp(26px,2.6vw,50px)">${mw.caught ? 'Enttarnt' : 'Entkommen'}</span></div>
+      <div class="stapel"><div class="frage" style="font-size:clamp(22px,2vw,38px)">${esc(mw.text)}</div>
+        <div class="chips">${tally.map(([c, n]) => `<span class="chip an">${esc(c)}: ${n}</span>`).join('') || '<span class="klein">Keine Stimmen</span>'}</div></div></div>`;
+  }
+  if (art === 'ziel') {
+    const z = V.zielErgebnis || {}, p = Math.min(100, Math.round(100 * z.stand / Math.max(1, z.ziel)));
+    return `<div class="stapel enthuellt lesetext"><div class="unter">${esc(fuelle(F.ziel, z))}</div>
+      ${z.maulwurfRaus && z.maulwurfBekannt ? `<div class="unter" style="font-size:clamp(18px,1.5vw,28px)">${esc(F.maulwurfZaehlt || '')}</div>` : ''}
+      <div class="titel">${z.stand} / ${z.ziel}</div><div class="uhr" style="height:16px"><i style="width:${p}%;${z.erreicht ? 'background:var(--gruen)' : ''}"></i></div>
+      <span class="stempel" style="align-self:flex-start;font-size:clamp(26px,2.6vw,50px)">${z.erreicht ? 'Gerettet' : 'Verloren'}</span>
+      <div class="frage" style="max-width:none">${esc(fuelle(z.erreicht ? F.zielErreicht : F.zielVerfehlt, z))}</div></div>`;
+  }
+  if (art === 'hueter' && V.zielErgebnis && !V.zielErgebnis.erreicht)
+    return `<div class="zweispaltig"><div class="stapel"><div class="klein">Das Archiv ist verloren</div><div class="titel">Kein Hüter</div><div class="unter">Übrig bleiben die Rucksäcke.</div></div><div class="rang">${rangliste(V.ranking)}</div></div>`;
+  if (art === 'kartei') {
+    return `<div class="stapel" style="gap:clamp(14px,1.6vw,26px);min-height:0"><div class="reihe" style="justify-content:space-between;align-items:baseline"><div class="titel2">${esc(F.gerettet || 'Das habt ihr gerettet')}</div>
+      <span class="klein">${V.beute.length} Karteikarte${V.beute.length === 1 ? '' : 'n'}</span></div>
+      <div class="kartei" style="grid-template-columns:repeat(auto-fill,minmax(clamp(240px,19vw,340px),1fr))">${V.beute.map(k => WWH.karte(k, { klein: true })).join('')}</div></div>`;
+  }
+  if (art === 'bilanz') {
+    const zeile = (label, wert, sub) => `<div class="stapel" style="gap:6px;border-top:1px solid var(--kante);padding-top:14px"><div class="klein">${label}</div><div class="titel2" style="font-size:clamp(26px,2.5vw,50px);overflow-wrap:anywhere">${wert}</div>${sub ? `<div class="unter" style="font-size:clamp(16px,1.3vw,24px)">${sub}</div>` : ''}</div>`;
+    const beute = V.beute && V.beute.length ? `<div class="stapel" style="gap:8px"><div class="klein">${esc(F.gerettet || 'Das habt ihr gerettet')}</div><div class="chips">${V.beute.map(b => `<span class="chip an">${esc(b.wort)}</span>`).join('')}</div></div>` : '';
+    let h = `<div class="titel2">${esc(F.frage || '')}</div>`;
+    if (!st.umgelagert) return h + `<div class="frage">${esc(F.keine || '')}</div>` + beute;
+    h += `<div class="zellen" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:28px">
+      ${zeile('Umgelagert', st.umgelagert + ' Wörter', st.anteil + ' % der gesamten Beute, in ' + st.zuege + ' Zügen')}
+      ${st.unterwegs ? zeile('Unterwegs zerstört', st.unterwegs + ' Wörter', 'beim Umlagern beschädigt – für alle verloren') : ''}
+      ${st.meist ? zeile('Die größte Raffhand', st.meist.codes.map(esc).join(' & '), st.meist.wert + ' Wörter aus fremden Rucksäcken genommen') : ''}
+      ${st.erleichtert ? zeile('Am meisten erleichtert', st.erleichtert.codes.map(esc).join(' & '), st.erleichtert.wert + ' Wörter verloren') : ''}
+      ${st.unbestechlich && st.unbestechlich.length ? zeile('Unbestechlich', st.unbestechlich.map(esc).join(', '), 'durfte umlagern – und hat verzichtet') : ''}
+      ${st.maulwurf ? zeile('Der Maulwurf', esc(st.maulwurf.code), st.maulwurf.genommen + ' Wörter umgelagert') : ''}</div>`;
+    return h + beute;
+  }
+  const [c, ...rest] = V.ranking;
+  return c ? `<div class="zweispaltig"><div class="stapel enthuellt">
+      <div class="klein">${esc(F.hueter || 'Hüterin oder Hüter des Archivs')}</div>
+      <div class="titel">${esc(c.code)}</div><div class="unter">alias ${esc(c.name)}</div>
+      <span class="stempel" style="align-self:flex-start;font-size:clamp(24px,2.4vw,46px)">${c.total} Wörter</span></div>
+      <div class="rang rest">${rest.map((r, i) => `<div><span class="nr">${pad(i + 2)}</span><b>${esc(r.code)}<small>${esc(r.name)}</small></b><span class="pk">${r.total}</span></div>`).join('')}</div></div>` : '';
+}
+
+function modus(m) { return m.mode === 'team' ? 'Zelleneinsatz' : 'Einzeleinsatz'; }
+function rangliste(list) { return list.map((r, i) => `<div><span class="nr">${pad(i + 1)}</span><b>${esc(r.code)}<small>${esc(r.name)}</small></b><span class="pk">${r.total}</span></div>`).join(''); }
+function zellen() { return `<div class="zellen">${V.teams.map((t, i) => `<div class="zelle"><h3>Zelle ${'ABCD'[i]}</h3>${t.map(a => `<div>${esc(a.code)} <span class="blass">· ${esc(a.name)}</span></div>`).join('')}</div>`).join('')}</div>`; }
+function status() {
+  if (V.revealed) return 'aufgedeckt';
+  const st = V.stage;
+  if (st.type === 'impostor') return V.open ? 'Abstimmung läuft' : 'Wortrunde';
+  if (st.type === 'wette' && !st.q) return 'Einsätze setzen';
+  if (st.type === 'woerterbuch') return st.phase === 'faelschen' ? 'Fälschen' : 'Abstimmung';
+  return V.open ? 'Abgabe offen' : 'Abgabe geschlossen';
+}
+function fuss() {
+  return `<div class="fuss">${V.ranking.map(r => `<span><b>${esc(r.code)}</b>${r.total}${r.gain ? `<i>${fmtGain(r.gain)}</i>` : ''}</span>`).join('')}</div>`;
+}
+function abgegeben(ids, label) {
+  const set = new Set(ids || []);
+  return `<div class="stapel" style="gap:8px"><div class="klein">${label}</div><div class="chips">${V.agents.map(a => `<span class="chip ${set.has(a.id) ? 'an' : ''}">${esc(a.code)}</span>`).join('')}</div></div>`;
+}
+function zellenAbgabe(st, pruef) {
+  const done = new Set(st.teamAnswered || []);
+  return `<div class="chips">${V.teams.map((t, i) => {
+    const ans = st.teamAnswers ? st.teamAnswers[i] : null;
+    const ok = pruef && ans ? pruef(ans) : null;
+    return `<span class="chip ${done.has(String(i)) ? 'an' : ''}" style="${ok === true ? 'border-color:var(--gruen);color:var(--gruen)' : ''}">Zelle ${'ABCD'[i]}${ans ? ': ' + esc(ans) + (ok === true ? ' ✓' : ok === false ? ' ✗' : '') : ''}</span>`;
+  }).join('')}</div>`;
+}
+function loesung(text) { return `<div class="loesung enthuellt"><span class="stempel">${esc(text)}</span></div>`; }
+
+function bühnenbild(st, m) {
+  const ids = byId(), rev = V.revealed;
+  switch (st.type) {
+    case 'schaetzen': {
+      let h = `<div class="frage">${esc(st.q)}</div>`;
+      if (!rev) return h + abgegeben(st.answered, 'Schätzung abgegeben');
+      h += `<div class="stapel enthuellt"><div class="klein">Lösung</div><div class="zahl">${esc(Number.isNaN(WWH.deNum(st.a)) ? st.a : WWH.deNum(st.a).toLocaleString('de-DE'))} <span style="font-size:.35em;color:var(--papier)">${esc(st.unit || '')}</span></div></div>`;
+      h += `<div class="tipps">${(st.guesses || []).map(g => `<div class="tipp ${st.closest.includes(g.id) ? 'nah' : ''}"><b>${esc(ids[g.id] ? ids[g.id].code : '?')}</b><span>${esc(g.v)}${g.diff != null && !st.closest.includes(g.id) ? ` <span class="blass">± ${g.diff.toLocaleString('de-DE')}</span>` : ''}</span></div>`).join('')}</div>`;
+      return h;
+    }
+    case 'ranking': {
+      const sol = rev ? st.solution : null;
+      let h = `<div class="frage" style="font-size:clamp(26px,2.6vw,50px)">${esc(st.q)}</div>`;
+      if (!rev) h += `<div class="karten-haufen">${st.items.map((it, i) => `<div class="kk" style="transform:rotate(${[-4, 3, -2, 5, -3, 2][i % 6]}deg) translateY(${[0, 14, -6, 8, -10, 4][i % 6]}px)"><span>${esc(it.text)}</span></div>`).join('')}</div>`;
+      else h += `<div class="items enthuellt">${sol.map((s, i) => `<div class="item"><span class="bu">${pad(i + 1)}</span><span>${esc(s)}</span><span></span></div>`).join('')}</div>`;
+      return h + zellenAbgabe(st, rev ? a => a === st.code : null);
+    }
+    case 'impostor': {
+      if (!rev) return `<div class="titel2">Reihum ein Wort</div><div class="unter">Wer kennt die Parole nicht?</div>${V.open ? abgegeben(st.voted, 'Stimme abgegeben') : ''}`;
+      const tally = Object.entries(st.tally || {}).sort((a, b) => b[1] - a[1]);
+      return `<div class="klein">Der Eindringling war</div><div class="titel enthuellt">${esc(st.spy)}</div>
+        <div class="unter">Parole: ${esc(st.word)} · Kategorie: ${esc(st.cat)}</div>
+        <div class="chips">${tally.map(([id, n]) => `<span class="chip an">${esc(ids[id] ? ids[id].code : '?')}: ${n}</span>`).join('')}</div>
+        ${st.spyResult ? `<div class="frage" style="font-size:clamp(22px,2vw,38px)">${st.spyResult === 'caught' ? 'Erkannt. Alle anderen bergen Wörter.' : 'Unerkannt. Der Eindringling birgt doppelt.'}</div>` : ''}`;
+    }
+    case 'zoom':
+      return `<div class="lupe"><img id="lupe" src="${esc(st.img)}" alt="" style="transform-origin:${st.origin};transform:scale(${letzteLupe && letzteLupe.img === st.img ? letzteLupe.scale : st.scale})"></div>
+        <div class="leiste"><span>Stufe ${st.step} / ${st.steps}</span><span>${st.attempts || 0} Funksprüche</span></div>${rev ? loesung(st.a) + gewinner(st) : ''}`;
+    case 'sound':
+      return `<div class="titel2">Abgehört</div>${/youtu\.?be/.test(st.src || '') ? `<div class="unter">Der Mitschnitt läuft in einem eigenen Tab.</div>` : `<div class="unter">Band ${V.round + 1}${rev ? '' : ` · Rauschen Stufe ${st.stufe} von ${st.stufen}`}</div>
+        <div class="uhr" style="max-width:520px"><i style="width:${100 * (st.stufe - 1) / Math.max(1, st.stufen - 1)}%"></i></div>`}
+        <div class="klein">${st.attempts || 0} Funksprüche</div>${rev ? loesung(st.a) + gewinner(st) : ''}`;
+    case 'hoeher': {
+      const anders = st.claim === 'A' ? st.b : st.a;
+      let h = `<div class="plakat"><div class="klein">Das Amt verkündet</div><div class="titel">${esc(st.claimName)}!</div>
+        <div class="unter" style="color:#f4ecda">${esc(st.q)} – ${esc(st.claimName)}, nicht ${esc(anders)}.</div></div>`;
+      if (rev) h += `<div class="reihe enthuellt" style="gap:32px"><span class="urteil" style="color:${st.wahr === 'W' ? 'var(--gruen)' : 'var(--signal)'};border-color:currentColor">${st.wahr === 'W' ? 'Wahrheit' : 'Propaganda'}</span>
+        <span class="unter">${esc(st.a)}: ${esc(st.av)} · ${esc(st.b)}: ${esc(st.bv)}</span></div>`;
+      const txt = { W: 'Wahrheit', P: 'Propaganda' };
+      return h + `<div class="chips">${V.teams.map((t, i) => { const a = st.teamAnswers ? st.teamAnswers[i] : null, fertig = (st.teamAnswered || []).includes(String(i));
+        return `<span class="chip ${fertig ? 'an' : ''}" style="${a && a === st.wahr ? 'border-color:var(--gruen);color:var(--gruen)' : ''}">Zelle ${'ABCD'[i]}${a ? ': ' + txt[a] + (a === st.wahr ? ' ✓' : ' ✗') : ''}</span>`; }).join('')}</div>`;
+    }
+    case 'woerterbuch': {
+      let h = `<div class="reihe" style="align-items:baseline;gap:20px"><div class="titel2">${esc(st.wort)}</div>${st.art ? `<span class="unter">${esc(st.art)}</span>` : ''}</div>`;
+      if (st.phase === 'faelschen') return h + `<div class="unter">Erfindet eine Bedeutung, die echt klingt – im Gerät.</div>` + abgegeben(st.answered, 'Fälschung abgegeben');
+      const code = id => ((V.agents.find(a => a.id === id) || {}).code || '?');
+      h += `<div class="optionen">${(st.optionen || []).map(o => `<div class="option ${rev && o.echt ? 'echt enthuellt' : ''}"><span class="bu">${'ABCDEFGHIJKLMNOP'[o.nr]}</span><span>${esc(o.text)}</span>
+        ${rev ? `<span class="von">${o.echt ? 'echt' : 'Fälschung von ' + esc(code(o.von))}<br>${o.stimmen.length ? o.stimmen.map(code).map(esc).join(', ') : '–'}</span>` : '<span></span>'}</div>`).join('')}</div>`;
+      if (!rev) h += abgegeben(st.voted, 'Stimme abgegeben');
+      return h;
+    }
+    case 'schwaerzung': {
+      const balken = '█'.repeat(Math.max(3, st.laenge || 5));
+      let h = `<div class="textblock">${esc(st.vor)}${rev ? `<span class="enthuellt-wort enthuellt">${esc(st.wort)}</span>` : `<span class="schwarz">${balken}</span>`}${esc(st.nach)}</div>
+        ${st.quelle ? `<div class="unter" style="font-size:clamp(18px,1.4vw,28px)">${esc(st.quelle)}</div>` : ''}`;
+      if (!rev) return h + abgegeben(st.answered, 'Antwort abgegeben');
+      const code = id => ((V.agents.find(a => a.id === id) || {}).code || '?');
+      return h + `<div class="chips">${(st.antworten || []).map(a => `<span class="chip ${a.ok ? 'an' : ''}" style="${a.ok ? 'border-color:var(--gruen);color:var(--gruen)' : ''}">${esc(code(a.id))}: ${esc(a.v)}</span>`).join('')}</div>`;
+    }
+    case 'emoji':
+      return `<div class="emoji">${esc(st.e)}</div>${st.cat ? `<div class="unter" style="text-align:center">Kategorie: ${esc(st.cat)}</div>` : ''}
+        <div class="klein" style="text-align:center">${st.attempts || 0} Funksprüche</div>${rev ? `<div style="text-align:center">${loesung(st.a)}</div>` + gewinner(st) : ''}`;
+    case 'atlas': {
+      const ids = new Set(st.answered || []);
+      let h = `<div class="atlaskopf"><div class="stapel" style="gap:6px"><div class="unter" style="font-size:clamp(18px,1.6vw,30px)">${esc(st.marke)}</div><div class="titel2">${esc(st.text)}</div></div>
+        <div class="chips">${st.units.map(u => `<span class="chip ${ids.has(u.key) ? 'an' : ''}">${esc(u.label)}${rev && st.res[u.key] ? ' · ' + st.res[u.key].pts : ''}</span>`).join('')}</div></div>`;
+      h += `<div id="kartenplatz"></div>`;
+      if (rev) h += `<div class="reihe"><span class="stempel enthuellt" style="font-size:clamp(22px,2.2vw,42px)">${esc(st.zielName)}</span>${st.notiz ? `<span class="unter" style="font-size:clamp(18px,1.5vw,28px);flex:1">${esc(st.notiz)}</span>` : ''}</div>`;
+      return h;
+    }
+    case 'wette': {
+      let h = `<div class="klein">Kategorie</div><div class="titel2">${esc(st.cat)}</div>`;
+      if (!st.q) return h + abgegeben(st.betPlaced, 'Einsatz gesetzt');
+      h += `<div class="frage">${esc(st.q)}</div>`;
+      if (!rev) return h + abgegeben(st.answered, 'Antwort abgegeben');
+      h += loesung(st.a);
+      h += `<div class="tipps">${V.agents.map(a => { const b = (st.bets || {})[a.id] || 0, d = (st.betDone || {})[a.id];
+        return `<div class="tipp ${d === 'r' ? 'nah' : ''}"><b>${esc(a.code)}</b><span>${d === 'r' ? '+' + b : d === 'w' ? '−' + b : 'setzt ' + b}</span></div>`; }).join('')}</div>`;
+      return h;
+    }
+  }
+  return '';
+}
+function gewinner(st) {
+  const ids = byId(), w = (st.winners || []).map(id => ids[id] && ids[id].code).filter(Boolean);
+  return w.length ? `<div class="unter">Geknackt von ${w.map(esc).join(', ')}</div>` : '';
+}
+
+// ---- Beutewort als Karteikarte, schiebt sich nach dem Aufdecken ins Bild
+let letzteKarte = '';
+function beuteKarte() {
+  const el = document.getElementById('lwkarte');
+  const st = V.screen === 'mission' && V.stage;
+  const k = st && (st.karte || (st.cell && st.cell.karte));
+  if (!k) { el.hidden = true; letzteKarte = ''; return; }
+  const neu = k.wort !== letzteKarte;
+  if (neu || el.hidden) { el.innerHTML = WWH.karte(k, { neu: true }); letzteKarte = k.wort; }
+  el.hidden = false;
+}
+
+// ---- Deppardy
+function deppardyBild(st) {
+  const c = st.cell;
+  if (!c) {
+    const weg = new Set(st.revealed), leer = new Set(st.leer);
+    return `<div class="brett" style="grid-template-columns:repeat(${st.cats.length},1fr);grid-template-rows:auto repeat(${st.pts.length},1fr)">
+      ${st.cats.map(k => `<div class="kat">${esc(k)}</div>`).join('')}
+      ${st.pts.map(p => st.cats.map((_, i) => { const k = i + '|' + p; return `<div class="kachel ${weg.has(k) ? 'weg' : ''} ${leer.has(k) ? 'leer' : ''}">${p}</div>`; }).join('')).join('')}</div>`;
+  }
+  // Moderierte HTML-Inhalte aus dem eigenen Archiv werden bewusst als HTML gezeigt (Bilder, Fettdruck).
+  const reihe = st.buzz.map((b, i) => `<span class="chip ${i === 0 && st.stage < 2 ? 'an' : ''}">${i + 1}. ${esc(b.label)}</span>`).join('')
+    + st.wrong.map(w => `<span class="chip" style="text-decoration:line-through">${esc(w)}</span>`).join('');
+  return `<div class="depkarte">
+    <div class="depkopf"><div class="stapel" style="gap:8px"><div class="klein">${esc(c.cat)}</div>${c.risk ? '<span class="stempel" style="font-size:clamp(20px,2vw,36px);align-self:flex-start">Risiko ×2</span>' : ''}</div><div class="wert">${c.value}</div></div>
+    <div class="stapel" style="min-height:0;overflow:auto"><div class="depfrage">${c.q}</div>
+      ${c.hint ? `<div class="deptipp enthuellt">${c.hint}</div>` : ''}
+      ${c.a ? `<div class="depantwort enthuellt">${c.a}</div>` : ''}</div>
+    <div class="stapel" style="gap:10px">${st.timer.dur > 0 && st.stage < 2 ? `<div class="reihe" style="justify-content:space-between"><div class="chips">${reihe || '<span class="klein">Buzzer frei</span>'}</div><span class="uhrtext" id="uhrtext"></span></div><div class="uhr"><i id="uhrbalken"></i></div>` : `<div class="chips">${reihe}</div>`}</div>
+  </div>`;
+}
+let uhrTakt = null;
+function uhr() {
+  clearInterval(uhrTakt);
+  const st = V.stage;
+  if (!st || st.type !== 'deppardy' || !st.cell || st.stage >= 2 || !(st.timer.dur > 0)) return;
+  const t = st.timer, takt = () => {
+    const rest = t.run ? Math.max(0, t.end - (Date.now() / 1000 + zeitDiff)) : t.left;
+    const txt = document.getElementById('uhrtext'), bal = document.getElementById('uhrbalken');
+    if (txt) { txt.textContent = rest > 0 ? Math.ceil(rest) + ' s' : 'Zeit!'; txt.classList.toggle('aus', rest <= 0); }
+    if (bal) bal.style.width = (100 * rest / t.dur) + '%';
+    if (t.run && rest <= 0 && !uhr.gemeldet) { uhr.gemeldet = t.end; ton_('timeout'); }
+    if (!t.run || rest <= 0) clearInterval(uhrTakt);
+  };
+  if (uhr.gemeldet !== t.end) uhr.gemeldet = null;
+  takt(); if (t.run) uhrTakt = setInterval(takt, 250);
+}
+
+// Töne wie im Deppardy-Original, erzeugt im Browser
+let ac = null;
+function ton_(art) {
+  if (!tonFrei) return;
+  const folgen = { open: [[440, 0, .09], [660, .08, .14]], hint: [[587, 0, .12]], reveal: [[523, 0, .1], [659, .09, .1], [784, .18, .26]],
+    plus: [[880, 0, .08], [1175, .07, .16]], minus: [[311, 0, .16], [208, .13, .26]], timeout: [[420, 0, .22], [300, .22, .22], [190, .44, .5]],
+    buzz: [[988, 0, .07], [988, .09, .07]] };
+  try {
+    ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+    if (ac.state === 'suspended') ac.resume();
+    (folgen[art] || []).forEach(([f, t, d]) => {
+      const o = ac.createOscillator(), g = ac.createGain(), s0 = ac.currentTime + t;
+      o.type = 'triangle'; o.frequency.value = f; o.connect(g); g.connect(ac.destination);
+      g.gain.setValueAtTime(0.0001, s0); g.gain.linearRampToValueAtTime(0.18, s0 + .012); g.gain.exponentialRampToValueAtTime(0.0001, s0 + d);
+      o.start(s0); o.stop(s0 + d + .03);
+    });
+  } catch (e) {}
+}
+function klang() {
+  const a = alt && alt.stage, n = V.stage;
+  if (!n || n.type !== 'deppardy') return;
+  if (!tonFrei) sperre.hidden = false;
+  if (!a || a.type !== 'deppardy') return;
+  if (n.cell && (!a.cell || a.cell.c !== n.cell.c || a.cell.p !== n.cell.p)) return ton_('open');
+  if (n.cell && a.cell && n.stage > a.stage) return ton_(n.stage === 1 ? 'hint' : 'reveal');
+  if (n.buzz.length > a.buzz.length) return ton_('buzz');
+  const summe = x => x.scores.reduce((z, u) => z + u.pts, 0);
+  if (summe(n) > summe(a)) return ton_('plus');
+  if (summe(n) < summe(a)) return ton_('minus');
+}
+
+// ---- Atlas: Karte liegt fest über dem Platzhalter
+let lwKarte = null, lwLaedt = false;
+const lwEl = document.getElementById('leinwandkarte');
+async function atlasKarte() {
+  const platz = document.getElementById('kartenplatz');
+  const st = V.stage;
+  if (!platz || !st || st.type !== 'atlas') { lwEl.hidden = true; return; }
+  const r = platz.getBoundingClientRect();
+  Object.assign(lwEl.style, { left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px' });
+  lwEl.hidden = false;
+  if (!lwKarte) { if (lwLaedt) return; lwLaedt = true; lwKarte = await Karte.erstellen(lwEl); }
+  const kl = {}, pins = [], linien = [];
+  if (V.revealed) {
+    (st.ziele || []).forEach(z => kl[z] = 'ziel');
+    const lbl = Object.fromEntries(st.units.map(u => [u.key, u.label]));
+    const stapel = {};
+    Object.entries(st.res || {}).forEach(([k, r]) => {
+      stapel[r.tip] = (stapel[r.tip] || 0);
+      pins.push({ key: r.tip, label: lbl[k] + ' · ' + r.pts, cls: r.hit ? 'treffer' : '', stapel: stapel[r.tip]++ });
+      if (!r.hit) { kl[r.tip] = kl[r.tip] || 'tipp'; linien.push({ von: r.tip, nach: r.ziel }); }
+    });
+  }
+  lwKarte.klassen(kl);
+  lwKarte.notizen({ pins, linien });
+}
+window.addEventListener('resize', () => { if (V) atlasKarte(); });
+
+// Vergrößerungsglas: vom alten auf den neuen Zoom animieren
+function lupe() {
+  const img = document.getElementById('lupe');
+  const st = V.stage;
+  if (!img || !st || st.type !== 'zoom') { letzteLupe = null; return; }
+  requestAnimationFrame(() => requestAnimationFrame(() => { img.style.transform = 'scale(' + st.scale + ')'; }));
+  letzteLupe = { img: st.img, scale: st.scale };
+}
+
+// Ton: gesteuert aus dem Steuermodul
+// Rauschen: Tiefpass und Bandrauschen, je Stufe etwas klarer. Klappt nur mit Dateien vom eigenen Server –
+// fremde Adressen spielen ohne Filter, weil der Browser deren Ton sonst stumm schaltet.
+const tonFx = new Audio(); tonFx.preload = 'auto';
+let fx = null;
+const RAUSCH = [[320, .20], [650, .14], [1300, .09], [2600, .05], [6000, .02], [20000, 0]];
+function fxBauen() {
+  if (fx) return fx;
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  const quelle = ctx.createMediaElementSource(tonFx), tief = ctx.createBiquadFilter(), laut = ctx.createGain();
+  tief.type = 'lowpass'; tief.Q.value = 0.9;
+  const puffer = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate), d = puffer.getChannelData(0);
+  let b = 0; for (let i = 0; i < d.length; i++) { b = 0.97 * b + 0.03 * (Math.random() * 2 - 1); d[i] = b * 6 + (Math.random() * 2 - 1) * 0.25; }
+  const rauschen = ctx.createBufferSource(); rauschen.buffer = puffer; rauschen.loop = true;
+  const rauschLaut = ctx.createGain(); rauschLaut.gain.value = 0;
+  quelle.connect(tief); tief.connect(laut); laut.connect(ctx.destination);
+  rauschen.connect(rauschLaut); rauschLaut.connect(ctx.destination); rauschen.start();
+  fx = { ctx, tief, rauschLaut };
+  return fx;
+}
+function fxStufe(stufe) {
+  if (!fx) return;
+  const [f, r] = RAUSCH[Math.max(0, Math.min(RAUSCH.length - 1, stufe))], t = fx.ctx.currentTime;
+  fx.tief.frequency.setTargetAtTime(f, t, 0.3);
+  fx.rauschLaut.gain.setTargetAtTime(tonFx.paused ? 0 : r, t, 0.2);
+}
+tonFx.addEventListener('play', () => { if (V && V.stage && V.stage.type === 'sound') fxStufe(V.revealed ? 99 : V.stage.stufe - 1); });
+tonFx.addEventListener('pause', () => { if (fx) fx.rauschLaut.gain.setTargetAtTime(0, fx.ctx.currentTime, 0.1); });
+
+function steuereTon() {
+  const st = V.stage;
+  const src = st && st.type === 'sound' && st.src && !/youtu\.?be/.test(st.src) ? st.src : '';
+  const abs = src ? new URL(src, location.href).href : '';
+  const eigen = abs && new URL(abs).origin === location.origin;
+  const el = eigen ? tonFx : ton, anderes = eigen ? ton : tonFx;
+  if (src) {
+    if (el.src !== abs) { el.src = abs; }
+    if (!anderes.paused) anderes.pause();
+    if (!tonFrei) sperre.hidden = false;
+    if (eigen && tonFrei) { fxBauen(); fxStufe(V.revealed ? 99 : st.stufe - 1); }
+  } else {
+    [ton, tonFx].forEach(a => { if (a.src) { a.pause(); a.removeAttribute('src'); a.load(); } });
+  }
+  const n = V.audio ? V.audio.n : 0;
+  if (audioN === null) { audioN = n; return; }
+  if (n === audioN) return;
+  audioN = n;
+  if (!src) return;
+  const a = V.audio.a;
+  if (eigen && fx && fx.ctx.state === 'suspended') fx.ctx.resume();
+  if (a === 'play') el.play().catch(() => { sperre.hidden = false; });
+  else if (a === 'pause') el.pause();
+  else if (a === 'restart') { el.currentTime = 0; el.play().catch(() => { sperre.hidden = false; }); }
+}
+document.addEventListener('keydown', e => { if (e.key === 'f') document.documentElement.requestFullscreen && document.documentElement.requestFullscreen(); });
+</script>
+</body>
+</html>
