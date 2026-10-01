@@ -170,3 +170,141 @@ class NeueSpiele(unittest.TestCase):
         self.assertIn(wahr, ("W", "P"))
         W.player_act(s, s["agents"][0], {"v": wahr})
         self.assertTrue(W.team_correct(s, W.team_of(s, ids[0])))
+
+
+class Runde2026(unittest.TestCase):
+    """Änderungen Okt. 2026: Einsatz-Limit, Umlagern am Gerät, Beutestatus, Zellenmodi, Zeittakt, Ziel."""
+
+    def _start(self, typ, mode="solo", **extra):
+        s, ids = abend()
+        s["plan"] = [dict({"id": "x", "type": typ, "mode": mode, "pts": 2, "rounds": 3, "opt": ""}, **extra)]
+        W.host_cmd(s, "mission_start", {})
+        W.host_cmd(s, "mission_begin", {})
+        return s, ids
+
+    def test_einsatz_limit_folgt_dem_rucksack(self):
+        s, ids = self._start("wette")
+        ag = s["agents"][0]
+        s["scores"][ag["id"]] = 39
+        W.player_act(s, ag, {"kind": "bet", "v": 10})
+        W.host_cmd(s, "show_q", {})
+        W.host_cmd(s, "reveal", {})
+        W.host_cmd(s, "judge", {"id": ag["id"], "ok": False})
+        self.assertEqual(W.total(s, ag["id"]), 29)
+        W.host_cmd(s, "round_next", {})
+        W.player_act(s, ag, {"kind": "bet", "v": 39})
+        self.assertEqual(s["bets"][ag["id"]], 29)           # nicht mehr 39
+        # Leerer Rucksack: darf 2 setzen, verliert aber nichts
+        leer = s["agents"][1]
+        W.player_act(s, leer, {"kind": "bet", "v": 5})
+        self.assertEqual(s["bets"][leer["id"]], 2)
+        W.host_cmd(s, "show_q", {})
+        W.host_cmd(s, "judge", {"id": leer["id"], "ok": False})
+        self.assertEqual(s["gains"].get(leer["id"]), 0)
+
+    def test_umlagern_am_geraet_auch_in_fremde_rucksaecke(self):
+        s, ids = abend()
+        for i, a in enumerate(ids):
+            s["scores"][a] = 10 * (i + 1)
+        s["pendingSteal"], s["thief"] = {"winners": [ids[0]]}, ids[0]
+        dieb = s["agents"][0]
+        me = W.me_view(s, dieb)
+        self.assertEqual(len(me["umlagern"]["rucksaecke"]), 3)
+        with self.assertRaises(W.CmdError):                    # nur der Dieb darf
+            W.player_act(s, s["agents"][1], {"kind": "steal", "v": ids[3]})
+        W.player_act(s, dieb, {"kind": "steal", "v": ids[3], "ziel": ids[1]})
+        self.assertEqual(s["scores"][ids[3]], 32)
+        self.assertEqual(s["scores"][ids[1]], 24)              # 20 + 4
+        self.assertEqual(s["scores"][ids[0]], 10)
+        self.assertIsNone(s["pendingSteal"])
+        self.assertEqual(W.abend_statistik(s)["fuerAndere"], 8)
+
+    def test_beutekarte_ohne_treffer_bleibt_grau(self):
+        s, ids = self._start("emoji")
+        W.host_cmd(s, "reveal", {})
+        self.assertTrue(s["beute"][0]["verloren"])
+        self.assertTrue(W.public_view(s)["stage"]["karte"]["verloren"])
+        W.host_cmd(s, "gain", {"id": ids[0], "d": 2})
+        self.assertFalse(s["beute"][0]["verloren"])
+
+    def test_zellen_abstimmung_und_zuversicht(self):
+        s, ids = abend(5)
+        s["plan"] = [{"id": "x", "type": "hoeher", "mode": "team", "pts": 2, "rounds": 2, "opt": "", "zm": "mehrheit"}]
+        s["teamCount"] = 2
+        W.host_cmd(s, "mission_start", {})
+        s["teams"] = [ids[:3], ids[3:]]
+        W.host_cmd(s, "mission_begin", {})
+        ag = W.by_id(s)
+        W.player_act(s, ag[ids[0]], {"v": "W"})
+        W.player_act(s, ag[ids[1]], {"v": "P"})
+        W.player_act(s, ag[ids[2]], {"v": "P"})
+        self.assertEqual(s["teamAnswers"]["0"]["v"], "P")
+        me = W.me_view(s, ag[ids[0]])
+        self.assertEqual(len(me["zelle"]["vorschlaege"]), 3)   # live sichtbar für die eigene Zelle
+        self.assertEqual(W.me_view(s, ag[ids[3]])["zelle"]["vorschlaege"], [])   # andere Zelle sieht nichts
+        # Zuversicht: eine sehr sichere Stimme schlägt zwei unsichere
+        s["plan"][0]["zm"] = "zuversicht"
+        W.host_cmd(s, "round_next", {})
+        W.player_act(s, ag[ids[0]], {"v": "W", "c": 100})
+        W.player_act(s, ag[ids[1]], {"v": "P", "c": 20})
+        W.player_act(s, ag[ids[2]], {"v": "P", "c": 20})
+        self.assertEqual(s["teamAnswers"]["0"]["v"], "W")
+
+    def test_rangordnung_borda(self):
+        s, ids = abend(3)
+        s["plan"] = [{"id": "x", "type": "ranking", "mode": "team", "pts": 2, "rounds": 1, "opt": "", "zm": "mehrheit"}]
+        W.host_cmd(s, "mission_start", {})
+        s["teams"] = [ids, []]
+        W.host_cmd(s, "mission_begin", {})
+        n = len(W.lines_of(W.item(s)))
+        a = W.LETTERS[:n]
+        ag = W.by_id(s)
+        W.player_act(s, ag[ids[0]], {"v": a})
+        W.player_act(s, ag[ids[1]], {"v": a})
+        W.player_act(s, ag[ids[2]], {"v": a[::-1]})
+        self.assertEqual(s["teamAnswers"]["0"]["v"], a)
+        with self.assertRaises(W.CmdError):
+            W.player_act(s, ag[ids[0]], {"v": "A"})
+
+    def test_zeittakt(self):
+        s, ids = self._start("emoji", takt=10)
+        s["plan"][0]["pts"] = 4
+        t0 = s["rnd"]["t0"]
+        m = W.mission(s)
+        self.assertEqual(W.takt_wert(s, m, t0 + 5), 4)
+        self.assertEqual(W.takt_wert(s, m, t0 + 15), 2)
+        self.assertEqual(W.takt_wert(s, m, t0 + 25), 1)
+        self.assertEqual(W.takt_wert(s, m, t0 + 95), 1)
+        s["feed"].append({"id": ids[0], "v": "x", "t": t0 + 12, "z": 0})
+        W.host_cmd(s, "judge", {"id": ids[0], "ok": True, "i": 0})
+        self.assertEqual(s["gains"][ids[0]], 2)
+
+    def test_auto_ziel_aus_dem_plan(self):
+        s, ids = abend()
+        s["plan"] = [{"id": "x", "type": "schaetzen", "mode": "solo", "pts": 3, "rounds": 5, "opt": ""},
+                     {"id": "y", "type": "hoeher", "mode": "team", "pts": 2, "rounds": 5, "opt": ""}]
+        self.assertEqual(W.max_woerter(s), 15 + 40)
+        s["zielProzent"] = 50
+        self.assertEqual(W.ziel_wert(s), 28)
+
+    def test_maulwurf_praemie_zahlt_das_amt(self):
+        s, ids = abend()
+        W.host_cmd(s, "mole_toggle", {"on": True})
+        mole = s["mole"]["id"]
+        for a in ids:
+            s["scores"][a] = 10
+        W.host_cmd(s, "mole_resolve", {})                     # keine Stimmen → entkommen
+        self.assertEqual(s["scores"][mole], 15)
+        self.assertTrue(all(s["scores"][a] == 10 for a in ids if a != mole))
+        s["screen"] = "finale"
+        v = W.public_view(s)
+        self.assertNotIn(mole, [x["id"] for x in v["hueterRanking"]])
+        self.assertEqual(v["statistik"]["gesamt"], 40)
+
+    def test_klang_signale(self):
+        s, ids = self._start("emoji")
+        arten = [c["art"] for c in s["cues"]]
+        self.assertEqual(arten[-2:], ["einsatz", "los"])
+        W.host_cmd(s, "klang_set", {"klang": {"musik": {"an": True, "url": "/media/x.mp3"}, "cues": {"ende": "/media/e.mp3", "quatsch": "y"}}})
+        self.assertEqual(s["klang"]["cues"], {"ende": "/media/e.mp3"})
+        self.assertTrue(s["klang"]["musik"]["an"])

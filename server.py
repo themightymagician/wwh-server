@@ -43,6 +43,7 @@ import urllib.parse
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
+mimetypes.add_type("font/woff2", ".woff2")      # Flaggen-Schrift; fehlt in manchen Systemtabellen
 BASE = os.path.dirname(os.path.abspath(__file__))
 WEB = os.path.join(BASE, "web")
 DATA = os.path.join(BASE, "data")
@@ -147,7 +148,7 @@ FIELDS = {
 }
 HINTS = {
     "schaetzen": "Antwort als reine Zahl eintragen – die Wertung rechnet damit aus, wer am nächsten dran ist.",
-    "ranking": "Begriffe in der richtigen Reihenfolge eintragen. Im Spiel werden sie gemischt und mit A, B, C … beschriftet.",
+    "ranking": "Begriffe in der richtigen Reihenfolge eintragen. Im Spiel liegen sie gemischt als Karteikarten auf dem Handy und werden durch Ziehen sortiert.",
     "impostor": "Pro Runde wird ein Eintrag gezogen und zufällig ein Spitzel bestimmt.",
     "zoom": "Bild hochladen oder URL einfügen. Hochgeladene Bilder liegen auf dem Server und funktionieren auch ohne Internet.",
     "sound": "Hochgeladene Dateien und mp3-URLs spielen auf der Leinwand, gesteuert aus dem Steuermodul. YouTube-Links öffnen sich in einem neuen Tab.",
@@ -246,6 +247,17 @@ ZOOM = [10, 6, 3.5, 2, 1.4, 1]
 LETTERS = "ABCDEFGH"
 TEAMS = "ABCD"
 MAX_BUZZ = 6            # Rateversuche pro Person und Runde
+TEAM_SPIELE = ("ranking", "hoeher", "atlas")      # Spiele mit Zellenantwort
+ZELLMODI = ("sprecher", "mehrheit", "zuversicht")
+TAKT_SPIELE = ("emoji", "schwaerzung")            # Schnell-Antwort-Spiele mit Zeittakt
+ATLAS_GEBORGEN = 50     # ab so vielen Atlas-Punkten gilt das Beutewort als geborgen
+CUES = [["einsatz", "Einsatzbefehl (Mission startet)"], ["los", "Einsatz beginnt"], ["aufdecken", "Aufdecken"],
+        ["treffer", "Treffer / Wörter vergeben"], ["ende", "Mission abgeschlossen"], ["umlagern", "Umlagern"],
+        ["verzicht", "Verzicht beim Umlagern"], ["tafel", "Prolog-Tafel"], ["uebergabe", "Übergabe beginnt"],
+        ["gerettet", "Ziel erreicht"], ["verloren", "Ziel verfehlt"], ["enttarnt", "Maulwurf enttarnt"],
+        ["entkommen", "Maulwurf entkommen"], ["takt", "Zeittakt: Punktestufe fällt"]]
+RAUSCH0 = {"tiefpass": 75, "rauschen": 70, "knistern": 40, "brummen": 25, "pfeifen": 15, "verzerrung": 30,
+           "aussetzer": 20, "leiern": 25}
 
 
 def uid():
@@ -265,7 +277,8 @@ def num(v):
 
 
 def make_plan():
-    return [{"id": uid(), "type": t, "mode": m, "pts": p, "rounds": r, "opt": ""} for t, m, p, r in PLAN0]
+    return [{"id": uid(), "type": t, "mode": m, "pts": p, "rounds": r, "opt": "", "zm": "sprecher", "takt": 0}
+            for t, m, p, r in PLAN0]
 
 
 def defaults():
@@ -283,8 +296,12 @@ def defaults():
         "story": vorlage("drehbuch.json", {}), "prologIdx": 0, "finaleStufe": 0, "stealLog": [],
         "mole": {"on": False, "id": None, "bonus": 5, "voteOpen": False, "result": None}, "moleVotes": {},
         "stealPct": 20, "stealVerlust": 50, "verzichtBonus": 2, "ziel": -1, "beute": [], "funk": None,
-        "depArm": True, "judgedPts": {}, "korrekturStand": 2,
+        "depArm": True, "judgedPts": {}, "korrekturStand": 3,
         "kartei": vorlage("beutekartei.json", {}),
+        "vorschlaege": {}, "zielProzent": 50, "namenZeigen": False, "beispiel": True, "schluesselloch": True,
+        "klang": {"an": True, "signale": True, "vol": 80, "cues": {},
+                  "musik": {"an": False, "url": "", "spiel": "", "vol": 35}},
+        "cues": [], "cueN": 0, "rausch": dict(RAUSCH0),
     }
 
 
@@ -307,7 +324,7 @@ def deep_merge(base, saved):
         if isinstance(base.get(k), dict) and isinstance(v, dict) and k not in ("content", "atlasSets", "scores", "gains",
                                                                                "upts", "answers", "teamAnswers", "votes",
                                                                                "moleVotes", "bets", "betDone", "judged",
-                                                                               "cursor", "rnd"):
+                                                                               "cursor", "rnd", "vorschlaege"):
             base[k] = deep_merge(base[k], v)
         else:
             base[k] = v
@@ -389,6 +406,19 @@ def korrekturen2(s):
     s["korrekturStand"] = 2
 
 
+ENTKOMMEN_ALT = "Entkommen. Der Maulwurf verschwindet mit seinem Rucksack über die Grenze. Das Amt zahlt {bonus} Wörter Prämie."
+
+
+def korrekturen3(s):
+    """Stand 3: Die Prämie des entkommenen Maulwurfs zahlt ausdrücklich das Amt."""
+    if s.get("korrekturStand", 0) >= 3:
+        return
+    mw = (s.get("story") or {}).get("maulwurf") or {}
+    if mw.get("entkommen") == ENTKOMMEN_ALT:
+        mw["entkommen"] = (vorlage("drehbuch.json", {}).get("maulwurf") or {}).get("entkommen", ENTKOMMEN_ALT)
+    s["korrekturStand"] = 3
+
+
 def load():
     global STATE, VERSION
     os.makedirs(MEDIA, exist_ok=True)
@@ -407,8 +437,11 @@ def load():
                 s["content"].setdefault(k, copy.deepcopy(v))
             korrekturen(s)
             korrekturen2(s)
+            korrekturen3(s)
             for p in s["plan"]:                       # Außeneinsätze sind jetzt eingebaut
                 p.setdefault("opt", "")
+                p.setdefault("zm", "sprecher")
+                p.setdefault("takt", 0)
                 if GAMES.get(p["type"], {}).get("kurs") and not p.get("pts"):
                     p["pts"] = GAMES[p["type"]]["pts"]      # früher fest 100 Punkte = 1 Wort
                 if p["type"] == "atlas" and p.get("rounds", 1) < 2:
@@ -588,10 +621,12 @@ def round_state(s, r):
         extra["claim"] = random.choice("AB")           # Was das Amt behauptet
     if m["type"] == "woerterbuch":
         extra.update(wbPhase="faelschen", optionen=[], treffer=[], gestrichen=[])
+    extra["g0"] = dict(s["gains"])                     # Stand vor der Runde: wurde etwas geborgen?
+    extra["t0"] = time.time()                          # Start des Zeittakts
     s.update({
         "round": r, "revealed": False, "zoomStep": 0, "showQ": False, "awarded": False,
-        "answers": {}, "teamAnswers": {}, "feed": [], "bets": {}, "betDone": {},
-        "votes": {}, "judged": {}, "spyResult": None,
+        "answers": {}, "teamAnswers": {}, "feed": [], "bets": {}, "betDone": {}, "vorschlaege": {},
+        "votes": {}, "judged": {}, "judgedPts": {}, "spyResult": None,
         # Beim Spitzel startet die Abstimmung erst auf Kommando.
         "open": m["type"] != "impostor",
         "rnd": dict({"item": it, "order": order, "spy": random.choice(ids) if ids else None,
@@ -602,6 +637,172 @@ def round_state(s, r):
 
 def add_gain(s, aid, d):
     s["gains"][aid] = s["gains"].get(aid, 0) + d
+
+
+def cue(s, art):
+    """Klang-Signal für die Leinwand (Musik und Töne spielt nur die Leinwand)."""
+    s["cueN"] = s.get("cueN", 0) + 1
+    s["cues"] = (s.get("cues") or [])[-11:] + [{"n": s["cueN"], "art": art}]
+
+
+def zell_modus(m):
+    return (m or {}).get("zm") if (m or {}).get("zm") in ZELLMODI else "sprecher"
+
+
+def zell_wertung(s, idx, now):
+    """Zellenantwort aus den Vorschlägen der Mitglieder: Mehrheit (eine Stimme pro Person)
+    oder Zuversicht (Stimmen nach Schieberegler gewichtet). Rangordnung zählt nach Plätzen (Borda)."""
+    m = mission(s)
+    team = s["teams"][idx] if idx < len(s["teams"]) else []
+    vs = [(aid, s["vorschlaege"][aid]) for aid in team if aid in s["vorschlaege"]]
+    if not vs:
+        s["teamAnswers"].pop(str(idx), None)
+        return
+    gew = (lambda x: 1.0) if zell_modus(m) == "mehrheit" else (lambda x: max(0.05, x.get("c", 50) / 100))
+    if m["type"] == "ranking":
+        n = len(vs[0][1]["v"])
+        punkte = {}
+        for _, x in vs:
+            for pos, l in enumerate(x["v"]):
+                punkte[l] = punkte.get(l, 0) + gew(x) * (n - pos)
+        # Gleichstand: Reihenfolge des sichersten bzw. frühesten Vorschlags entscheidet
+        best = sorted(vs, key=lambda z: (-gew(z[1]), z[1]["t"]))[0][1]["v"]
+        v = "".join(sorted(punkte, key=lambda l: (-punkte[l], best.index(l) if l in best else 99)))
+    else:
+        summe, frueh = {}, {}
+        for _, x in vs:
+            summe[x["v"]] = summe.get(x["v"], 0) + gew(x)
+            frueh[x["v"]] = min(frueh.get(x["v"], x["t"]), x["t"])
+        v = sorted(summe, key=lambda k: (-summe[k], frueh[k]))[0]
+    alt = s["teamAnswers"].get(str(idx)) or {}
+    s["teamAnswers"][str(idx)] = {"v": v, "t": alt["t"] if alt.get("v") == v and alt.get("by") == "zelle" else now,
+                                  "by": "zelle", "n": len(vs)}
+
+
+def zellen_vorschlag(s, m, aid, v, a, now):
+    """Eingabe eines Zellenmitglieds: immer als Vorschlag sichtbar für die eigene Zelle (Live-Ansicht)."""
+    idx = team_of(s, aid)
+    if idx is None:
+        raise CmdError("Du bist in keiner Zelle")
+    try:
+        c = max(0, min(100, int(a.get("c", 50))))
+    except (TypeError, ValueError):
+        c = 50
+    s["vorschlaege"][aid] = {"v": v, "c": c, "t": now}
+    if zell_modus(m) == "sprecher":
+        if a.get("kind") != "vorschlag":
+            s["teamAnswers"][str(idx)] = {"v": v, "t": now, "by": aid}
+    else:
+        zell_wertung(s, idx, now)
+
+
+def takt_wert(s, m, t):
+    """Zeittakt: im ersten Takt volle Wörter, danach je Takt die Hälfte (mindestens 1)."""
+    takt = int((m or {}).get("takt") or 0)
+    if takt <= 0 or m["type"] not in TAKT_SPIELE:
+        return step(m)
+    stufe = max(0, int((t - s["rnd"].get("t0", t)) // takt))
+    return max(1, jround(step(m) * 0.5 ** stufe))
+
+
+def umlagern(s, thief, vic, ziel=None):
+    """Wörter aus einem fremden Rucksack nehmen – in den eigenen oder in einen anderen fremden."""
+    ids = by_id(s)
+    ziel = ziel or thief
+    if not (thief and vic in ids and thief in ids and ziel in ids):
+        raise CmdError("Ungültig")
+    if vic == thief:
+        raise CmdError("Nicht aus dem eigenen Rucksack")
+    if vic == ziel:
+        raise CmdError("Quelle und Ziel sind derselbe Rucksack")
+    amt, an = umlager_menge(s, vic)
+    s["scores"][vic] = s["scores"].get(vic, 0) - amt
+    s["scores"][ziel] = s["scores"].get(ziel, 0) + an
+    s["stealLog"].append({"thief": thief, "victim": vic, "ziel": ziel, "amt": amt, "an": an, "cur": s["cur"]})
+    rest = f" – angekommen sind {an}" if an != amt else ""
+    wohin = "" if ziel == thief else f" in den Rucksack von {ids[ziel]['code']}"
+    s.update({"pendingSteal": None, "thief": None,
+              "lastSteal": f"{ids[thief]['code']} hat {amt} Wörter aus dem Rucksack von {ids[vic]['code']}{wohin} umgelagert{rest}."})
+    cue(s, "umlagern")
+
+
+def verzichten(s):
+    ids = by_id(s)
+    if s["thief"]:
+        bonus = s.get("verzichtBonus", 0)
+        s["stealLog"].append({"thief": s["thief"], "victim": None, "amt": 0, "cur": s["cur"], "verzicht": True, "bonus": bonus})
+        if s["thief"] in ids:
+            s["scores"][s["thief"]] = s["scores"].get(s["thief"], 0) + bonus
+            s["lastSteal"] = f"{ids[s['thief']]['code']} hätte umlagern dürfen – und hat verzichtet." + (
+                f" Die Zentrale dankt mit {bonus} Wörtern." if bonus else "")
+        cue(s, "verzicht")
+    s.update({"pendingSteal": None, "thief": None})
+
+
+def beute_pruefen(s):
+    """Ist das Beutewort der laufenden Runde wirklich geborgen? Nur wenn jemand in dieser Runde
+    Wörter bekommen hat – sonst erscheint die Karte ausgegraut und zählt nicht als gerettet."""
+    m = mission(s)
+    if not m or not s.get("active") or s.get("phase") != "play":
+        return
+    if m["type"] == "deppardy":
+        d = s.get("dep")
+        if not d or not d.get("cell") or d["stage"] < 2:
+            return
+        c = d["cell"]
+        wort = str((d["board"]["cats"][c["c"]].get("bw") or {}).get(str(c["p"])) or "").strip()
+        rk = f"{s['cur']}:d{c['c']}|{c['p']}"
+        u0 = d.get("u0") or {}
+        ok = any(v > u0.get(k, 0) for k, v in s["upts"].items())
+    else:
+        if not s["revealed"] or not item(s):
+            return
+        wort = beute_von(item(s), m["type"])
+        rk = f"{s['cur']}:{s['round']}"
+        if m["type"] == "atlas":
+            ok = any(r.get("pts", 0) >= ATLAS_GEBORGEN for r in (s.get("atlasRes") or {}).values())
+        else:
+            g0 = s["rnd"].get("g0") or {}
+            ok = any(v > g0.get(k, 0) for k, v in s["gains"].items())
+    for b in s["beute"]:
+        if b.get("wort") == wort and b.get("rk") == rk:
+            b["verloren"] = not ok
+
+
+def board_wert(b):
+    return sum(p * (2 if (c.get("rk") or {}).get(str(p)) else 1)
+               for c in b.get("cats", []) for p in b.get("pts", []) if (c.get("qh") or {}).get(str(p)))
+
+
+def max_woerter(s):
+    """Wie viele Wörter könnte die Zelle laut Einsatzplan höchstens bergen? Grundlage für das Auto-Ziel."""
+    n = len(s["agents"])
+    if n == 0:
+        return 0
+    t = max(1, min(s.get("teamCount", 2), n))
+    summe = 0.0
+    for m in s["plan"]:
+        r, p, typ = m.get("rounds", 1), m.get("pts", 0), m["type"]
+        if typ == "schaetzen" or typ == "emoji":
+            summe += r * p
+        elif typ in ("zoom", "sound"):
+            summe += r * (p + 1)
+        elif typ == "ranking":
+            summe += r * (p * n + math.ceil(n / t))
+        elif typ in ("hoeher", "woerterbuch", "schwaerzung"):
+            summe += r * p * n
+        elif typ == "impostor":
+            summe += r * p * max(0, n - 1)
+        elif typ == "deppardy":
+            b = next((x for x in s["boards"] if x["id"] == m.get("opt")), None) or (s["boards"] or [None])[0]
+            if b:
+                summe += board_wert(b) / kurs(m) * (n / t if m["mode"] == "team" else 1)
+        elif typ == "atlas":
+            summe += r * 100 / kurs(m) * n
+    mo = s.get("mole") or {}
+    if mo.get("on") and n > 1:                      # der Rucksack des Maulwurfs zählt nicht
+        summe *= (n - 1) / n
+    return jround(summe)
 
 
 def closest_ids(s):
@@ -729,7 +930,8 @@ def wb_werten(s, m):
 
 
 def bet_cap(s, aid):
-    return max(total(s, aid) - s["gains"].get(aid, 0), 2)
+    """Höchsteinsatz: der aktuelle Rucksack – inklusive der in dieser Mission gewonnenen und verlorenen Wörter."""
+    return max(total(s, aid), 2)
 
 
 def vote_tally(s):
@@ -766,7 +968,10 @@ def umlager_menge(s, vic):
 
 def ziel_wert(s):
     z = s.get("ziel", -1)
-    return 8 * len(s["agents"]) if z < 0 else z
+    if z < 0:
+        mx = max_woerter(s)
+        return max(1, jround(mx * s.get("zielProzent", 50) / 100)) if mx else 8 * len(s["agents"])
+    return z
 
 
 def ziel_stand(s, ohne_maulwurf=True):
@@ -778,14 +983,21 @@ def ziel_stand(s, ohne_maulwurf=True):
 def birg(s, wort, spiel=None):
     """Ein Beutewort in die Liste des Abends aufnehmen (jedes Wort nur einmal)."""
     wort = str(wort or "").strip()
-    if not wort or any(b.get("wort") == wort for b in s["beute"]):
+    if not wort:
         return
     m = mission(s)
+    d = s.get("dep") if m and m["type"] == "deppardy" else None
+    rk = f"{s['cur']}:d{d['cell']['c']}|{d['cell']['p']}" if d and d.get("cell") else f"{s['cur']}:{s['round']}"
+    alt = next((b for b in s["beute"] if b.get("wort") == wort), None)
+    if alt:
+        if alt.get("verloren") and alt.get("rk") != rk:     # zweite Chance für ein verlorenes Wort
+            alt["rk"] = rk
+        return
     ms = ((s.get("story") or {}).get("missionen") or {}).get(m["type"], {}) if m else {}
     tage = (s.get("story") or {}).get("tage", 7)
     tag = max(1, tage - math.ceil(stunden_uebrig(s) / 24) + 1)
     s["beute"].append({"wort": wort, "ort": ms.get("ort", ""), "spiel": GAMES[m["type"]]["name"] if m else (spiel or ""),
-                       "tag": tag})
+                       "tag": tag, "rk": rk, "verloren": True})
 
 
 def karte(s, wort, info=None):
@@ -798,7 +1010,7 @@ def karte(s, wort, info=None):
     nr = next((i + 1 for i, x in enumerate(s["beute"]) if x.get("wort") == wort), None)
     return {"wort": wort, "art": k.get("art", ""), "def": k.get("def", ""), "herkunft": k.get("herkunft", ""),
             "vermerk": k.get("vermerk", ""), "ort": b.get("ort", ""), "spiel": b.get("spiel", ""),
-            "tag": b.get("tag"), "nr": nr}
+            "tag": b.get("tag"), "nr": nr, "verloren": bool(b.get("verloren"))}
 
 
 def prolog_tafeln(s):
@@ -945,6 +1157,11 @@ BRAUCHT_MISSION = {"mission_begin", "round_next", "round_skip", "reveal", "zoom_
 
 def host_cmd(s, c, a):
     """Alle Befehle des Steuermoduls. a = Argumente als dict."""
+    _host_cmd(s, c, a)
+    beute_pruefen(s)
+
+
+def _host_cmd(s, c, a):
     m = mission(s)
     ids = by_id(s)
     if c in BRAUCHT_MISSION and (not m or not s["active"]):
@@ -982,8 +1199,11 @@ def host_cmd(s, c, a):
         for k, (lo, hi) in grenzen.items():
             if k in a:
                 s[k] = max(lo, min(hi, int(a[k] if a[k] not in ("", None) else lo)))
-        if "depArm" in a:
-            s["depArm"] = bool(a["depArm"])
+        if "zielProzent" in a:
+            s["zielProzent"] = max(1, min(100, int(a["zielProzent"] or 50)))
+        for k in ("depArm", "namenZeigen", "beispiel", "schluesselloch"):
+            if k in a:
+                s[k] = bool(a[k])
     elif c == "plan_set":
         plan = []
         for p in a.get("plan", []):
@@ -991,7 +1211,9 @@ def host_cmd(s, c, a):
                 plan.append({"id": p.get("id") or uid(), "type": p["type"],
                              "mode": "team" if p.get("mode") == "team" else "solo",
                              "pts": max(0, int(p.get("pts", 0))), "rounds": max(1, int(p.get("rounds", 1))),
-                             "opt": str(p.get("opt") or "")})
+                             "opt": str(p.get("opt") or ""),
+                             "zm": p.get("zm") if p.get("zm") in ZELLMODI else "sprecher",
+                             "takt": max(0, min(300, int(p.get("takt") or 0)))})
         s["plan"] = plan
         s["cur"] = max(0, min(int(a.get("cur", s["cur"])), len(plan)))
     elif c == "plan_reset":
@@ -1011,12 +1233,22 @@ def host_cmd(s, c, a):
                 s["finaleStufe"] = 0
             if a["name"] == "prolog" and s["screen"] != "prolog":
                 s["prologIdx"] = 0
+                cue(s, "tafel")
+            if a["name"] == "finale" and s["screen"] != "finale":
+                cue(s, "uebergabe")
             s["screen"] = a["name"]
     elif c == "prolog_step":
         n = len(prolog_tafeln(s))
+        alt = s["prologIdx"]
         s["prologIdx"] = max(0, min(n - 1, s["prologIdx"] + int(a.get("d", 1))))
+        if s["prologIdx"] > alt:
+            cue(s, "tafel")
     elif c == "finale_step":
-        s["finaleStufe"] = max(0, min(len(finale_stufen(s)) - 1, s["finaleStufe"] + int(a.get("d", 1))))
+        stufen = finale_stufen(s)
+        alt = s["finaleStufe"]
+        s["finaleStufe"] = max(0, min(len(stufen) - 1, s["finaleStufe"] + int(a.get("d", 1))))
+        if s["finaleStufe"] > alt and stufen[s["finaleStufe"]] == "ziel":
+            cue(s, "gerettet" if ziel_stand(s) >= ziel_wert(s) else "verloren")
     # ---- Maulwurf ---------------------------------------------------------
     elif c == "mole_toggle":
         s["mole"]["on"] = bool(a.get("on"))
@@ -1053,8 +1285,11 @@ def host_cmd(s, c, a):
                 s["scores"][o] = s["scores"].get(o, 0) + res["anteil"]
             s["scores"][mo["id"]] = beute - res["anteil"] * len(others)
         elif not caught:
+            # Die Prämie zahlt das Amt für Reinsprache aus eigener Kasse – kein Rucksack der Zelle wird angetastet
             s["scores"][mo["id"]] = s["scores"].get(mo["id"], 0) + mo["bonus"]
+            res["praemie"] = mo["bonus"]
         mo["result"], mo["voteOpen"] = res, False
+        cue(s, "enttarnt" if caught else "entkommen")
     elif c == "story_set":
         st = a.get("story") or {}
         s["story"] = {
@@ -1085,7 +1320,8 @@ def host_cmd(s, c, a):
                       "revealed": False, "lastSteal": None, "pendingSteal": None, "thief": None,
                       "teams": roll_teams(s, s["teamCount"]) if m["mode"] == "team" else [],
                       "rnd": {}, "answers": {}, "teamAnswers": {}, "feed": [], "open": False,
-                      "upts": {}, "dep": None, "atlasRes": None, "atlasOrder": [], "funk": None})
+                      "upts": {}, "dep": None, "atlasRes": None, "atlasOrder": [], "funk": None, "vorschlaege": {}})
+            cue(s, "einsatz")
     elif c == "mission_abort":
         s.update({"screen": "hq", "active": False, "phase": "intro", "gains": {}, "rnd": {},
                   "answers": {}, "teamAnswers": {}, "feed": [], "open": False})
@@ -1117,6 +1353,7 @@ def host_cmd(s, c, a):
         else:
             s["phase"] = "play"
             round_state(s, 0)
+        cue(s, "los")
     elif c == "round_next":
         if m and s["round"] < m["rounds"] - 1:
             round_state(s, s["round"] + 1)
@@ -1138,6 +1375,8 @@ def host_cmd(s, c, a):
                     s["upts"][key] = s["upts"].get(key, 0) + r["pts"]
             s["atlasRes"] = res
             sync_gains(s)
+        if not s["revealed"]:
+            cue(s, "aufdecken")
         s["revealed"], s["open"] = True, False
         if m and m["type"] == "woerterbuch" and s["rnd"].get("wbPhase") == "abstimmen":
             wb_werten(s, m)
@@ -1156,9 +1395,13 @@ def host_cmd(s, c, a):
         s["showQ"], s["open"] = True, True
     elif c == "gain":
         add_gain(s, a.get("id"), int(a.get("d", 0)))
+        if int(a.get("d", 0)) > 0:
+            cue(s, "treffer")
     elif c == "gain_team":
         for aid in s["teams"][int(a.get("idx"))]:
             add_gain(s, aid, int(a.get("d", 0)))
+        if int(a.get("d", 0)) > 0:
+            cue(s, "treffer")
     elif c == "set_answer":               # Moderation trägt für Agenten ohne Gerät ein
         aid, v = a.get("id"), str(a.get("v", "")).strip()[:80]
         if v:
@@ -1170,12 +1413,18 @@ def host_cmd(s, c, a):
         s["bets"][aid] = max(0, min(int(a.get("v") or 0), bet_cap(s, aid)))
     elif c == "set_team_answer":
         v = str(a.get("v", "")).upper().strip()[:8]
+        if m["type"] == "ranking" and v:
+            n = len(lines_of(item(s)))
+            if len(v) != n or sorted(v) != list(LETTERS[:n]):
+                raise CmdError("Jeder Begriff genau einmal")
         if v:
             s["teamAnswers"][str(int(a["idx"]))] = {"v": v, "t": time.time(), "by": "leitung"}
     elif c == "award_closest":
         if not s["awarded"]:
             for aid in closest_ids(s):
                 add_gain(s, aid, step(m))
+            if closest_ids(s):
+                cue(s, "treffer")
             s["awarded"] = True
     elif c == "award_teams":
         if not s["awarded"]:
@@ -1188,6 +1437,8 @@ def host_cmd(s, c, a):
                 for aid in s["teams"][schnell]:
                     add_gain(s, aid, 1)
                 s["rnd"]["schnellste"] = schnell
+            if richtig:
+                cue(s, "treffer")
             s["awarded"] = True
     elif c == "judge":
         aid, ok = a.get("id"), bool(a.get("ok"))
@@ -1195,18 +1446,25 @@ def host_cmd(s, c, a):
             if aid in s["betDone"]:
                 raise CmdError("Schon gewertet")
             b = max(0, min(int(s["bets"].get(aid, 0)), bet_cap(s, aid)))
-            add_gain(s, aid, b if ok else -b)
+            # Wer nichts im Rucksack hat, setzt trotzdem 2 – verliert aber nur, was wirklich da ist
+            add_gain(s, aid, b if ok else -min(b, total(s, aid)))
             s["betDone"][aid] = "r" if ok else "w"
+            if ok and b:
+                cue(s, "treffer")
         else:
             prev = s["judged"].get(aid)
             wert = step(m)
+            i = a.get("i")
+            f = s["feed"][int(i)] if i is not None and 0 <= int(i) < len(s["feed"]) else None
             if m["type"] in ("zoom", "sound"):        # Stufe zum Zeitpunkt des Funkspruchs
-                i = a.get("i")
-                z = s["feed"][int(i)].get("z", 0) if i is not None and int(i) < len(s["feed"]) else s["zoomStep"]
-                wert = zoom_wert(m, z)
+                wert = zoom_wert(m, f.get("z", 0) if f else s["zoomStep"])
+            elif m["type"] in TAKT_SPIELE:            # Zeittakt: wann kam die Antwort?
+                t = f["t"] if f else (s["answers"].get(aid) or {}).get("t", time.time())
+                wert = takt_wert(s, m, t)
             if ok and prev != "r":
                 add_gain(s, aid, wert)
                 s["judgedPts"][aid] = wert
+                cue(s, "treffer")
             if not ok and prev == "r":
                 add_gain(s, aid, -s["judgedPts"].pop(aid, step(m)))
             s["judged"][aid] = "r" if ok else "w"
@@ -1220,6 +1478,7 @@ def host_cmd(s, c, a):
         else:
             r["treffer"].append(aid)
             add_gain(s, aid, step(m))
+            cue(s, "treffer")
     elif c == "wb_streichen":
         r, aid = s["rnd"], a.get("id")
         if aid in r["gestrichen"]:
@@ -1237,10 +1496,16 @@ def host_cmd(s, c, a):
         r.update(wbPhase="abstimmen", optionen=opt)
         s.update({"votes": {}, "open": True})
     elif c == "award_schwarz":                 # alle wahrscheinlichen Treffer auf einmal
+        neu = 0
         for aid, x in s["answers"].items():
             if aid not in s["judged"] and wohl_richtig(x["v"], schwarz_wort(item(s))):
-                add_gain(s, aid, step(m))
+                wert = takt_wert(s, m, x["t"])
+                add_gain(s, aid, wert)
                 s["judged"][aid] = "r"
+                s["judgedPts"][aid] = wert
+                neu += 1
+        if neu:
+            cue(s, "treffer")
     elif c == "spy_award":
         spy = s["rnd"].get("spy")
         if s["spyResult"] or not spy:
@@ -1250,39 +1515,56 @@ def host_cmd(s, c, a):
                 if x["id"] != spy:
                     add_gain(s, x["id"], step(m))
             s["spyResult"] = "caught"
+            cue(s, "treffer")
         else:
             add_gain(s, spy, 2 * step(m))
             s["spyResult"] = "escaped"
     elif c == "audio":
         s["audio"] = {"n": s["audio"].get("n", 0) + 1, "a": a.get("a", "play")}
     elif c == "mission_finish":
+        if m:
+            beute_pruefen(s)
+            cue(s, "ende")
         finish(s)
     elif c == "steal_thief":
         if a.get("id") not in ((s["pendingSteal"] or {}).get("winners") or []):
             raise CmdError("Nur wer den Einsatz gewonnen hat, darf umlagern")
         s["thief"] = a.get("id")
     elif c == "steal_victim":
-        thief, vic = s["thief"], a.get("id")
-        if not (thief and vic in ids and thief in ids):
-            raise CmdError("Ungültig")
-        if vic == thief:
-            raise CmdError("Nicht aus dem eigenen Rucksack")
-        amt, an = umlager_menge(s, vic)
-        s["scores"][vic] = s["scores"].get(vic, 0) - amt
-        s["scores"][thief] = s["scores"].get(thief, 0) + an
-        s["stealLog"].append({"thief": thief, "victim": vic, "amt": amt, "an": an, "cur": s["cur"]})
-        rest = f" – angekommen sind {an}" if an != amt else ""
-        s.update({"pendingSteal": None, "thief": None,
-                  "lastSteal": f"{ids[thief]['code']} hat {amt} Wörter aus dem Rucksack von {ids[vic]['code']} umgelagert{rest}."})
+        umlagern(s, s["thief"], a.get("id"), a.get("ziel"))
     elif c == "steal_skip":
-        if s["thief"]:
-            bonus = s.get("verzichtBonus", 0)
-            s["stealLog"].append({"thief": s["thief"], "victim": None, "amt": 0, "cur": s["cur"], "verzicht": True, "bonus": bonus})
-            if s["thief"] in ids:
-                s["scores"][s["thief"]] = s["scores"].get(s["thief"], 0) + bonus
-                s["lastSteal"] = f"{ids[s['thief']]['code']} hätte umlagern dürfen – und hat verzichtet." + (
-                    f" Die Zentrale dankt mit {bonus} Wörtern." if bonus else "")
-        s.update({"pendingSteal": None, "thief": None})
+        verzichten(s)
+    elif c == "klang_set":
+        k, neu = s["klang"], a.get("klang") or {}
+        for f in ("an", "signale"):
+            if f in neu:
+                k[f] = bool(neu[f])
+        if "vol" in neu:
+            k["vol"] = max(0, min(100, int(neu["vol"] or 0)))
+        mu = neu.get("musik") or {}
+        for f in ("an",):
+            if f in mu:
+                k["musik"][f] = bool(mu[f])
+        for f in ("url", "spiel"):
+            if f in mu:
+                k["musik"][f] = str(mu[f] or "")[:300]
+        if "vol" in mu:
+            k["musik"]["vol"] = max(0, min(100, int(mu["vol"] or 0)))
+        gueltig = {x for x, _ in CUES}
+        for art, url in (neu.get("cues") or {}).items():
+            if art in gueltig:
+                if url:
+                    k["cues"][art] = str(url)[:300]
+                else:
+                    k["cues"].pop(art, None)
+    elif c == "klang_test":
+        cue(s, a.get("art") if a.get("art") in {x for x, _ in CUES} else "treffer")
+    elif c == "rausch_set":
+        for k, v in (a.get("rausch") or {}).items():
+            if k in RAUSCH0:
+                s["rausch"][k] = max(0, min(100, int(v or 0)))
+    elif c == "rausch_reset":
+        s["rausch"] = dict(RAUSCH0)
     elif c == "evening_reset":
         s.update({"stealLog": [], "prologIdx": 0, "finaleStufe": 0, "moleVotes": {}, "beute": [], "funk": None})
         s["mole"].update({"id": None, "voteOpen": False, "result": None})
@@ -1302,7 +1584,7 @@ def host_cmd(s, c, a):
             if not (d["board"]["cats"][ci].get("qh") or {}).get(str(p)):
                 raise CmdError("Feld ist leer")
             frei = not s.get("depArm", True)
-            d.update({"cell": {"c": ci, "p": p}, "stage": 0, "buzz": [], "wrong": [], "armed": frei, "sperre": {},
+            d.update({"cell": {"c": ci, "p": p}, "stage": 0, "u0": dict(s["upts"]), "buzz": [], "wrong": [], "armed": frei, "sperre": {},
                       "tLeft": d["dur"], "tRun": frei and d["dur"] > 0, "tEnd": now + d["dur"]})
         elif c == "dep_arm":
             if d["cell"] and not d.get("armed"):
@@ -1415,6 +1697,14 @@ def player_act(s, agent, a):
             raise CmdError("Ungültige Stimme")
         s["moleVotes"][aid] = v
         return
+    if a.get("kind") in ("steal", "steal_skip"):          # Umlagern direkt am Gerät
+        if not s["pendingSteal"] or s["thief"] != aid:
+            raise CmdError("Du darfst gerade nicht umlagern")
+        if a["kind"] == "steal_skip":
+            verzichten(s)
+        else:
+            umlagern(s, aid, a.get("v"), a.get("ziel") or aid)
+        return
     if m and m["type"] == "deppardy" and s["screen"] == "mission" and s["phase"] == "play" and s.get("dep"):
         d = s["dep"]
         if not d["cell"] or d["stage"] >= 2:
@@ -1449,10 +1739,7 @@ def player_act(s, agent, a):
         if v not in GEO:
             raise CmdError("Unbekanntes Land")
         if m["mode"] == "team" and s["teams"]:
-            idx = team_of(s, aid)
-            if idx is None:
-                raise CmdError("Du bist in keiner Zelle")
-            s["teamAnswers"][str(idx)] = {"v": v, "t": now, "by": aid}
+            zellen_vorschlag(s, m, aid, v, a, now)
         else:
             s["answers"][aid] = {"v": v, "t": now}
         return
@@ -1461,17 +1748,14 @@ def player_act(s, agent, a):
             raise CmdError("Ungültige Stimme")
         s["votes"][aid] = v
     elif t in ("ranking", "hoeher"):
-        idx = team_of(s, aid)
-        if idx is None:
-            raise CmdError("Du bist in keiner Zelle")
         v = str(v or "").upper().strip()
         if t == "hoeher" and v not in ("W", "P"):
             raise CmdError("Wahrheit oder Propaganda")
         if t == "ranking":
             n = len(lines_of(item(s)))
             if len(v) != n or sorted(v) != list(LETTERS[:n]):
-                raise CmdError("Jeder Buchstabe genau einmal")
-        s["teamAnswers"][str(idx)] = {"v": v, "t": now, "by": aid}
+                raise CmdError("Jeder Begriff genau einmal")
+        zellen_vorschlag(s, m, aid, v, a, now)
     elif t in BUZZ:
         v = str(v or "").strip()[:80]
         if not v:
@@ -1543,19 +1827,23 @@ def tage_uebrig(s):
 def abend_statistik(s):
     """Für die Übergabe: wer hat wie viel umgelagert, wer wurde erleichtert, wer hat verzichtet."""
     ids = by_id(s)
-    genommen, verloren, verzicht, zuege = {}, {}, {}, {}
+    genommen, verloren, verzicht, zuege, verteilt = {}, {}, {}, {}, {}
     for e in s.get("stealLog", []):
         if e.get("verzicht"):
             verzicht[e["thief"]] = verzicht.get(e["thief"], 0) + 1
             continue
-        genommen[e["thief"]] = genommen.get(e["thief"], 0) + e["amt"]
+        if e.get("ziel") and e["ziel"] != e["thief"]:            # in einen fremden Rucksack umgelagert
+            verteilt[e["thief"]] = verteilt.get(e["thief"], 0) + e["amt"]
+        else:
+            genommen[e["thief"]] = genommen.get(e["thief"], 0) + e["amt"]
         zuege[e["thief"]] = zuege.get(e["thief"], 0) + 1
         if e["victim"]:
             verloren[e["victim"]] = verloren.get(e["victim"], 0) + e["amt"]
     unterwegs = sum(e.get("amt", 0) - e.get("an", e.get("amt", 0)) for e in s.get("stealLog", []) if not e.get("verzicht"))
     bonus = sum(e.get("bonus", 0) for e in s.get("stealLog", []) if e.get("verzicht"))
-    gesamt = sum(total(s, a["id"]) for a in s["agents"])
-    umgelagert = sum(genommen.values())
+    praemie = ((s.get("mole") or {}).get("result") or {}).get("praemie", 0)
+    gesamt = max(0, sum(total(s, a["id"]) for a in s["agents"]) - praemie)     # die Prämie des Amtes ist keine Beute
+    umgelagert = sum(genommen.values()) + sum(verteilt.values())
     code = lambda i: ids[i]["code"] if i in ids else "?"
     def spitze(d):
         if not d or max(d.values()) <= 0:
@@ -1565,9 +1853,12 @@ def abend_statistik(s):
     return {"gesamt": gesamt, "umgelagert": umgelagert,
             "anteil": round(100 * umgelagert / gesamt) if gesamt else 0,
             "zuege": sum(zuege.values()), "unterwegs": unterwegs, "verzichtBonus": bonus,
-            "meist": spitze(genommen), "erleichtert": spitze(verloren),
-            "unbestechlich": [code(k) for k in verzicht if k in ids and k not in genommen],
-            "pro": {a["id"]: {"genommen": genommen.get(a["id"], 0), "verloren": verloren.get(a["id"], 0),
+            "meist": spitze(genommen), "erleichtert": spitze(verloren), "verteiler": spitze(verteilt),
+            "fuerSich": sum(genommen.values()), "fuerAndere": sum(verteilt.values()),
+            "unbestechlich": [code(k) for k in verzicht if k in ids and k not in genommen and k not in verteilt],
+            "pro": {a["id"]: {"genommen": genommen.get(a["id"], 0) + verteilt.get(a["id"], 0),
+                               "fuerSich": genommen.get(a["id"], 0), "fuerAndere": verteilt.get(a["id"], 0),
+                               "verloren": verloren.get(a["id"], 0),
                                "verzicht": verzicht.get(a["id"], 0)} for a in s["agents"]}}
 
 
@@ -1587,6 +1878,8 @@ def public_view(s, full=False):
         "pendingSteal": bool(s["pendingSteal"]),
         "thief": ids[s["thief"]]["code"] if s["thief"] in ids else None,
         "audio": s["audio"], "now": time.time(),
+        "namenZeigen": bool(s.get("namenZeigen")), "beispiel": bool(s.get("beispiel", True)),
+        "klang": s.get("klang"), "cues": s.get("cues") or [],
     }
     st = s.get("story") or {}
     v["story"] = {"zelle": st.get("zelle", ""), "tage": tage_uebrig(s), "stunden": stunden_uebrig(s), "auftrag": st.get("auftrag", ""),
@@ -1617,8 +1910,12 @@ def public_view(s, full=False):
                              "tally": {ids[k]["code"]: n for k, n in r["tally"].items() if k in ids},
                              "text": fuell(mt.get("enttarnt" if r["caught"] else "entkommen", ""), anteil=r["anteil"], bonus=r["bonus"])}
             stat["maulwurf"] = {"code": ids[mo["id"]]["code"], "genommen": pro.get(mo["id"], {}).get("genommen", 0)}
+            v["maulwurf"]["praemie"] = r.get("praemie", 0)
+            # Hüter des Archivs kann nur werden, wer zur Zelle gehört
+            v["hueterRanking"] = [x for x in ranking if x["id"] != mo["id"]]
         v["statistik"] = stat
         v["beute"] = [karte(s, b["wort"], b) for b in s.get("beute") or []]
+        v["beuteGerettet"] = sum(1 for k in v["beute"] if not k["verloren"])
         if ziel_wert(s) > 0:
             raus = bool(mo["on"] and mo["id"] in ids)
             stand = ziel_stand(s)
@@ -1627,8 +1924,11 @@ def public_view(s, full=False):
                                  "maulwurfBekannt": bool(mo.get("result"))}
     if m:
         v["mission"] = {"type": m["type"], "name": g["name"], "mode": m["mode"], "pts": m["pts"],
-                        "rounds": m["rounds"],
-                        "rules": g["rules"] + ([f"Kurs: {kurs(m)} Punkte = 1 Wort."] if g.get("kurs") else [])}
+                        "rounds": m["rounds"], "zm": zell_modus(m) if m["mode"] == "team" else None,
+                        "takt": int(m.get("takt") or 0) if m["type"] in TAKT_SPIELE else 0,
+                        "rules": g["rules"] + ([f"Kurs: {kurs(m)} Punkte = 1 Wort."] if g.get("kurs") else [])
+                        + (zell_regel(m) if m["mode"] == "team" and m["type"] in TEAM_SPIELE else [])
+                        + (takt_regel(m) if m["type"] in TAKT_SPIELE and m.get("takt") else [])}
     if s["screen"] != "mission" or not m:
         return v
     v.update({"phase": s["phase"], "round": s["round"], "revealed": s["revealed"], "open": s["open"],
@@ -1655,6 +1955,9 @@ def public_view(s, full=False):
         st["voted"] = list(s["votes"].keys())
     if t in ("ranking", "hoeher"):
         st["teamAnswered"] = list(s["teamAnswers"].keys())
+        st["teamVotes"] = {str(i): sum(1 for x in tm if x in s["vorschlaege"]) for i, tm in enumerate(s["teams"])}
+    if t in TAKT_SPIELE and m.get("takt") and not rev:
+        st["takt"] = {"s": int(m["takt"]), "t0": s["rnd"].get("t0", 0), "voll": step(m)}
     if t in BUZZ:
         st["attempts"] = len(s["feed"])
 
@@ -1682,9 +1985,10 @@ def public_view(s, full=False):
                        "spy": spy["code"] if spy else None, "tally": vote_tally(s), "spyResult": s["spyResult"]})
     elif t == "zoom":
         st.update({"img": it.get("img"), "scale": ZOOM[s["zoomStep"]], "step": s["zoomStep"] + 1, "steps": len(ZOOM),
+                   "loch": bool(s.get("schluesselloch", True)),
                    "origin": f"{s['rnd'].get('ox', 50):.1f}% {s['rnd'].get('oy', 50):.1f}%"})
     elif t == "sound":
-        st.update({"src": it.get("src"), "stufe": s["zoomStep"] + 1, "stufen": len(ZOOM)})
+        st.update({"src": it.get("src"), "stufe": s["zoomStep"] + 1, "stufen": len(ZOOM), "rausch": s.get("rausch") or RAUSCH0})
     elif t == "hoeher":
         claim = s["rnd"].get("claim", "A")
         st.update({"q": it.get("q"), "a": it.get("a"), "b": it.get("b"), "claim": claim,
@@ -1739,6 +2043,20 @@ def public_view(s, full=False):
         st["karte"] = karte(s, bw)
     v["stage"] = st
     return v
+
+
+def zell_regel(m):
+    zm = zell_modus(m)
+    if zm == "mehrheit":
+        return ["Zellenmodus Abstimmung: Jede Person stimmt im Gerät ab, die Mehrheit gilt für die Zelle. Was die anderen wählen, seht ihr live."]
+    if zm == "zuversicht":
+        return ["Zellenmodus Zuversicht: Jede Person gibt eine Antwort und stellt ein, wie sicher sie ist. Sichere Stimmen wiegen mehr."]
+    return ["Zellenmodus Sprecher: Alle sehen die Vorschläge der Zelle live, eine Person schickt für alle ab."]
+
+
+def takt_regel(m):
+    t = int(m.get("takt") or 0)
+    return [f"Zeittakt: Wer in den ersten {t} Sekunden richtig liegt, birgt alles – danach jede {t} Sekunden nur noch die Hälfte."]
 
 
 def unit_scores(s):
@@ -1801,6 +2119,10 @@ def me_view(s, agent):
         me["moleVote"] = s["moleVotes"].get(aid)
     if s["screen"] == "finale":
         me["bilanz"] = abend_statistik(s)["pro"].get(aid)
+    if s["pendingSteal"] and s["thief"] == aid:
+        me["umlagern"] = {"bonus": s.get("verzichtBonus", 0),
+                          "rucksaecke": [{"id": a["id"], "code": a["code"], "name": a["name"], "total": total(s, a["id"]),
+                                          "menge": umlager_menge(s, a["id"])} for a in s["agents"] if a["id"] != aid]}
     m = mission(s)
     it = item(s)
     if m and m["type"] in ("deppardy", "atlas") and s["screen"] == "mission":
@@ -1839,7 +2161,13 @@ def me_view(s, agent):
             ta = s["teamAnswers"].get(str(me["team"]))
             if ta:
                 by = by_id(s).get(ta.get("by"))
-                me["teamAnswer"] = {"v": ta["v"], "by": by["code"] if by else "Moderation"}
+                me["teamAnswer"] = {"v": ta["v"], "by": by["code"] if by else ("Abstimmung der Zelle" if ta.get("by") == "zelle" else "Moderation")}
+        if t in TEAM_SPIELE and m["mode"] == "team" and me["team"] is not None and me["team"] < len(s["teams"]):
+            ids = by_id(s)
+            me["zelle"] = {"modus": zell_modus(m), "mein": s["vorschlaege"].get(aid),
+                           "vorschlaege": [dict(s["vorschlaege"][x], id=x, code=ids[x]["code"], name=ids[x]["name"])
+                                           for x in s["teams"][me["team"]] if x in s["vorschlaege"] and x in ids],
+                           "groesse": len(s["teams"][me["team"]])}
         if t == "atlas":
             u = unit_of(s, aid)
             tip = atlas_tips(s).get(u["key"]) if u else None
@@ -1847,6 +2175,8 @@ def me_view(s, agent):
             me["tip"] = tip
             if s["revealed"] and u:
                 me["res"] = (s.get("atlasRes") or {}).get(u["key"])
+        if t in TAKT_SPIELE and aid in s["judgedPts"]:
+            me["wert"] = s["judgedPts"][aid]
         if t in BUZZ:
             me["tries"] = [f["v"] for f in s["feed"] if f["id"] == aid]
             me["triesLeft"] = MAX_BUZZ - len(me["tries"])
@@ -1867,7 +2197,8 @@ def host_view(s):
     extra["prolog"] = prolog_tafeln(s)
     extra["reihenfolge"] = {t: {"naechster": (s["cursor"].get(t, 0) % len(l)) + 1 if l else 0, "von": len(l),
                                 "gespielt": s["cursor"].get(t, 0)} for t, l in s["content"].items()}
-    extra["ziel"] = {"wert": ziel_wert(s), "stand": ziel_stand(s, ohne_maulwurf=False), "ohneMaulwurf": ziel_stand(s)}
+    extra["ziel"] = {"wert": ziel_wert(s), "stand": ziel_stand(s, ohne_maulwurf=False), "ohneMaulwurf": ziel_stand(s),
+                     "max": max_woerter(s)}
     if s["pendingSteal"]:
         extra["umlagerVorschau"] = {x["id"]: umlager_menge(s, x["id"]) for x in s["agents"]}
     if m and s["phase"] == "play" and item(s):
@@ -1897,6 +2228,11 @@ def host_view(s):
             extra["feedMatch"] = [wohl_richtig(f["v"], item(s).get("a")) for f in s["feed"]]
             if t in ("zoom", "sound"):
                 extra["feedWert"] = [zoom_wert(m, f.get("z", 0)) for f in s["feed"]]
+        if t in TAKT_SPIELE and m.get("takt"):
+            if t == "emoji":
+                extra["feedWert"] = [takt_wert(s, m, f["t"]) for f in s["feed"]]
+            else:
+                extra["antwortWert"] = {k: takt_wert(s, m, x["t"]) for k, x in s["answers"].items()}
     if m and s["phase"] == "play" and m["type"] in ("deppardy", "atlas"):
         extra["units"] = units(s)
         if m["type"] == "deppardy" and s.get("dep"):
@@ -1911,7 +2247,8 @@ def host_view(s):
     return v
 
 
-META = {"games": GAMES, "internal": INTERNAL, "special": SPECIAL, "fields": FIELDS, "hints": HINTS, "zoom": ZOOM}
+META = {"games": GAMES, "internal": INTERNAL, "special": SPECIAL, "fields": FIELDS, "hints": HINTS, "zoom": ZOOM,
+        "cues": CUES, "rausch": RAUSCH0, "teamSpiele": TEAM_SPIELE, "taktSpiele": TAKT_SPIELE, "zellmodi": ZELLMODI}
 
 
 # ---------------------------------------------------------------------------
@@ -2190,6 +2527,7 @@ class Handler(BaseHTTPRequestHandler):
                             neu["content"].setdefault(k, copy.deepcopy(v))
                         korrekturen(neu)
                         korrekturen2(neu)
+                        korrekturen3(neu)
                     except ValueError as e:
                         return self.send_err("Import abgelehnt: " + str(e))
                     with LOCK:

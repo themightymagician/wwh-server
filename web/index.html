@@ -56,12 +56,23 @@ h2{margin:0;font-family:var(--display);font-weight:400;font-size:clamp(24px,7.5v
 .rang div.ich{color:var(--signal);}
 .rang b{font-family:var(--display);font-weight:400;font-size:20px;text-transform:uppercase;}
 .pause{border-left:3px solid var(--signal);padding:4px 0 4px 14px;font-family:var(--serif);font-size:17px;color:var(--papier-matt);}
-.sortierliste{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;touch-action:none;}
-.sortierliste li{display:grid;grid-template-columns:28px 1fr auto;gap:10px;align-items:center;background:#f4edd8;color:#2b251b;border-left:4px solid #c8463a;padding:12px 10px 12px 12px;font-family:var(--serif);font-size:18px;user-select:none;-webkit-user-select:none;box-shadow:0 2px 0 #d8ceb4;cursor:grab;position:relative;}
-.sortierliste li .nr{font-family:var(--mono);font-size:12px;color:#6b614f;}
-.sortierliste li .pfeile{display:flex;gap:4px;}
-.sortierliste li .pfeile button{background:transparent;border:1px solid #b9ad92;color:#2b251b;width:34px;height:34px;font-size:16px;cursor:pointer;}
-.sortierliste li.zieht{box-shadow:0 12px 24px rgba(0,0,0,.45);z-index:5;cursor:grabbing;transition:none;}
+.vorschlaege{display:flex;flex-direction:column;gap:8px;}
+.vorschlag{border:1px solid var(--kante);background:var(--nacht-2);padding:10px 12px;display:flex;flex-direction:column;gap:6px;}
+.vorschlag .kopf2{display:flex;justify-content:space-between;align-items:baseline;gap:8px;}
+.vorschlag b{font-family:var(--display);font-weight:400;font-size:18px;text-transform:uppercase;}
+.vorschlag ol{margin:0;padding-left:20px;font-family:var(--serif);font-size:15px;color:var(--papier-matt);}
+.balken{height:6px;background:var(--nacht-3);position:relative;}
+.balken i{position:absolute;left:0;top:0;bottom:0;background:var(--signal);}
+.zuversicht{display:flex;flex-direction:column;gap:6px;}
+.zuversicht input{width:100%;accent-color:var(--signal);}
+.taktuhr{display:flex;justify-content:space-between;gap:10px;align-items:baseline;font-size:13px;letter-spacing:.08em;text-transform:uppercase;}
+.taktuhr b{font-family:var(--display);font-weight:400;font-size:24px;color:var(--signal);}
+.umlager{display:flex;flex-direction:column;gap:8px;}
+.umlager button{display:flex;justify-content:space-between;gap:10px;align-items:baseline;text-align:left;background:var(--nacht-2);border:1px solid var(--kante);padding:12px 14px;cursor:pointer;}
+.umlager button b{font-family:var(--display);font-weight:400;font-size:20px;text-transform:uppercase;}
+.umlager button span{font-size:13px;color:var(--blass);}
+.umlager button.an{border-color:var(--signal);background:#2e1a15;}
+.umlager button:disabled{opacity:.35;}
 .plakat{background:#c23522;color:#f4ecda;padding:22px 20px;display:flex;flex-direction:column;gap:10px;transform:rotate(-1deg);box-shadow:0 10px 24px rgba(0,0,0,.4);}
 .plakat .display{font-size:clamp(28px,9vw,44px);line-height:.95;}
 .schwarz{background:#15130f;color:transparent;border-radius:2px;padding:0 .2em;}
@@ -80,6 +91,7 @@ h2{margin:0;font-family:var(--display);font-weight:400;font-size:clamp(24px,7.5v
 #atlaskarte{height:min(52vh,440px);}
 .atlasfuss{position:sticky;bottom:0;background:var(--nacht);padding:10px 0 calc(10px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--kante);}
 .atlasfuss .wahl-name{font-family:var(--display);font-size:26px;text-transform:uppercase;min-height:30px;}
+.k-land.vorschlag{fill:#8a6a3a;}
 </style>
 </head>
 <body>
@@ -112,7 +124,7 @@ function hinweis(t) { meldung.textContent = t; meldung.hidden = false; clearTime
 async function senden(body) { try { await post('/api/act', { t: token, ...body }); } catch (e) { hinweis(e.message); } }
 
 poll(() => '/api/view?t=' + encodeURIComponent(token || ''), d => {
-  V = d.view; ME = d.me;
+  V = d.view; ME = d.me; zeitDiff = V.now - Date.now() / 1000;
   if (token && d.me === null) { token = null; try { localStorage.removeItem('wwh_token'); } catch (e) {} }
   zeichnen();
 });
@@ -124,8 +136,8 @@ function zeichnen() {
     <div class="wort"><div class="klein">Im Rucksack</div><b class="${ME.gain ? 'plus' : ''}">${ME.total}${ME.gain ? ' <small>' + fmtGain(ME.gain) + '</small>' : ''}</b></div>`;
   const m = V.mission;
   const key = [V.screen, V.cur, V.round, V.phase, m && m.type, V.finaleStufe].join('|');
-  if (key !== lokal.key) { lokal.key = key; lokal.folge = ''; lokal.offen = false; lokal.wahl = null; lokal.rolleOffen = false; lokal.reihe = null; }
-  if (lokal.ziehen) { lokal.nachher = true; return; }       // nicht neu zeichnen, solange eine Karte gezogen wird
+  if (key !== lokal.key) { lokal.key = key; lokal.folge = ''; lokal.offen = false; lokal.wahl = null; lokal.rolleOffen = false; lokal.reihe = null; lokal.conf = 50; }
+  if (WWH.ziehen.aktiv) return;          // nicht neu zeichnen, solange eine Karte gezogen wird
   let html;
   if (V.screen === 'finale') html = finale();
   else if (V.screen === 'prolog') html = prolog();
@@ -134,8 +146,41 @@ function zeichnen() {
   else if (V.noItem || !V.stage) html = `<p class="pause">Die Moderation bereitet die nächste Runde vor.</p>`;
   else html = spiel();
   if (V.mole && V.mole.voteOpen && V.screen !== 'finale') html = maulwurfWahl() + html;
+  if (ME.umlagern) html = umlagernKarte() + html;
   render(app, html);
+  WWH.passeText(app);
   atlas();
+  taktUhr();
+}
+let zeitDiff = 0;
+
+// Umlagern: die Frage steht auf dem Gerät der Person, die umlagern darf
+function umlagernKarte() {
+  const u = ME.umlagern, opfer = u.rucksaecke.find(r => r.id === lokal.opfer), ziel = lokal.ziel || ME.id;
+  const name = a => esc(a.code) + (V.namenZeigen ? ` <span>${esc(a.name)}</span>` : '');
+  let h = `<div class="karte" style="border:2px solid var(--signal)"><div class="klein signal">Du darfst umlagern</div>
+    <h2>Aus wessen Rucksack?</h2><p class="text" style="font-size:16px">Ein Teil nimmt unterwegs Schaden. Du kannst in deinen eigenen Rucksack umlagern – oder zur Sicherheit in einen fremden.</p>
+    <div class="umlager">${u.rucksaecke.map(r => `<button data-do="uopfer" data-x="${r.id}" class="${lokal.opfer === r.id ? 'an' : ''}" ${r.total > 0 ? '' : 'disabled'}><b>${name(r)}</b><span>${r.total} Wörter · nimmt ${r.menge[0]}, kommen ${r.menge[1]} an</span></button>`).join('')}</div>`;
+  if (opfer) {
+    const ziele = [{ id: ME.id, code: 'Mein Rucksack', name: '' }].concat(u.rucksaecke.filter(r => r.id !== opfer.id));
+    h += `<div class="klein">Wohin mit den ${opfer.menge[1]} Wörtern?</div><div class="umlager">${ziele.map(r => `<button data-do="uziel" data-x="${r.id}" class="${ziel === r.id ? 'an' : ''}"><b>${r.id === ME.id ? 'In meinen Rucksack' : name(r)}</b><span>${r.id === ME.id ? 'für dich selbst' : 'zur Sicherheit'}</span></button>`).join('')}</div>
+      <button class="btn rot voll" data-do="umlagern">Umlagern</button>`;
+  }
+  return h + `<button class="btn voll" data-do="uverzicht">Verzichten${u.bonus ? ` – die Zentrale dankt mit ${u.bonus} Wörtern` : ''}</button></div>`;
+}
+
+// Zeittakt bei Schnell-Antwort-Spielen: volle Wörter nur im ersten Takt
+let taktTimer = null;
+function taktUhr() {
+  clearInterval(taktTimer);
+  const el = document.getElementById('taktuhr'), tk = V && V.stage && V.stage.takt;
+  if (!el || !tk) return;
+  const takt = () => {
+    const vergangen = Math.max(0, Date.now() / 1000 + zeitDiff - tk.t0), stufe = Math.floor(vergangen / tk.s);
+    const wert = Math.max(1, Math.round(tk.voll * Math.pow(0.5, stufe))), rest = Math.ceil(tk.s - (vergangen % tk.s));
+    el.innerHTML = `<span>Richtig bringt jetzt</span><b>${wert} Wort${wert === 1 ? '' : 'e'}</b>` + (wert > 1 ? `<span>noch ${rest} s</span>` : '<span></span>');
+  };
+  takt(); taktTimer = setInterval(takt, 250);
 }
 
 function beitritt() {
@@ -151,7 +196,7 @@ function rules(m) { return `<ol class="regeln">${m.rules.map(r => `<li>${esc(r)}
 
 function meineZelle() {
   if (ME.team == null || !V.teams || !V.teams[ME.team]) return '';
-  const mit = V.teams[ME.team].filter(x => x.id !== ME.id).map(x => esc(x.code)).join(', ');
+  const mit = V.teams[ME.team].filter(x => x.id !== ME.id).map(x => esc(x.code) + (V.namenZeigen ? ' (' + esc(x.name) + ')' : '')).join(', ');
   return `<div class="karte"><div class="klein">Deine Zelle</div><h2>Zelle ${'ABCD'[ME.team]}</h2><p class="text">${mit ? 'Mit ' + mit : 'Du bist allein in dieser Zelle.'}</p></div>`;
 }
 
@@ -205,8 +250,34 @@ function warten() {
 function einweisung() {
   const m = V.mission, mi = SY().mission || {};
   return `<div class="klein">Einsatz ${pad(V.cur + 1)} / ${pad(V.planLen)} · ${esc(m.name)}</div><h1>${esc(mi.ort || m.name)}</h1>
-    ${mi.lage ? `<p class="pause">${esc(mi.lage)}</p>` : ''}${rules(m)}${m.mode === 'team' ? meineZelle() : ''}`;
+    ${mi.lage ? `<p class="pause">${esc(mi.lage)}</p>` : ''}${rules(m)}${m.mode === 'team' ? meineZelle() : ''}
+    ${V.beispiel ? WWH.vorfuehrung(m.type, { zm: m.mode === 'team' ? m.zm : null, breite: '200px' }) : ''}`;
 }
+
+// ---- Zellen: Vorschläge der anderen live, Abstimmung oder Zuversicht
+const ZM_TEXT = { sprecher: 'Alle sehen eure Vorschläge live. Wer abschickt, entscheidet für die Zelle.',
+  mehrheit: 'Abstimmung: Deine Wahl ist deine Stimme. Die Mehrheit gilt für die Zelle.',
+  zuversicht: 'Zuversicht: Deine Wahl zählt so stark, wie du sicher bist.' };
+function zellModus() { return (ME.zelle && ME.zelle.modus) || 'sprecher'; }
+function zuversichtRegler() {
+  if (zellModus() !== 'zuversicht') return '';
+  const mein = ME.zelle && ME.zelle.mein;
+  if (lokal.confKey !== lokal.key) { lokal.confKey = lokal.key; if (mein) lokal.conf = mein.c; }
+  return `<div class="zuversicht"><div class="reihe" style="justify-content:space-between"><span class="klein">Wie sicher bist du?</span><span class="klein signal" id="confwert">${lokal.conf} %</span></div>
+    <input type="range" min="0" max="100" step="5" data-k="conf" id="conf" value="${lokal.conf}"></div>`;
+}
+function zellVorschlaege(darstellen, uebernehmen) {
+  const z = ME.zelle; if (!z) return '';
+  const andere = z.vorschlaege.filter(x => x.id !== ME.id);
+  const n = z.vorschlaege.length;
+  let h = `<div class="klein">${esc(ZM_TEXT[z.modus] || '')}${z.modus !== 'sprecher' ? ` · ${n} von ${z.groesse} haben gewählt` : ''}</div>`;
+  if (!andere.length) return h;
+  return h + `<div class="vorschlaege">${andere.map(x => `<div class="vorschlag"><div class="kopf2"><b>${esc(x.code)}${V.namenZeigen ? ' <span class="klein">' + esc(x.name) + '</span>' : ''}</b>
+      ${z.modus === 'zuversicht' ? `<span class="klein">${x.c} % sicher</span>` : ''}</div>${darstellen(x.v)}
+      ${z.modus === 'zuversicht' ? `<div class="balken"><i style="width:${x.c}%"></i></div>` : ''}
+      ${uebernehmen && V.open && !V.revealed ? `<button class="btn klein" data-do="${uebernehmen}" data-x="${esc(x.v)}">Übernehmen</button>` : ''}</div>`).join('')}</div>`;
+}
+function zelleSenden(v, final) { senden({ v, c: lokal.conf, kind: final || zellModus() !== 'sprecher' ? undefined : 'vorschlag' }); }
 
 function finale() {
   const pos = V.ranking.findIndex(r => r.id === ME.id), art = V.finaleArt, F = SY().finale || {}, st = V.statistik || {};
@@ -268,7 +339,8 @@ function atlasText(st) {
     h += `<div class="karte hell"><div class="klein" style="color:#5c5446">Richtig</div><h2>${esc(st.zielName)}</h2>
       ${r ? `<p class="text">${r.hit ? 'Volltreffer' : r.nb ? 'Nachbarland' : Math.round(r.km).toLocaleString('de-DE') + ' km daneben'} · <b>${r.pts} Punkte</b></p>` : '<p class="text">Kein Tipp abgegeben.</p>'}
       ${st.notiz ? `<p class="text" style="font-size:16px">${esc(st.notiz)}</p>` : ''}</div>` + (st.karte ? WWH.karte(st.karte, { neu: true }) : '');
-  } else if (ME.tip) h += gesendet('Tipp: ' + (atlasKarte ? atlasKarte.name(ME.tip) : ME.tip) + (V.mission.mode === 'team' ? ' (für die Zelle)' : ''));
+  } else if (ME.tip) h += gesendet('Tipp: ' + (atlasKarte ? atlasKarte.name(ME.tip) : ME.tip) + (V.mission.mode === 'team' ? (zellModus() === 'sprecher' ? ' (für die Zelle)' : ' (Ergebnis der Zelle)') : ''));
+  if (V.open && !V.revealed && ME.zelle) h += zuversichtRegler() + zellVorschlaege(k => `<span class="serif">${esc(atlasKarte ? atlasKarte.name(k) : k)}</span>`, 'atlasnimm');
   if (!V.open && !V.revealed) h += zu();
   return h;
 }
@@ -293,6 +365,7 @@ async function atlas() {
 function atlasMalen() {
   if (!atlasKarte) return;
   const st = V.stage, kl = {};
+  if (ME.zelle) ME.zelle.vorschlaege.forEach(x => { if (x.id !== ME.id) kl[x.v] = 'vorschlag'; });
   if (ME.tip) kl[ME.tip] = 'tipp';
   if (lokal.wahl) kl[lokal.wahl] = 'gewaehlt';
   if (V.revealed) (st.ziele || []).forEach(z => kl[z] = (kl[z] ? kl[z] + ' ' : '') + 'ziel');
@@ -300,12 +373,13 @@ function atlasMalen() {
   atlasKarte.notizen(V.revealed && ME.res && !ME.res.hit ? { pins: [{ key: ME.res.tip, label: ME.res.pts + ' P.' }], linien: [{ von: ME.res.tip, nach: ME.res.ziel }] } : { pins: [], linien: [] });
   const offen = V.open && !V.revealed;
   atlasWahl.textContent = lokal.wahl ? atlasKarte.name(lokal.wahl) : (ME.tip ? atlasKarte.name(ME.tip) : '');
-  atlasSenden.disabled = !offen || !lokal.wahl || lokal.wahl === ME.tip;
-  atlasSenden.textContent = ME.tip && offen ? 'Tipp ändern' : 'Tipp abschicken';
+  const mein = ME.zelle && ME.zelle.mein, abstimmen = ME.zelle && ME.zelle.modus !== 'sprecher';
+  atlasSenden.disabled = !offen || !lokal.wahl || lokal.wahl === (abstimmen ? mein && mein.v : ME.tip);
+  atlasSenden.textContent = abstimmen ? (mein ? 'Stimme ändern' : 'Meine Stimme abgeben') : ME.tip && offen ? 'Tipp ändern' : 'Tipp abschicken';
   atlasSenden.hidden = V.revealed;
   document.getElementById('atlashinweis').textContent = V.revealed ? 'Aufgelöst' : offen ? 'Land antippen, mit zwei Fingern zoomen' : 'Abgabe geschlossen';
 }
-atlasSenden.onclick = async () => { const k = lokal.wahl; if (!k) return; await senden({ v: k }); lokal.wahl = null; };
+atlasSenden.onclick = async () => { const k = lokal.wahl; if (!k) return; await senden({ v: k, c: lokal.conf }); lokal.wahl = null; };
 
 function spiel() {
   const st = V.stage, m = V.mission, t = st.type, offen = V.open && !V.revealed;
@@ -329,22 +403,33 @@ function spielInnen(st, m, t, offen) {
   else if (t === 'ranking') {
     h += `<p class="text">${esc(st.q)}</p>` + meineZelle();
     const text = Object.fromEntries(st.items.map(it => [it.letter, it.text]));
-    if (!lokal.reihe || lokal.reihe.length !== st.items.length) lokal.reihe = (ME.teamAnswer ? ME.teamAnswer.v.split('') : st.items.map(it => it.letter));
+    const liste = v => `<ol>${v.split('').map(l => `<li>${esc(text[l] || '?')}</li>`).join('')}</ol>`;
+    const mein = ME.zelle && ME.zelle.mein;
+    if (!lokal.reihe || lokal.reihe.length !== st.items.length) lokal.reihe = (mein ? mein.v : ME.teamAnswer ? ME.teamAnswer.v : st.items.map(it => it.letter).join('')).split('');
     if (offen) {
-      h += `<div class="klein">Karten ziehen oder mit den Pfeilen verschieben – oben zuerst</div>
-        <ol class="sortierliste" id="sortier">${lokal.reihe.map((l, i) => `<li data-l="${l}"><span class="nr">${pad(i + 1)}</span><span>${esc(text[l])}</span>
-          <span class="pfeile"><button data-do="hoch" data-i="${i}" ${i ? '' : 'disabled'} aria-label="nach oben">↑</button><button data-do="runter" data-i="${i}" ${i < lokal.reihe.length - 1 ? '' : 'disabled'} aria-label="nach unten">↓</button></span></li>`).join('')}</ol>
-        <button class="btn rot voll" data-do="folge">${ME.teamAnswer ? 'Neue Reihenfolge abschicken' : 'Für die Zelle abschicken'}</button>`;
+      h += `<div class="klein">Karten festhalten und an ihren Platz ziehen – oben zuerst</div>
+        <ol class="sortierliste" id="sortier">${lokal.reihe.map((l, i) => `<li data-l="${l}"><span class="griff" aria-hidden="true">⠿</span><span class="nr">${pad(i + 1)}</span><span>${esc(text[l])}</span>
+          <span class="pfeile"><button data-do="hoch" data-i="${i}" ${i ? '' : 'disabled'} aria-label="nach oben">↑</button><button data-do="runter" data-i="${i}" ${i < lokal.reihe.length - 1 ? '' : 'disabled'} aria-label="nach unten">↓</button></span></li>`).join('')}</ol>`
+        + zuversichtRegler()
+        + (zellModus() === 'sprecher' ? `<button class="btn rot voll" data-do="folge">${ME.teamAnswer ? 'Neue Reihenfolge abschicken' : 'Für die Zelle abschicken'}</button>`
+          : `<button class="btn rot voll" data-do="folge">${mein ? 'Stimme aktualisieren' : 'Meine Reihenfolge abgeben'}</button>`);
+      h += zellVorschlaege(liste, 'reihe');
     } else if (!V.revealed) h += zu();
-    if (ME.teamAnswer) h += gesendet(`Zelle hat „${ME.teamAnswer.v}“ abgegeben (${ME.teamAnswer.by})`);
-    if (V.revealed) h += `<div class="karte hell"><div class="klein" style="color:#5c5446">Lösung</div><h2>${esc(st.code)}</h2><ol class="regeln" style="color:#15130f">${st.solution.map(s => `<li>${esc(s)}</li>`).join('')}</ol></div>`;
+    if (ME.teamAnswer) h += `<div class="karte"><div class="ok">✓ Für die Zelle abgegeben (${esc(ME.teamAnswer.by)})</div><div class="vorschlag" style="border:none;padding:0;background:none">${liste(ME.teamAnswer.v)}</div></div>`;
+    if (V.revealed) {
+      const ok = ME.teamAnswer && ME.teamAnswer.v === st.code;
+      h += `<div class="karte hell"><div class="klein" style="color:#5c5446">Richtige Reihenfolge</div><ol class="regeln" style="color:#15130f">${st.solution.map(s => `<li>${esc(s)}</li>`).join('')}</ol>${ME.teamAnswer ? `<b style="color:#c23522">${ok ? 'Eure Zelle lag richtig.' : 'Nicht ganz.'}</b>` : ''}</div>`;
+    }
   }
 
   else if (t === 'hoeher') {
-    const cur = ME.teamAnswer && ME.teamAnswer.v, anders = st.claim === 'A' ? st.b : st.a;
+    const cur = ME.teamAnswer && ME.teamAnswer.v, anders = st.claim === 'A' ? st.b : st.a, mein = ME.zelle && ME.zelle.mein;
+    const wahl = zellModus() === 'sprecher' ? cur : mein && mein.v, txt = { W: 'Wahrheit', P: 'Propaganda' };
     h += `<div class="plakat"><div class="klein" style="color:#f4ecda">Das Amt verkündet</div><div class="display">${esc(st.claimName)}!</div>
       <div class="serif" style="font-size:17px">${esc(st.q)} – ${esc(st.claimName)}, nicht ${esc(anders)}.</div></div>` + meineZelle();
-    h += `<div class="ab">${[['W', 'Wahrheit'], ['P', 'Propaganda']].map(([x, l]) => `<button data-do="ab" data-x="${x}" class="${cur === x ? 'an' : ''}" ${offen ? '' : 'disabled'}><b style="font-size:26px">${l}</b></button>`).join('')}</div>`;
+    if (offen) h += zuversichtRegler();
+    h += `<div class="ab">${[['W', 'Wahrheit'], ['P', 'Propaganda']].map(([x, l]) => `<button data-do="ab" data-x="${x}" class="${wahl === x ? 'an' : ''}" ${offen ? '' : 'disabled'}><b style="font-size:26px">${l}</b></button>`).join('')}</div>`;
+    if (offen) h += zellVorschlaege(v => `<span class="serif">${txt[v] || v}</span>`);
     if (ME.teamAnswer) h += gesendet(`Zelle sagt ${ME.teamAnswer.v === 'W' ? 'Wahrheit' : 'Propaganda'} (${ME.teamAnswer.by})`);
     if (!offen && !V.revealed) h += zu();
     if (V.revealed) h += `<div class="karte hell"><div class="klein" style="color:#5c5446">${st.wahr === 'W' ? 'Es stimmt' : 'Propaganda'}</div>
@@ -374,12 +459,12 @@ function spielInnen(st, m, t, offen) {
   else if (t === 'schwaerzung') {
     const balken = '█'.repeat(Math.max(3, st.laenge || 5));
     h += `<div class="textblock">${esc(st.vor)}${V.revealed ? `<b style="color:#c23522">${esc(st.wort)}</b>` : `<span class="schwarz">${balken}</span>`}${esc(st.nach)}</div>
-      ${st.quelle ? `<div class="klein">${esc(st.quelle)}</div>` : ''}`;
+      ${st.quelle ? `<div class="klein">${esc(st.quelle)}</div>` : ''}${st.takt && offen ? '<div class="taktuhr" id="taktuhr"></div>' : ''}`;
     if (offen) h += `<input class="feld gross" data-k="schwarz" id="eingabe" placeholder="Was stand unter dem Balken?" autocomplete="off" enterkeyhint="send">
       <button class="btn rot voll" data-do="antwort">${ME.answer ? 'Antwort ändern' : 'Antwort abgeben'}</button>`;
     if (ME.answer) h += gesendet('Abgegeben: ' + ME.answer);
     if (!offen && !V.revealed) h += zu();
-    if (V.revealed && ME.judged === 'r') h += `<div class="karte hell"><h2>Richtig!</h2></div>`;
+    if (V.revealed && ME.judged === 'r') h += `<div class="karte hell"><h2>Richtig!${ME.wert ? ' +' + ME.wert : ''}</h2></div>`;
   }
 
   else if (t === 'impostor') {
@@ -396,11 +481,12 @@ function spielInnen(st, m, t, offen) {
   }
 
   else if (t === 'zoom' || t === 'sound' || t === 'emoji') {
-    if (t === 'emoji') h += `<div style="font-size:64px;line-height:1.1;text-align:center">${esc(st.e)}</div>${st.cat ? `<div class="klein" style="text-align:center">Kategorie: ${esc(st.cat)}</div>` : ''}`;
+    if (t === 'emoji') h += `<div class="emojizeile" data-fit="0.2" style="font-size:64px;line-height:1.15;text-align:center">${esc(st.e)}</div>${st.cat ? `<div class="klein" style="text-align:center">Kategorie: ${esc(st.cat)}</div>` : ''}`;
+    if (st.takt && offen && ME.judged !== 'r') h += `<div class="taktuhr" id="taktuhr"></div>`;
     else h += `<p class="pause">${t === 'zoom' ? 'Das Beweisfoto ist auf der Leinwand.' : 'Das Band läuft über die Leinwand' + (st.stufe && !V.revealed ? ` – Rauschen Stufe ${st.stufe} von ${st.stufen}` : '') + '.'}</p>`;
     if (offen && ME.triesLeft > 0 && ME.judged !== 'r') h += `<input class="feld gross" data-k="buzz" id="eingabe" placeholder="Antwort" autocomplete="off" enterkeyhint="send">
       <button class="btn rot voll" data-do="funk">Antwort funken</button><div class="klein">Noch ${ME.triesLeft} Versuche</div>`;
-    if (ME.judged === 'r') h += `<div class="karte hell"><h2>Treffer!</h2></div>`;
+    if (ME.judged === 'r') h += `<div class="karte hell"><h2>Treffer!${ME.wert ? ' +' + ME.wert : ''}</h2></div>`;
     if (ME.tries && ME.tries.length) h += `<ul class="versuche">${ME.tries.map(x => `<li>${esc(x)}</li>`).join('')}</ul>`;
     if (!offen && !V.revealed) h += zu();
     if (V.revealed) h += `<div class="karte hell"><div class="klein" style="color:#5c5446">Lösung</div><h2>${esc(st.a)}</h2></div>`;
@@ -437,13 +523,16 @@ actions(app, {
   antwort: () => { const v = wert(); if (!v) return hinweis('Erst etwas eintippen'); senden({ v }); leeren(); },
   funk: () => { const v = wert(); if (!v) return; senden({ v }); leeren(); },
   einsatz: () => { senden({ kind: 'bet', v: parseInt(wert()) || 0 }); leeren(); },
-  tippen: d => { lokal.folge += d.l; zeichnen(); },
-  folgeweg: () => { lokal.folge = ''; zeichnen(); },
-  folgezurueck: () => { lokal.folge = lokal.folge.slice(0, -1); zeichnen(); },
-  folge: () => { senden({ v: lokal.reihe.join('') }); },
-  hoch: d => { const i = +d.i, r = lokal.reihe; [r[i - 1], r[i]] = [r[i], r[i - 1]]; zeichnen(); },
-  runter: d => { const i = +d.i, r = lokal.reihe; [r[i + 1], r[i]] = [r[i], r[i + 1]]; zeichnen(); },
-  ab: d => senden({ v: d.x }),
+  folge: () => zelleSenden(lokal.reihe.join(''), true),
+  hoch: d => { const i = +d.i, r = lokal.reihe; [r[i - 1], r[i]] = [r[i], r[i - 1]]; reiheGeaendert(); },
+  runter: d => { const i = +d.i, r = lokal.reihe; [r[i + 1], r[i]] = [r[i], r[i + 1]]; reiheGeaendert(); },
+  reihe: d => { lokal.reihe = d.x.split(''); reiheGeaendert(); },
+  atlasnimm: d => { lokal.wahl = d.x; atlasMalen(); },
+  ab: d => zelleSenden(d.x, true),
+  uopfer: d => { lokal.opfer = d.x; if (lokal.ziel === d.x) lokal.ziel = null; zeichnen(); },
+  uziel: d => { lokal.ziel = d.x; zeichnen(); },
+  umlagern: () => { senden({ kind: 'steal', v: lokal.opfer, ziel: lokal.ziel || ME.id }); lokal.opfer = lokal.ziel = null; },
+  uverzicht: () => { if (confirm('Wirklich verzichten?')) senden({ kind: 'steal_skip' }); },
   stimme: d => senden({ v: d.x }),
   geheim: () => { lokal.offen = !lokal.offen; zeichnen(); },
   rolle: () => { lokal.rolleOffen = !lokal.rolleOffen; zeichnen(); },
@@ -452,27 +541,19 @@ actions(app, {
   wbwahl: d => senden({ v: +d.x }),
   buzz: () => { if (navigator.vibrate) navigator.vibrate(60); senden({ kind: 'buzz' }); },
 });
-// Karteikarten ziehen (Registratur)
-app.addEventListener('pointerdown', e => {
-  const li = e.target.closest('#sortier li');
-  if (!li || e.target.closest('button')) return;
-  const liste = li.parentElement, hoehe = li.getBoundingClientRect().height + 8;
-  let start = e.clientY;
-  lokal.ziehen = true; li.classList.add('zieht'); li.setPointerCapture(e.pointerId);
-  const bewegen = ev => {
-    let dy = ev.clientY - start;
-    const vor = li.previousElementSibling, nach = li.nextElementSibling;
-    if (dy < -hoehe / 2 && vor) { liste.insertBefore(li, vor); start -= hoehe; dy += hoehe; }
-    else if (dy > hoehe / 2 && nach) { liste.insertBefore(nach, li); start += hoehe; dy -= hoehe; }
-    li.style.transform = `translateY(${dy}px)`;
-  };
-  const los = () => {
-    li.removeEventListener('pointermove', bewegen); li.removeEventListener('pointerup', los); li.removeEventListener('pointercancel', los);
-    li.classList.remove('zieht'); li.style.transform = '';
-    lokal.reihe = [...liste.children].map(x => x.dataset.l);
-    lokal.ziehen = false; lokal.nachher = false; zeichnen();
-  };
-  li.addEventListener('pointermove', bewegen); li.addEventListener('pointerup', los); li.addEventListener('pointercancel', los);
+// Karteikarten ziehen (Registratur). Jede neue Reihenfolge geht live als Vorschlag an die Zelle.
+function reiheGeaendert() {
+  zeichnen();
+  clearTimeout(reiheGeaendert.t);
+  reiheGeaendert.t = setTimeout(() => { if (V && V.open && !V.revealed) zelleSenden(lokal.reihe.join('')); }, 400);
+}
+WWH.sortierbar(app, '#sortier', reihe => { lokal.reihe = reihe; reiheGeaendert(); });
+// Zuversicht: Regler schickt die aktuelle Wahl mit neuem Gewicht
+app.addEventListener('input', e => { if (e.target.id === 'conf') { lokal.conf = +e.target.value; const w = document.getElementById('confwert'); if (w) w.textContent = lokal.conf + ' %'; } });
+app.addEventListener('change', e => {
+  if (e.target.id !== 'conf') return;
+  const mein = ME.zelle && ME.zelle.mein;
+  if (mein) senden({ v: mein.v, c: lokal.conf });
 });
 
 app.addEventListener('keydown', e => {

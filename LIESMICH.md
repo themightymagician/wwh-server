@@ -26,7 +26,7 @@ Die Ordnungsfront hat das Hinterland erobert, ihr Amt für Reinsprache vernichte
 
 - **Prolog:** Über „Leinwand → Prolog“ zeigt die Leinwand den Lagebericht Tafel für Tafel, gesteuert in der Zentrale. Die Handys zeigen dazu die Einsatzkarte.
 - **Einsatzbefehle:** Jede Mission hat einen Einsatzort und eine Lage, zum Beispiel das Statistische Landesamt für Schätzfragen. Die Leinwand zählt die Tage bis zur Säuberung herunter.
-- **Umlagern:** Wer einen Einsatz am besten erledigt, darf Wörter aus einem fremden Rucksack in den eigenen legen. Jede Umlagerung und jeder Verzicht wird mitgeschrieben.
+- **Umlagern:** Wer einen Einsatz am besten erledigt, bekommt die Frage direkt aufs Handy: aus welchem fremden Rucksack, und wohin – in den eigenen oder „zur Sicherheit“ in einen anderen fremden. Wer kein Gerät hat, wählt in der Zentrale. Jede Umlagerung und jeder Verzicht wird mitgeschrieben, die Bilanz unterscheidet „für sich selbst“ und „zur Sicherheit“.
 - **Übergabe:** Am Ende führst du in der Zentrale Schritt für Schritt durch die Übergabe. Zuerst kommt die Einleitung, dann der Maulwurf (falls eingeschaltet), dann Hüterin oder Hüter des Archivs und zuletzt die Bilanz „Zur Sicherheit – oder für euch selbst?“. Die Bilanz zeigt, wie viel umgelagert wurde, wer die größte Raffhand war, wer am meisten erleichtert wurde und wer verzichtet hat, obwohl er durfte.
 
 Alle Texte stehen im Archiv unter „Drehbuch“ und lassen sich dort umschreiben, auch Zellenname, Tage und die Anzahl der Prolog-Tafeln.
@@ -38,7 +38,7 @@ Damit die Schlussfrage „Zur Sicherheit – oder für euch selbst?“ auch spie
 - **Umlagern:** 20 % des fremden Rucksacks, mindestens 3 Wörter. Die Knöpfe zeigen vorher, wie viel genommen wird und wie viel ankommt.
 - **Unterwegs beschädigt:** 50 % der umgelagerten Wörter gehen verloren. Umlagern verschiebt also nicht nur, es vernichtet Beute der Zelle.
 - **Verzicht:** Wer umlagern dürfte und verzichtet, bekommt 2 Wörter von der Zentrale.
-- **Ziel der Zelle:** Bei der Übergabe braucht die Zelle genug Wörter für das Archiv. „Auto“ heißt 8 Wörter pro Person, „Fest“ nimmt eine eigene Zahl, „Aus“ schaltet das Ziel ab. Die Leinwand zeigt den Stand in der Zentrale. Wird das Ziel verfehlt, gibt es keinen Hüter des Archivs. Der Rucksack des Maulwurfs zählt nicht mit, sein Umlagern trifft die Zelle also doppelt.
+- **Ziel der Zelle:** Bei der Übergabe braucht die Zelle genug Wörter für das Archiv. „Auto“ rechnet aus dem Einsatzplan aus, wie viele Wörter höchstens zu holen sind (alle Runden und Personen, Deppardy-Brett und Atlas über den Kurs, ohne Maulwurf-Anteil), und nimmt davon einen einstellbaren Anteil (Standard 50 %). „Fest“ nimmt eine eigene Zahl, „Aus“ schaltet das Ziel ab. Die Leinwand zeigt den Stand in der Zentrale. Wird das Ziel verfehlt, gibt es keinen Hüter des Archivs. Der Rucksack des Maulwurfs zählt nicht mit, sein Umlagern trifft die Zelle also doppelt.
 
 Alle Werte lassen sich während des Abends ändern, falls das Ziel zu leicht oder zu schwer wirkt.
 
@@ -53,8 +53,18 @@ Alle Werte lassen sich während des Abends ändern, falls das Ziel zu leicht ode
 - **Die Schwärzung:** Ein Text erscheint mit schwarzem Balken, alle tippen das fehlende Wort. Jede richtige Antwort zählt. Im Archiv setzt du das geschwärzte Wort in doppelte eckige Klammern: `Die Gedanken sind [[frei]]`. Mitgeliefert sind 13 gemeinfreie Texte, Sprichwörter und Grundgesetz-Artikel. Die Karte zeigt ein thematisches Beutewort, zum Beispiel „Gedankenfreiheit“.
 
 Die beiden neuen Spiele stehen im Einsatzplan unter „Mission anhängen“. Sie haben eigene Einsatzorte im Drehbuch: die Wörterbuchredaktion und die Zensurbehörde.
+- **Einsatz:** Höchsteinsatz ist immer der aktuelle Rucksack – Gewinne und Verluste aus früheren Runden derselben Mission zählen mit. Wer leer ist, darf 2 setzen und verliert dabei nichts.
+- **Zellenmodus** (Einsatzplan, bei Rangordnung, Mehr oder weniger und Atlas): *Sprecher* – alle sehen die Vorschläge der eigenen Zelle live, eine Person schickt ab. *Abstimmung* – jede Stimme zählt gleich, die Mehrheit gilt (bei der Rangordnung nach Plätzen verrechnet). *Zuversicht* – jede Person stellt per Schieberegler ein, wie sicher sie ist; sichere Stimmen wiegen mehr. Andere Zellen sehen nichts davon.
+- **Zeittakt** (Einsatzplan, bei Bilderschrift und Schwärzung): Wer im ersten Takt (z. B. 10 s) richtig liegt, birgt alle Wörter, danach je Takt die Hälfte, mindestens 1. Leinwand und Handys zeigen den laufenden Wert.
+- **Bildarchiv:** Das Bild liegt hinter einem Schlüsselloch und öffnet sich beim Aufdecken (abschaltbar in der Zentrale).
+- **Abgehört – Störgeräusche:** Im Cockpit gibt es Regler für Dumpf, Rauschen, Knistern, Brummen, Pfeifen, Verzerrung, Aussetzer und Leiern. Sie gelten für Stufe 1 und nehmen mit jeder Stufe ab. Rauschen, Knistern, Brummen, Pfeifen und Leiern liegen auch über fremden mp3-Adressen.
+- **Beispiel vor jedem Einsatz:** Bei der Einweisung zeigen Leinwand und Handys ein animiertes Handy, das den Spielablauf vorführt (abschaltbar).
+- **Echte Namen:** In der Zentrale lässt sich einschalten, dass die Leinwand neben jedem Decknamen den echten Namen zeigt.
+- **Klang:** Unter „Archiv → Klang“ lassen sich Hintergrundmusik (Dauerschleife, optional eigene Spielmusik) und Signaltöne für Einsatzbefehl, Aufdecken, Treffer, Missionsende, Umlagern, Übergabe, Ziel erreicht/verfehlt, Maulwurf u. a. hochladen. Ohne eigene Datei erklingt ein eingebauter Ton. Beim Abhören schweigt die Musik.
+- **Leinwand ohne Scrollen:** Emojis, Titel und Karten werden einzeilig eingepasst, und der ganze Inhalt verkleinert sich, statt zu scrollen. Die Beutekarte bekommt eine eigene Spalte und verdeckt keine Antworten oder Punkte mehr. Hat in einer Runde niemand Wörter bekommen, erscheint sie ausgegraut als „Nicht geborgen“ und zählt bei der Übergabe nicht als gerettet.
+- **Flaggen:** Eine mitgelieferte Flaggen-Schrift (Twemoji, CC BY 4.0) sorgt dafür, dass Flaggen-Emojis auch unter Windows als Flagge statt als „FR“ erscheinen.
 - **Funksprüche:** Das Cockpit markiert Antworten mit einem roten Punkt, die nach der Lösung aussehen. Groß- und Kleinschreibung, Umlaute, Artikel und kleine Tippfehler werden dabei ignoriert. Entscheiden musst du trotzdem selbst.
-- **Rangordnung:** Das Cockpit zeigt bei falschen Antworten, wie viele Begriffe am richtigen Platz stehen. Auf dem Handy gibt es „⌫ Letzten“ zum Korrigieren.
+- **Rangordnung:** Die Begriffe sind auf dem Handy echte Karteikarten zum Ziehen, Buchstabencodes gibt es nicht mehr. Das Cockpit zeigt bei falschen Antworten, wie viele Begriffe am richtigen Platz stehen, und kann die Reihenfolge einer Zelle mit ↑/↓ setzen.
 - **Beutewörter und Karteikarten:** Jeder Inhalt kann ein Beutewort haben – in allen Minispielen, bei jedem Atlas-Begriff und bei jedem Deppardy-Feld. Beim Aufdecken schiebt sich auf der Leinwand eine Karteikarte ins Bild: Stichwort mit Artikel, Bedeutung, Herkunft, Fundort, Aktenzeichen und ein Stempel des Amtes, warum das Wort verboten ist („Fremd“, „Veraltet“, „Doppeldeutig“ …). Die Handys zeigen dieselbe Karte. Bei Deppardy gilt ein Wort als geborgen, sobald die Antwort gezeigt wird. Am Ende der Übergabe liegen alle Karten des Abends als „Das habt ihr gerettet“ auf dem Tisch.
 - **Beutekartei im Archiv:** Unter „Archiv → Beutekartei“ stehen alle Beutewörter mit ihrer Karte. Wörter ohne Karte sind rot markiert. Mitgeliefert sind Karten für 281 Wörter.
 - **Funksprüche nach dem Einsatz:** Nach jeder Mission meldet sich die Zentrale mit einem Satz aus dem Drehbuch („Das Statistische Landesamt brennt …“).
@@ -71,7 +81,7 @@ Eingeschaltet bekommt eine zufällige Person heimlich die Rolle Maulwurf. Jedes 
 Die Abstimmung „Wer ist der Maulwurf?“ lässt sich jederzeit öffnen, in der Mission „Die Parole“ gibt es dafür einen eigenen Knopf. Es zählt die letzte Stimme jeder Person, die Stimme des Maulwurfs selbst zählt nicht. Aufgelöst wird bei der Übergabe:
 
 - **Enttarnt** (der Maulwurf hat allein die meisten Stimmen): Sein Rucksack wird gleichmäßig auf alle anderen verteilt.
-- **Entkommen:** Das Amt zahlt ihm eine Prämie, einstellbar in der Zentrale (Standard 5 Wörter).
+- **Entkommen:** Das Amt für Reinsprache zahlt ihm eine Prämie aus eigener Kasse, einstellbar in der Zentrale (Standard 5 Wörter). Kein Rucksack der Zelle wird dafür angerührt. Ein enttarnter oder entkommener Maulwurf kann nicht Hüter des Archivs werden.
 
 „Abend neu starten“ setzt auch den Maulwurf zurück, beim ersten Einsatz wird dann neu gelost.
 
@@ -180,4 +190,4 @@ Soll parallel eine Test-Instanz laufen, die Service-Datei kopieren, Port und `Wo
 python3 -m unittest discover tests
 ```
 
-Die Tests brauchen nur die Standardbibliothek und prüfen die Spiellogik ohne laufenden Server: Umlagern, Deppardy-Freigabe und -Kurs, Ziel der Zelle, Pfadnormalisierung, Decknamen und das Laden alter Spielstände.
+Die Tests brauchen nur die Standardbibliothek und prüfen die Spiellogik ohne laufenden Server: Umlagern (auch in fremde Rucksäcke, am Gerät), Einsatz-Limit, Beutestatus, Zellenmodi, Zeittakt, Auto-Ziel, Maulwurf-Prämie, Deppardy-Freigabe und -Kurs, Pfadnormalisierung, Decknamen und das Laden alter Spielstände.
