@@ -79,6 +79,10 @@ const WWH = (() => {
   function karte(k, opt) {
     if (!k) return '';
     opt = opt || {};
+    // Nicht geborgen: nur das Wort – Bedeutung und Herkunft gingen mit verloren
+    if (k.verloren) return `<div class="karteikarte verloren nurwort ${opt.klein ? 'kompakt' : ''} ${opt.neu ? 'neu' : ''}">
+      <div class="kk-kopf"><div class="kk-wort" data-fit="0.45">${esc(k.wort)}</div><div class="kk-az">${k.nr ? `Az. WWH-${pad(k.nr)}` : 'Az. WWH-··'}</div></div>
+      <span class="kk-geborgen">Nicht geborgen</span></div>`;
     const zeile = (dt, dd) => dd ? `<dt>${dt}</dt><dd>${esc(dd)}</dd>` : '';
     const az = k.nr ? `Az. WWH-${pad(k.nr)}` : 'Az. WWH-··';
     return `<div class="karteikarte ${opt.klein ? 'kompakt' : ''} ${opt.neu ? 'neu' : ''} ${k.verloren ? 'verloren' : ''}">

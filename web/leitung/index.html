@@ -252,6 +252,13 @@ function boxMaulwurf() {
   h += `<div class="reihe"><span class="text">Maulwurf: <b>${ui.zeigMole ? esc(code(mo.id) + ' · ' + ((agent(mo.id) || {}).name || '')) : '●●●●●●'}</b></span>
       <button class="btn klein" data-do="mzeig">${ui.zeigMole ? 'Verbergen' : 'Anzeigen'}</button>${mo.result ? '' : '<button class="btn klein" data-do="mpick">Neu bestimmen</button>'}</div>
     <div class="reihe"><span class="klein">Prämie bei Entkommen</span><input class="feld kurz" type="number" min="0" data-k="mbonus" value="${mo.bonus}" data-change="mbonus"><span class="blass">Wörter</span></div>`;
+  const lauf = mo.lauf, log = mo.log || [];
+  h += `<div class="reihe"><span class="klein">Misstrauensvotum jederzeit</span><span class="seg"><button class="${mo.dauer ? '' : 'an'}" data-do="misstrauen" data-x="0">Aus</button><button class="${mo.dauer ? 'an' : ''}" data-do="misstrauen" data-x="1">An</button></span></div>`;
+  if (mo.dauer) h += `<div class="reihe"><span class="blass">Mehrheit trifft:</span><input class="feld kurz" style="width:60px" type="number" min="0" data-k="mdb" value="${mo.dauerBonus}" data-change="mdauer" data-f="dauerBonus"><span class="blass">Wörter für alle · daneben:</span><input class="feld kurz" style="width:60px" type="number" min="0" data-k="msb" value="${mo.schattenBonus}" data-change="mdauer" data-f="schattenBonus"><span class="blass">aufs Schattenkonto</span></div>
+    <div class="reihe">${lauf ? `<span class="pill an">läuft · ${Object.keys(lauf.stimmen || {}).length}/${S.agents.length} Stimmen${lauf.von ? ' · beantragt von ' + esc(code(lauf.von)) : ''}</span><button class="btn rot" data-do="miende">Jetzt auswerten</button>`
+      : `<button class="btn" data-do="mistart">Misstrauensvotum starten</button>`}
+      <span class="klein">${log.length} Voten · ${log.filter(x => x.treffer).length} Treffer${ui.zeigMole ? ' · Schattenkonto ' + (mo.schatten || 0) : ''}</span></div>
+    <p class="kbd">Jede Person kann auf dem Handy einmal pro Einsatz ein anonymes Votum beantragen. Es endet, wenn alle gewählt haben. Trifft die Mehrheit, bekommen alle Wörter – auch der Maulwurf, damit ihn der Punktestand nicht verrät. Sonst wandern Wörter auf sein Schattenkonto: unsichtbar, nicht umlagerbar, erst bei der Übergabe offen.</p>`;
   if (!mo.result) h += `<div class="reihe"><button class="btn ${mo.voteOpen ? 'rot' : ''}" data-do="mvote" data-x="${mo.voteOpen ? 0 : 1}">${mo.voteOpen ? 'Abstimmung schließen' : 'Abstimmung öffnen'}</button><span class="klein">${n} Stimmen${ui.zeigMole && n ? ' · ' + Object.entries(t).map(([k, v]) => esc(code(k)) + ' ' + v).join(', ') : ''}</span></div>
     <p class="kbd">Abstimmen geht jederzeit, die letzte Stimme zählt. Aufgelöst wird bei der Übergabe.</p>`;
   return h + '</div>';
@@ -335,7 +342,7 @@ function seitePlan() {
     return `<div class="p ${i === S.cur ? 'jetzt' : ''}" style="${i < S.cur ? 'opacity:.5' : ''}">
       <span class="blass">${pad(i + 1)}</span>
       <div><b>${esc(g.name)}</b><div class="klein">${i < S.cur ? 'erledigt' : '≈ ' + Math.round(g.min * (g.ext || g.board ? 1 : p.rounds)) + ' Min.'}</div></div>
-      ${p.type === 'deppardy' ? `<select class="feld kurz" style="width:180px" data-change="popt" data-i="${i}" data-k="po-${p.id}">${S.boards.map(b => `<option value="${esc(b.id)}" ${p.opt === b.id ? 'selected' : ''}>${esc(b.name)}</option>`).join('')}</select>`
+      ${p.type === 'deppardy' ? `<select class="feld kurz" style="width:180px" data-change="popt" data-i="${i}" data-k="po-${p.id}"><option value="">Erstes Board in der Rotation</option>${S.boards.map(b => `<option value="${esc(b.id)}" ${p.opt === b.id ? 'selected' : ''}>${esc(b.name)}${b.aus ? ' (nicht in Rotation)' : ''}</option>`).join('')}</select>`
         : p.type === 'atlas' ? `<select class="feld kurz" style="width:180px" data-change="popt" data-i="${i}" data-k="po-${p.id}"><option value="">Alle Sets gemischt</option>${Object.entries(S.atlasSets).map(([k, v]) => `<option value="${esc(k)}" ${p.opt === k ? 'selected' : ''}>${esc(v.name)}</option>`).join('')}</select>` : ''}
       <span class="reihe" style="gap:6px"><span class="seg"><button class="${team ? '' : 'an'}" data-do="pmode" data-i="${i}" data-x="solo">Einzeln</button><button class="${team ? 'an' : ''}" data-do="pmode" data-i="${i}" data-x="team">Zellen</button></span>
         ${team && M.teamSpiele.includes(p.type) ? `<select class="feld kurz" style="width:150px;padding:6px" data-change="pzm" data-i="${i}" data-k="pz-${p.id}" title="Wie die Zelle zu ihrer Antwort kommt">${[['sprecher', 'Sprecher'], ['mehrheit', 'Abstimmung'], ['zuversicht', 'Zuversicht']].map(([k, l]) => `<option value="${k}" ${(p.zm || 'sprecher') === k ? 'selected' : ''}>${l}</option>`).join('')}</select>` : ''}
@@ -492,12 +499,13 @@ function archivDeppardy() {
   if (!ui.boardId && S.boards[0]) ui.boardId = S.boards[0].id;
   const orig = S.boards.find(b => b.id === ui.boardId);
   if (!ui.boardDirty || !ui.board || ui.board.id !== ui.boardId) ui.board = orig ? structuredClone(orig) : null;
-  const liste = S.boards.filter(b => !ui.nurMeine || b.autor === ICH.name).map(b => `<button class="btn klein ${b.id === ui.boardId ? 'hell' : ''}" data-do="bwahl" data-id="${esc(b.id)}" title="${b.autor ? 'vorbereitet von ' + esc(b.autor) : ''}">${esc(b.name)}${b.autor ? ` <span class="blass">· ${esc(b.autor)}</span>` : ''}</button>`).join('');
+  const liste = S.boards.filter(b => !ui.nurMeine || b.autor === ICH.name).map(b => `<button class="btn klein ${b.id === ui.boardId ? 'hell' : ''}" style="${b.aus ? 'opacity:.5;text-decoration:line-through' : ''}" data-do="bwahl" data-id="${esc(b.id)}" title="${b.aus ? 'nicht in der Rotation · ' : ''}${b.autor ? 'vorbereitet von ' + esc(b.autor) : ''}">${esc(b.name)}${b.autor ? ` <span class="blass">· ${esc(b.autor)}</span>` : ''}</button>`).join('');
   let h = `<div class="stapel" style="margin-top:18px">
     <p class="text blass">Boards aus dem eigenständigen Deppardy lassen sich als .json importieren, auch ältere Versionen. Eingebettete Bilder und Töne legt der Server dabei als Dateien ab. Fragen, Tipps und Antworten dürfen HTML enthalten.</p>
     <div class="reihe"><label class="klein" style="display:flex;gap:6px;align-items:center"><input type="checkbox" data-nurmeine ${ui.nurMeine ? 'checked' : ''}> nur meine Boards</label></div>
     <div class="reihe">${liste}</div>
     <div class="reihe"><button class="btn rot" data-do="bneu">Neues Board</button><label class="btn">Importieren (.json)<input type="file" accept="application/json,.json" data-bimport hidden></label>
+      ${ui.board ? `<button class="btn ${(S.boards.find(x => x.id === ui.boardId) || {}).aus ? '' : 'hell'}" data-do="brot" title="Boards außerhalb der Rotation werden nur gespielt, wenn sie im Einsatzplan ausdrücklich gewählt sind">${(S.boards.find(x => x.id === ui.boardId) || {}).aus ? 'Nicht in Rotation' : 'In Rotation'}</button>` : ''}
       <button class="btn" data-do="btest" ${ui.board && !ui.boardDirty ? '' : 'disabled'} title="${ui.boardDirty ? 'Erst speichern' : 'Board sofort als Testlauf spielen'}">▶ Testen</button>
       <button class="btn" data-do="bexport" ${ui.board ? '' : 'disabled'}>Exportieren</button><button class="btn" data-do="bdel" ${ui.board ? '' : 'disabled'}>Löschen</button>
       <button class="btn link" data-do="brestore">Hinterland-Board wiederherstellen</button></div></div>`;
@@ -508,9 +516,10 @@ function archivDeppardy() {
       <label class="klein">Punktstufen <input class="feld mittel" data-k="bpts" data-bf="pts" value="${esc(b.pts.join(', '))}"></label>
       <button class="btn ${ui.boardDirty ? 'rot' : ''}" data-do="bsave">${ui.boardDirty ? 'Änderungen speichern' : 'Gespeichert'}</button></div>
     ${b.cats.map((c, ci) => `<details class="kat" ${ui.offen === ci ? 'open' : ''} data-ci="${ci}"><summary><span class="blass">${pad(ci + 1)}</span><h2 style="flex:1;font-size:24px">${esc(c.name)}</h2>
-        <span class="klein">${b.pts.filter(p => c.qh[p]).length} / ${b.pts.length} Fragen</span></summary>
+        <span class="klein">${b.pts.filter(p => c.qh[p] && !(c.aus || {})[p]).length} / ${b.pts.length} Fragen aktiv</span></summary>
       <div class="karten"><div class="reihe"><label class="klein" style="flex:1">Kategorie <input class="feld" data-k="bc-${ci}" data-bf="cat:${ci}" value="${esc(c.name)}"></label><button class="btn klein" data-do="bcdel" data-i="${ci}">Kategorie entfernen</button></div>${b.pts.map(p => `<div class="dkarte"><div><div class="p">${p}</div>
-          <label class="klein" style="display:flex;gap:6px;align-items:center"><input type="checkbox" data-bf="rk:${ci}:${p}" ${c.rk[p] ? 'checked' : ''}>×2</label></div>
+          <label class="klein" style="display:flex;gap:6px;align-items:center"><input type="checkbox" data-bf="rk:${ci}:${p}" ${c.rk[p] ? 'checked' : ''}>×2</label>
+          <label class="klein" style="display:flex;gap:6px;align-items:center" title="Feld außerhalb der Rotation bleibt im Spiel leer"><input type="checkbox" data-bf="aus:${ci}:${p}" ${(c.aus || {})[p] ? '' : 'checked'}>aktiv</label></div>
         <div class="felder"><label>Frage<textarea class="feld" data-k="bq-${ci}-${p}" data-bf="qh:${ci}:${p}">${esc(c.qh[p] || '')}</textarea>
             <span class="reihe"><input type="file" accept="image/*,audio/*" data-bupload="qh:${ci}:${p}" style="font-size:11px"></span></label>
           <label>Tipp<textarea class="feld" data-k="bh-${ci}-${p}" data-bf="hh:${ci}:${p}">${esc(c.hh[p] || '')}</textarea></label>
@@ -525,6 +534,7 @@ function boardFeld(bf, el) {
   else if (art === 'pts') { const neu = [...new Set(el.value.split(/[,; ]+/).map(x => parseInt(x)).filter(x => x > 0))].sort((a, z) => a - z); if (neu.length) b.pts = neu; }
   else if (art === 'cat') b.cats[+ci].name = el.value;
   else if (art === 'rk') { if (el.checked) b.cats[+ci].rk[p] = true; else delete b.cats[+ci].rk[p]; }
+  else if (art === 'aus') { b.cats[+ci].aus = b.cats[+ci].aus || {}; if (el.checked) delete b.cats[+ci].aus[p]; else b.cats[+ci].aus[p] = true; }
   else { b.cats[+ci][art] = b.cats[+ci][art] || {}; if (el.value.trim()) b.cats[+ci][art][p] = el.value; else delete b.cats[+ci][art][p]; }
   if (!ui.boardDirty) { ui.boardDirty = true; const btn = app.querySelector('[data-do="bsave"]'); if (btn) { btn.textContent = 'Änderungen speichern'; btn.classList.add('rot'); } }
 }
@@ -758,7 +768,12 @@ function bühne(m, it, step) {
       <div class="funk">${Object.entries(S.answers).map(([id, a]) => `<div class="${S.judged[id] === 'r' ? 'r' : ''}" style="grid-template-columns:110px 1fr auto"><b>${esc(code(id))}</b><span class="serif">${(x.schwarzMatch || {})[id] ? '<span class="signal">● </span>' : ''}${esc(a.v)}</span>
         <span class="reihe"><button class="btn klein" data-do="judge" data-id="${id}" data-x="1">✓ +${(x.antwortWert || {})[id] || step}</button><button class="btn klein" data-do="judge" data-id="${id}" data-x="0">✗</button></span></div>`).join('') || '<p class="blass">Noch keine Antwort.</p>'}</div></div>`;
   }
-  if (t === 'wette') h = `<div class="loesung"><div class="klein">Kategorie</div><span class="display">${esc(it.cat)}</span><p class="gross">${esc(it.q)}</p><p class="text">Antwort: <b>${esc(it.a)}</b></p></div>`;
+  if (t === 'wette') {
+    const opts = (it.opts || '').split('\n').map(z => z.trim()).filter(Boolean);
+    h = `<div class="loesung"><div class="klein">Kategorie</div><span class="display">${esc(it.cat)}</span><p class="gross">${esc(it.q)}</p><p class="text">Antwort: <b>${esc(it.a)}</b></p>
+      ${opts.length ? `<p class="text blass">Antwortmöglichkeiten: ${opts.map(o => o === it.a ? `<b style="color:var(--gruen)">${esc(o)}</b>` : esc(o)).join(' · ')}</p>` : ''}</div>`;
+    if (S.revealed) h += `<div class="reihe"><button class="btn rot" data-do="wetteauto">Alle offenen Einsätze automatisch werten</button><span class="klein">${opts.length ? 'nach der gewählten Antwortmöglichkeit' : 'nach Ähnlichkeit mit der Antwort – vorher prüfen'}</span></div>`;
+  }
   const bw = (it.beute || '').trim();
   return h + steuerung(m, it) + (M.games[t] && ['zoom', 'sound', 'emoji'].includes(t) ? funk(m, step) : '')
     + (bw ? `<div class="klein">${S.revealed ? 'Geborgen – steht jetzt auf Leinwand und Handys' : 'Beutewort dieser Runde, erscheint beim Aufdecken'}</div>${WWH.karte({ ...((S.kartei || {})[bw] || {}), wort: bw }, { klein: true })}` : '');
@@ -835,7 +850,7 @@ function wertung(m, step) {
     if (t === 'wette' && S.phase === 'play') {
       const bet = S.bets[id], done = S.betDone[id];
       mitte = `<input class="feld kurz" style="width:80px" data-k="b-${id}" value="${bet ?? ''}" placeholder="max ${(x.betCaps || {})[id]}" data-change="bet" data-id="${id}" ${S.revealed ? 'disabled' : ''}>
-        <span class="serif">${esc(ans ? ans.v : '')}</span>` + (rev ? (done ? `<span class="pill ${done === 'r' ? 'gut' : 'schlecht'}">${done === 'r' ? 'richtig +' : 'falsch −'}${bet || 0}</span>`
+        <span class="serif">${ans && (x.wetteRichtig || {})[id] ? '<span class="signal">● </span>' : ''}${esc(ans ? ans.v : '')}</span>` + (rev ? (done ? `<span class="pill ${done === 'r' ? 'gut' : 'schlecht'}">${done === 'r' ? 'richtig +' : 'falsch −'}${bet || 0}</span>`
           : (bet ? `<button class="btn klein" data-do="judge" data-id="${id}" data-x="1">Richtig</button><button class="btn klein" data-do="judge" data-id="${id}" data-x="0">Falsch</button>` : '<span class="blass">kein Einsatz</span>')) : '');
     }
     if (t === 'impostor' && S.phase === 'play') {
@@ -925,6 +940,11 @@ actions(app, {
   wbtreffer: d => cmd('wb_treffer', { id: d.id }),
   wbweg: d => cmd('wb_streichen', { id: d.id }),
   awardschwarz: () => cmd('award_schwarz'),
+  wetteauto: () => cmd('wette_auto'),
+  misstrauen: d => cmd('misstrauen_set', { dauer: d.x === '1' }),
+  mistart: () => cmd('misstrauen_start'),
+  miende: () => cmd('misstrauen_ende'),
+  brot: () => { const b = S.boards.find(x => x.id === ui.boardId); if (b) cmd('board_rotation', { id: b.id, an: !!b.aus }); },
   uadj: d => cmd('upts_adj', { key: d.k, d: +d.d }),
   prologzeigen: () => cmd('screen', { name: 'prolog' }),
   prolog: d => cmd('prolog_step', { d: +d.d }),
@@ -1042,6 +1062,7 @@ app.addEventListener('change', async e => {
     case 'popt': { const p = structuredClone(S.plan); p[+d.i].opt = v; return planSenden(p); }
     case 'ddur': return cmd('dep_dur', { s: parseInt(v) || 0 });
     case 'mbonus': return cmd('mole_bonus', { n: parseInt(v) || 0 });
+    case 'mdauer': return cmd('misstrauen_set', { [d.f]: parseInt(v) || 0 });
     case 'regel': return cmd('settings', { [d.f]: parseInt(v) || 0 });
     case 'stealAmount': return cmd('settings', { stealAmount: +v || 0 });
     case 'rename': return cmd('agent_rename', { id: d.id, name: v });

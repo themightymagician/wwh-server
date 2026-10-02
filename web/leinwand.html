@@ -82,6 +82,9 @@ html,body{height:100%;overflow:hidden;}
 .lupe.schloss .schild{position:absolute;inset:0;pointer-events:none;background:var(--schild) center/auto 88% no-repeat;transition:opacity 1s ease;filter:drop-shadow(0 4px 10px rgba(0,0,0,.6));}
 .lupe.schloss.offen .loch{-webkit-mask-size:auto 520%;mask-size:auto 520%;}
 .lupe.schloss.offen .schild{opacity:0;}
+/* Nach dem Öffnen fällt die Maske ganz weg – kein Rest des Schlüssellochs bleibt im Bild */
+.lupe.schloss.ganz .loch{-webkit-mask:none;mask:none;}
+.lupe.schloss.ganz .schild{display:none;}
 :root{--schluesselloch:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 150'%3E%3Cpath d='M34 76 A34 34 0 1 1 66 76 L82 148 H18 Z'/%3E%3C/svg%3E");
   --schild:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 150'%3E%3Cpath d='M34 76 A34 34 0 1 1 66 76 L82 148 H18 Z' fill='none' stroke='%23b08a4a' stroke-width='3' stroke-linejoin='round'/%3E%3C/svg%3E");}
 .emoji{font-size:clamp(100px,14vw,280px);line-height:1.15;text-align:center;font-family:var(--emoji);}
@@ -283,6 +286,7 @@ function zeichnen() {
     let notizen = '';
     if (V.pendingSteal) notizen += `<div class="zettel alarm"><div class="klein">Umlagern</div><div class="inhalt">${V.thief ? `<b>${esc(V.thief)}</b> darf umlagern: ${umlagerRegel()} Zur Sicherheit.${V.umlagern && V.umlagern.bonus ? ` Wer verzichtet, erhält ${V.umlagern.bonus} Wörter von der Zentrale.` : ''}` : 'Gleichstand an der Spitze. Die Zentrale entscheidet.'}</div></div>`;
     if (V.funk && V.funk.text) notizen += `<div class="zettel"><div class="klein">Funkspruch${V.funk.ort ? ' · ' + esc(V.funk.ort) : ''}</div><div class="inhalt">${esc(V.funk.text)}</div></div>`;
+    if (V.misstrauen && V.misstrauen.an && V.misstrauen.letztes) notizen += `<div class="zettel ${V.misstrauen.letztes.treffer ? '' : 'alarm'}" style="transform:rotate(1.2deg)"><div class="klein">Misstrauensvotum Nº ${V.misstrauen.letztes.n}</div><div class="inhalt">${esc(V.misstrauen.letztes.text)}</div></div>`;
     if (V.lastSteal) notizen += `<div class="zettel" style="transform:rotate(-1deg)"><div class="klein">Vermerk</div><div class="inhalt">${esc(V.lastSteal)}</div></div>`;
     mitte = `<div class="zentrale"><div class="links">${notizen}</div>${m ? akte(m) : akteEnde()}<div class="rechts">${zielSaeule()}</div></div>`;
     unten = rucksaecke();
@@ -308,6 +312,8 @@ function zeichnen() {
     unten = fuss();
   }
   if (!unten && V.screen === 'mission') unten = fuss();
+  const mi = V.misstrauen;
+  if (mi && mi.an && mi.laeuft && V.screen !== 'finale') oben = oben.replace(/<\/span>$/, ` · <span class="status">Misstrauensvotum ${mi.gewaehlt}/${V.agents.length}</span></span>`);
   if (V.test) oben = oben.replace(/^<span>/, '<span><span class="status">Testlauf</span> · ');
   if (V.mole && V.mole.voteOpen && V.screen !== 'finale') oben = oben.replace(/<\/span>$/, ` · <span class="status">${esc(V.mole.frage)} ${V.mole.voted.length}/${V.agents.length}</span></span>`);
   render(bühne, `<div class="leiste">${oben}</div><div class="mitte"><div class="fit">${mitte}</div>${beiseite()}</div><div>${unten}</div>`);
@@ -470,6 +476,7 @@ function uebergabe() {
     return `<div class="zweispaltig"><div class="stapel enthuellt"><div class="klein">Der Maulwurf war</div><div class="titel" data-fit>${esc(mw.code)}</div><div class="unter">alias ${esc(mw.name)}</div>
         <span class="stempel" style="align-self:flex-start;font-size:clamp(26px,2.6vw,50px)">${mw.caught ? 'Enttarnt' : 'Entkommen'}</span></div>
       <div class="stapel"><div class="frage" style="font-size:clamp(22px,2vw,38px)">${esc(mw.text)}</div>
+        ${mw.schatten ? `<div class="zettel" style="transform:rotate(1.4deg)"><div class="klein">Schattenkonto · jetzt offengelegt</div><div class="inhalt">${mw.schatten} Wörter hat das Amt heimlich für ${esc(mw.code)} beiseitegelegt – nach ${(mw.voten || []).filter(x => !x.treffer).length} danebengegangenen Misstrauensvoten.</div></div>` : ''}
         ${!mw.caught && mw.praemie ? `<div class="zettel alarm" style="transform:rotate(-1deg)"><div class="klein">Zahlungsanweisung · Amt für Reinsprache</div><div class="inhalt">${mw.praemie} Wörter Prämie an ${esc(mw.code)} – aus der Kasse des Amtes. Die Rucksäcke der Zelle bleiben unberührt.</div></div>` : ''}
         <div class="chips">${tally.map(([c, n]) => `<span class="chip an">${esc(c)}: ${n}</span>`).join('') || '<span class="klein">Keine Stimmen</span>'}</div></div></div>`;
   }
@@ -599,8 +606,8 @@ function bühnenbild(st, m) {
         ${st.spyResult ? `<div class="frage" style="font-size:clamp(22px,2vw,38px)">${st.spyResult === 'caught' ? 'Erkannt. Alle anderen bergen Wörter.' : 'Unerkannt. Der Eindringling birgt doppelt.'}</div>` : ''}`;
     }
     case 'zoom': {
-      const start = letzteLupe && letzteLupe.img === st.img ? letzteLupe : st, bild = `<img id="lupe" src="${esc(st.img)}" alt="" style="transform-origin:${st.origin};transform:${lupenTrafo(start)}">`;
-      return `${st.loch ? `<div class="lupe schloss ${letzteLupe && letzteLupe.img === st.img && letzteLupe.offen ? 'offen' : ''}" id="lupenrahmen"><div class="loch">${bild}</div><div class="schild"></div></div>` : `<div class="lupe">${bild}</div>`}
+      const start = letzteLupe && letzteLupe.img === st.img ? letzteLupe : st, ganz = letzteLupe && letzteLupe.img === st.img && letzteLupe.ganz, bild = `<img id="lupe" src="${esc(st.img)}" alt="" style="transform-origin:${st.origin};transform:${lupenTrafo(start)}">`;
+      return `${st.loch ? `<div class="lupe schloss ${letzteLupe && letzteLupe.img === st.img && letzteLupe.offen ? 'offen' : ''} ${ganz ? 'ganz' : ''}" id="lupenrahmen"><div class="loch">${bild}</div><div class="schild"></div></div>` : `<div class="lupe">${bild}</div>`}
         <div class="leiste"><span>Stufe ${st.step} / ${st.steps}</span><span>${st.attempts || 0} Funksprüche</span></div>${rev ? loesung(st.a) + gewinner(st) : ''}`;
     }
     case 'sound':
@@ -648,8 +655,9 @@ function bühnenbild(st, m) {
       let h = `<div class="klein">Kategorie</div><div class="titel2" data-fit>${esc(st.cat)}</div>`;
       if (!st.q) return h + abgegeben(st.betPlaced, 'Einsatz gesetzt');
       h += `<div class="frage">${esc(st.q)}</div>`;
+      if (st.opts && st.opts.length) h += `<div class="optionen" style="grid-template-columns:repeat(${st.opts.length > 3 ? 2 : st.opts.length},minmax(0,1fr))">${st.opts.map((o, i) => `<div class="option ${rev && o === st.a ? 'echt enthuellt' : ''}"><span class="bu">${'ABCDEFGH'[i]}</span><span>${esc(o)}</span><span></span></div>`).join('')}</div>`;
       if (!rev) return h + abgegeben(st.answered, 'Antwort abgegeben');
-      h += loesung(st.a);
+      if (!(st.opts && st.opts.length)) h += loesung(st.a);
       h += `<div class="tipps">${V.agents.map(a => { const b = (st.bets || {})[a.id] || 0, d = (st.betDone || {})[a.id];
         return `<div class="tipp ${d === 'r' ? 'nah' : ''}"><b>${wer(a)}</b><span>${d === 'r' ? '+' + b : d === 'w' ? '−' + b : 'setzt ' + b}</span></div>`; }).join('')}</div>`;
       return h;
@@ -803,8 +811,11 @@ function lupe() {
   const st = V.stage;
   if (!img || !st || st.type !== 'zoom') { letzteLupe = null; return; }
   const rahmen = document.getElementById('lupenrahmen'), offen = !!V.revealed;
+  const ganz = offen && letzteLupe && letzteLupe.img === st.img && letzteLupe.ganz;
   requestAnimationFrame(() => requestAnimationFrame(() => { img.style.transform = lupenTrafo(st); if (rahmen) rahmen.classList.toggle('offen', offen); }));
-  letzteLupe = { img: st.img, scale: st.scale, origin: st.origin, loch: st.loch, offen };
+  letzteLupe = { img: st.img, scale: st.scale, origin: st.origin, loch: st.loch, offen, ganz };
+  clearTimeout(lupe.t);
+  if (offen && !ganz && rahmen) lupe.t = setTimeout(() => { letzteLupe.ganz = true; const r = document.getElementById('lupenrahmen'); if (r) r.classList.add('ganz'); }, 1900);
 }
 
 // Ton: gesteuert aus dem Steuermodul

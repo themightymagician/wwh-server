@@ -149,6 +149,7 @@ function zeichnen() {
   else html = spiel();
   if (V.mole && V.mole.voteOpen && V.screen !== 'finale') html = maulwurfWahl() + html;
   if (ME.umlagern) html = umlagernKarte() + html;
+  html = misstrauenKarte() + html;
   render(app, html);
   WWH.passeText(app);
   autofokus();
@@ -243,6 +244,20 @@ function prolog() {
   const t = SY().tafel;
   return `<div class="klein">Lagebericht${t ? ' ' + pad(t.nr) + ' / ' + pad(SY().prologLen) : ''}</div>
     ${t ? `<h1>${esc(t.titel)}</h1><p class="text">${esc(t.text)}</p>` : ''}${einsatzkarte()}${rolle()}`;
+}
+
+// Misstrauensvotum: jederzeit, anonym. Niemand sieht, wer wen gewählt hat – nur ob die Mehrheit richtig lag.
+function misstrauenKarte() {
+  const mi = V.misstrauen;
+  if (!mi || !mi.an || V.screen === 'finale') return '';
+  if (mi.laeuft) return `<div class="karte" style="border:2px solid var(--signal)"><div class="klein signal">Misstrauensvotum · anonym</div><h2>Wer arbeitet für das Amt?</h2>
+    <p class="text" style="font-size:16px">Trifft die Mehrheit den Maulwurf, bekommt jede Person ${mi.bonus} Wörter. Liegt sie daneben, profitiert das Amt. ${mi.gewaehlt} von ${V.agents.length} haben gewählt.</p>
+    <div class="stimmen">${V.agents.filter(a => a.id !== ME.id).map(a => `<button data-do="mmisstrauen" data-x="${a.id}" class="${ME.misstrauenStimme === a.id ? 'an' : ''}"><b>${esc(a.code)}</b>${V.namenZeigen ? `<span>${esc(a.name)}</span>` : ''}</button>`).join('')}</div>
+    ${ME.misstrauenStimme ? gesendet('Stimme abgegeben – ändern geht, bis alle gewählt haben') : ''}</div>`;
+  let h = '';
+  if (mi.letztes && lokal.gesehenMisstrauen !== mi.letztes.n) h += `<div class="karte ${mi.letztes.treffer ? 'hell' : ''}" data-do="misstrauenok"><div class="klein">Ergebnis des Misstrauensvotums</div><p class="text">${esc(mi.letztes.text)}</p><span class="klein">Antippen zum Schließen</span></div>`;
+  if (mi.moeglich && V.screen !== 'start') h += `<button class="btn voll" data-do="mantrag">Misstrauensvotum beantragen</button>`;
+  return h;
 }
 
 function impressumLink() { return V && V.impressum ? `<div class="fuss-impressum"><a href="/impressum" target="_blank" rel="noopener">Impressum</a></div>` : ''; }
@@ -522,7 +537,8 @@ function spielInnen(st, m, t, offen) {
       if (ME.bet != null) h += gesendet('Einsatz: ' + ME.bet + ' Wörter');
     } else {
       h += `<p class="text">${esc(st.q)}</p>${ME.bet != null ? `<div class="klein">Dein Einsatz: ${ME.bet}</div>` : '<div class="klein">Kein Einsatz gesetzt</div>'}`;
-      if (offen) h += `<input class="feld gross" data-k="wantwort" id="eingabe" placeholder="Antwort" autocomplete="off"><button class="btn rot voll" data-do="antwort">${ME.answer ? 'Antwort ändern' : 'Antwort abschicken'}</button>`;
+      if (offen && st.opts && st.opts.length) h += `<div class="optionen">${st.opts.map((o, i) => `<button data-do="wwahl" data-x="${esc(o)}" class="${ME.answer === o ? 'an' : ''}"><span class="bu">${'ABCDEFGH'[i]}</span>${esc(o)}</button>`).join('')}</div>`;
+      else if (offen) h += `<input class="feld gross" data-k="wantwort" id="eingabe" placeholder="Antwort" autocomplete="off"><button class="btn rot voll" data-do="antwort">${ME.answer ? 'Antwort ändern' : 'Antwort abschicken'}</button>`;
       if (ME.answer) h += gesendet('Abgegeben: ' + ME.answer);
       if (!offen && !V.revealed) h += zu();
       if (V.revealed) h += `<div class="karte hell"><div class="klein" style="color:#5c5446">Lösung</div><h2>${esc(st.a)}</h2>${ME.betDone ? `<b style="color:#c23522">${ME.betDone === 'r' ? 'Einsatz gewonnen' : 'Einsatz verloren'}</b>` : ''}</div>`;
@@ -550,6 +566,9 @@ actions(app, {
   reihe: d => { lokal.reihe = d.x.split(''); reiheGeaendert(); },
   atlasnimm: d => { lokal.wahl = d.x; atlasMalen(); },
   ab: d => zelleSenden(d.x, true),
+  wwahl: d => senden({ v: d.x }),
+  mantrag: () => { if (confirm('Ein anonymes Misstrauensvotum für die ganze Zelle beantragen? Pro Einsatz geht das nur einmal.')) senden({ kind: 'misstrauen_antrag' }); },
+  mmisstrauen: d => senden({ kind: 'misstrauen', v: d.x }),
   uopfer: d => { lokal.opfer = d.x; if (lokal.ziel === d.x) lokal.ziel = null; zeichnen(); },
   uziel: d => { lokal.ziel = d.x; zeichnen(); },
   umlagern: () => { senden({ kind: 'steal', v: lokal.opfer, ziel: lokal.ziel || ME.id }); lokal.opfer = lokal.ziel = null; },
@@ -557,6 +576,7 @@ actions(app, {
   stimme: d => senden({ v: d.x }),
   geheim: () => { lokal.offen = !lokal.offen; zeichnen(); },
   rolle: () => { lokal.rolleOffen = !lokal.rolleOffen; zeichnen(); },
+  misstrauenok: () => { lokal.gesehenMisstrauen = V.misstrauen.letztes.n; zeichnen(); },
   mstimme: d => senden({ kind: 'mole_vote', v: d.x }),
   faelschen: () => { const v = wert(); if (!v) return hinweis('Erst etwas eintippen'); senden({ v }); },
   wbwahl: d => senden({ v: +d.x }),
